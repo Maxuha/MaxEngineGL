@@ -56,6 +56,21 @@ GLuint createShaderProgram() {
 class Vector3 {
 public:
     float x, y, z;
+
+    Vector3 operator+(const Vector3 &v) const {
+        return Vector3(x + v.x, y + v.y, z + v.z);
+    }
+
+    Vector3 operator+=(const Vector3 &v) {
+        x += v.x;
+        y += v.y;
+        z += v.z;
+        return *this;
+    }
+
+    Vector3 operator*(const float value) const {
+        return Vector3(x * value, y * value, z * value);
+    }
 };
 
 class Matrix4x4 {
@@ -98,6 +113,10 @@ public:
 
         const glm::mat4 view = glm::lookAt(cameraPos, cameraAt, cameraUp);
         return glm::perspective(fov, aspectRatio, near, far) * view;
+    }
+
+    void Translate(const Vector3 to, const float speed) {
+        Position += to * speed;
     }
 };
 
@@ -154,6 +173,10 @@ public:
         glfwTerminate();
     }
 
+    bool GetInputKey(const int key) const {
+        return glfwGetKey(window, key) == GLFW_PRESS;
+    }
+
     int IsClosed() const {
         return glfwWindowShouldClose(window);
     }
@@ -198,15 +221,7 @@ public:
 
         GLint mvpLocation = glGetUniformLocation(shaderProgram, "uMVP");
 
-        // TODO DELETE
-        glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -3.0f);
-        glm::vec3 cameraAt = glm::vec3(0.0f, 0.0f, 1.0f);
-        glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0, 1.0f, 0.0f));
-        glm::mat4 view = glm::lookAt(cameraPos, cameraAt, cameraUp);
-        glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1280.0f / 720.0f, 0.1f, 100.0f);
-
         glm::mat4 mvp = camera->ViewMatrix() * model;
 
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
@@ -259,8 +274,8 @@ public:
 };
 
 int main() {
-    auto *window = new Window(800, 600);
-    window->MakeWindow();
+    Window window = Window(1280, 720);
+    window.MakeWindow();
 
     auto *camera = new Camera();
     camera->Position = {0.0, 0.0, -3.0};
@@ -269,7 +284,7 @@ int main() {
     camera->fov = 45;
     camera->near = 0.01;
     camera->far = 100;
-    camera->aspectRatio = 800 / 600;
+    camera->aspectRatio = static_cast<float>(window.width) / static_cast<float>(window.height);
 
     //render cube
     auto Box = MeshPrimitives::CreateBox();
@@ -277,25 +292,23 @@ int main() {
     mesh_renderer.camera = camera;
     mesh_renderer.mesh = Box;
 
-    while (!window->IsClosed()) {
+    float last_time = glfwGetTime();
+    float delta_time = 0;
+
+    while (!window.IsClosed()) {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         mesh_renderer.Render();
-        window->SwapBuffers();
+        window.SwapBuffers();
         glfwPollEvents();
-    }
 
-    // while (!glfwWindowShouldClose(window)) {
-    //     auto deltaTime = static_cast<float>(glfwGetTime());
-    //
-    //     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    //         cameraPos += cameraAt * deltaTime * cameraSpeed;
-    //     }
-    //
-    //
-    //
-    //
-    // }
+        delta_time = glfwGetTime() - last_time;
+        last_time = glfwGetTime();
+
+        if (window.GetInputKey(GLFW_KEY_W)) {
+            camera->Translate(Vector3(1.0f, 0.0f, 1.0f), 2 * delta_time);
+        }
+    }
     return 0;
 }
 
