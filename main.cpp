@@ -119,6 +119,14 @@ public:
 
         return Vector3(x / length, y / length, z / length);
     }
+
+    Vector3 CrossProduct(const Vector3 &a, const Vector3 &b) {
+        return Vector3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+    }
+
+    float DotProduct(const Vector3 &a, const Vector3 &b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
 };
 
 class Matrix4x4 {
@@ -146,20 +154,46 @@ public:
     float aspectRatio;
 
     Vector3 Position;
+
     Vector3 Forward;
     Vector3 Up;
 
-    glm::mat4x4 ViewMatrix() const {
-        const glm::vec3 cameraPos = { Position.x, Position.y, Position.z };
-        const glm::vec3 cameraAt = { Forward.x, Forward.y, Forward.z };
-        const glm::vec3 cameraUp = { Up.x, Up.y, Up.z };
+    glm::mat4 ViewMatrix() const {
+        const glm::vec3 cameraPos = {Position.x, Position.y, Position.z};
+        const glm::vec3 cameraAt = {Forward.x, Forward.y, Forward.z};
+        const glm::vec3 cameraUp = {Up.x, Up.y, Up.z};
 
-        const glm::mat4 view = glm::lookAt(cameraPos, cameraAt + cameraPos, cameraUp);
-        return glm::perspective(fov, aspectRatio, near, far) * view;
+        return glm::lookAt(cameraPos, cameraPos + cameraAt, cameraUp);
+    }
+
+    glm::mat4 ViewProjectionMatrix() const {
+        return glm::perspective(glm::radians(fov), aspectRatio, near, far) * ViewMatrix();
     }
 
     void Translate(const Vector3 to, const float speed) {
-        Position += to * speed;
+        const Vector3 right = Vector3().CrossProduct(Up, Forward);
+
+        //Vector3 dir = Vector3().Zero();
+        // dir.x = Vector3().DotProduct(to, right);
+        // dir.y = Vector3().DotProduct(to, Up);
+        // dir.z = Vector3().DotProduct(to, Forward);
+
+        Vector3 dir = right * to.x + Up * to.y + Forward * to.z;
+
+        std::cout << "Right: " << right.x << " " << right.y << " " << right.z << std::endl;
+        std::cout << "Up: " << Up.x << " " << Up.y << " " << Up.z << std::endl;
+        std::cout << "Forward: " << Forward.x << " " << Forward.y << " " << Forward.z << std::endl;
+
+        std::cout << "global: " << to.x << " " << to.y << " " << to.z << " " << std::endl;
+        std::cout << "dir: " << dir.x << " " << dir.y << " " << dir.z << " " << std::endl;
+
+        Position += dir * speed ;
+    }
+
+    void RotateY(float Yaw) {
+        glm::mat4 matRot = glm::rotate(glm::mat4(1), glm::radians(Yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::vec4 vecRot = matRot * glm::vec4(Forward.x, Forward.y, Forward.z, 0);
+        Forward = Vector3(vecRot.x, vecRot.y, vecRot.z).Normalize();
     }
 };
 
@@ -198,6 +232,8 @@ public:
             glfwTerminate();
         }
 
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
         glEnable(GL_DEPTH_TEST);
         glViewport(0, 0, width, height);
 
@@ -218,6 +254,10 @@ public:
 
     bool GetInputKey(const int key) const {
         return glfwGetKey(window, key) == GLFW_PRESS;
+    }
+
+    void GetCursorPos(double *x, double *y) const {
+        glfwGetCursorPos(window, x, y);
     }
 
     int IsClosed() const {
@@ -267,9 +307,9 @@ public:
         GLint mvpLocation = glGetUniformLocation(shaderProgram, "uMVP");
 
         glm::mat4 model =
-            //glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0, 1.0f, 0.0f)) *
-            glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y,  position.z));
-        glm::mat4 mvp = camera->ViewMatrix() * model;
+                //glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0, 1.0f, 0.0f)) *
+                glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
+        glm::mat4 mvp = camera->ViewProjectionMatrix() * model;
 
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -317,15 +357,47 @@ public:
 
         return box;
     }
+
+    static Mesh CreateLine(Vector3 direction) {
+        auto box = Mesh();
+
+        box.tris = {
+            // SOUTH
+                {{{0.0f, 0.0f, 0.0f}, {0.0f, direction.y, 0.0f}, {direction.x, direction.y, 0.0f}}},
+                {{{0.0f, 0.0f, 0.0f}, {direction.x, direction.y, 0.0f}, {direction.x, 0.0f, 0.0f}}},
+
+                // EAST
+                {{{direction.x, 0.0f, 0.0f}, {direction.x, direction.y, 0.0f}, {direction.x, direction.y, direction.z}}},
+                {{{direction.x, 0.0f, 0.0f}, {direction.x, direction.y, direction.z}, {direction.x, 0.0f, direction.z}}},
+
+                // NORTH
+                {{{direction.x, 0.0f, direction.z}, {direction.x, direction.y, direction.z}, {0.0f, direction.y, direction.z}}},
+                {{{direction.x, 0.0f, direction.z}, {0.0f, direction.y, direction.z}, {0.0f, 0.0f, direction.z}}},
+
+                // WEST
+                {{{0.0f, 0.0f, direction.z}, {0.0f, direction.y, direction.z}, {0.0f, direction.y, 0.0f}}},
+                {{{0.0f, 0.0f, direction.z}, {0.0f, direction.y, 0.0f}, {0.0f, 0.0f, 0.0f}}},
+
+                // TOP
+                {{{0.0f, direction.y, 0.0f}, {0.0f, direction.y, direction.z}, {direction.x, direction.y, direction.z}}},
+                {{{0.0f, direction.y, 0.0f}, {direction.x, direction.y, direction.z}, {direction.x, direction.y, 0.0f}}},
+
+                // BOTTOM
+                {{{direction.x, 0.0f, direction.z}, {0.0f, 0.0f, direction.z}, {0.0f, 0.0f, 0.0f}}},
+                {{{direction.x, 0.0f, direction.z}, {0.0f, 0.0f, 0.0f}, {direction.x, 0.0f, 0.0f}}}
+        };
+
+        return box;
+    }
 };
 
 int main() {
-    Window window = Window(1280, 720);
+    Window window = Window(2000, 1500);
     window.MakeWindow();
 
     auto *camera = new Camera();
-    camera->Position = {0.0, 0.0, -3.0};
-    camera->Forward = {0.0, 0.0, 1.0};
+    camera->Position = {0.0, 1.0, -3.0};
+    camera->Forward = Vector3(0.0, 0.0, 1.0);
     camera->Up = {0.0, 1.0, 0.0};
     camera->fov = 45;
     camera->near = 0.01;
@@ -345,20 +417,53 @@ int main() {
     mesh_renderer2.mesh = Box2;
     mesh_renderer2.position = Vector3(2.0f, 0.0f, 0.0f);
 
-    float last_time = glfwGetTime();
-    float delta_time = 0;
+    auto Box3 = MeshPrimitives::CreateBox();
+    MeshRenderer mesh_renderer7;
+    mesh_renderer7.camera = camera;
+    mesh_renderer7.mesh = Box3;
+    mesh_renderer7.position = Vector3(0.0f, 0.0f, 0.0f);
+
+    auto LineX = MeshPrimitives::CreateLine(Vector3(1,.2,.2));
+    MeshRenderer mesh_renderer3;
+    mesh_renderer3.camera = camera;
+    mesh_renderer3.mesh = LineX;
+    mesh_renderer3.position = Vector3(4.0f, 0.0f, 0.0f);
+
+    auto LineY = MeshPrimitives::CreateLine(Vector3(.2,1,.2));
+    MeshRenderer mesh_renderer4;
+    mesh_renderer4.camera = camera;
+    mesh_renderer4.mesh = LineY;
+    mesh_renderer4.position = Vector3(4.0f, 0.0f, 0.0f);
+
+    auto LineZ = MeshPrimitives::CreateLine(Vector3(.2,.2,1));
+    MeshRenderer mesh_renderer5;
+    mesh_renderer5.camera = camera;
+    mesh_renderer5.mesh = LineZ;
+    mesh_renderer5.position = Vector3(4.0f, 0.0f, 0.0f);
+
+    double last_time = glfwGetTime();
+    double delta_time = 0;
+
+    //Warning
+    Vector3 directionRotX = Vector3().Zero();
 
     while (!window.IsClosed()) {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         mesh_renderer.Render();
         mesh_renderer2.Render();
+        mesh_renderer3.Render();
+        mesh_renderer4.Render();
+        mesh_renderer5.Render();
+        mesh_renderer7.Render();
         window.SwapBuffers();
         glfwPollEvents();
 
         delta_time = glfwGetTime() - last_time;
         last_time = glfwGetTime();
 
+        // Camera control
+        // Camera translate
         auto direction = Vector3(0.0f, 0.0f, 0.0f);
 
         if (window.GetInputKey(GLFW_KEY_W)) {
@@ -378,10 +483,23 @@ int main() {
             //camera->Translate(Vector3(-1.0f, 0.0f, 0.0f), 2 * delta_time);
         }
 
-        if (window.GetInputKey(GLFW_KEY_W) || window.GetInputKey(GLFW_KEY_S) || window.GetInputKey(GLFW_KEY_A) || window.GetInputKey(GLFW_KEY_D)) {
+        if (window.GetInputKey(GLFW_KEY_W) || window.GetInputKey(GLFW_KEY_S) || window.GetInputKey(GLFW_KEY_A) || window
+            .GetInputKey(GLFW_KEY_D)) {
             direction = direction.Normalize();
             camera->Translate(direction, 2 * delta_time);
         }
+
+        double x, y;
+
+        window.GetCursorPos(&x, &y);
+
+        directionRotX = Vector3(x - directionRotX.x, directionRotX.y, directionRotX.z).Normalize();
+
+        float Yaw = -directionRotX.x * delta_time * 90;
+        if (Yaw != 0) {
+            camera->RotateY(Yaw);
+        }
+        directionRotX = Vector3(x, directionRotX.y, directionRotX.z);
 
     }
     return 0;
