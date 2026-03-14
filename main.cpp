@@ -57,8 +57,24 @@ class Vector3 {
 public:
     float x, y, z;
 
+    Vector3 Zero() {
+        return Vector3(0.0f, 0.0f, 0.0f);
+    }
+
+    Vector3 operator-(const Vector3 &v) const {
+        return Vector3(x - v.x, y - v.y, z - v.z);
+    }
+
     Vector3 operator+(const Vector3 &v) const {
         return Vector3(x + v.x, y + v.y, z + v.z);
+    }
+
+    Vector3 operator*(const float value) const {
+        return Vector3(x * value, y * value, z * value);
+    }
+
+    Vector3 operator/(const float value) const {
+        return Vector3(x / value, y / value, z / value);
     }
 
     Vector3 operator+=(const Vector3 &v) {
@@ -68,8 +84,40 @@ public:
         return *this;
     }
 
-    Vector3 operator*(const float value) const {
-        return Vector3(x * value, y * value, z * value);
+    Vector3 operator-=(const Vector3 &v) {
+        x -= v.x;
+        y -= v.y;
+        z -= v.z;
+        return *this;
+    }
+
+    Vector3 operator*=(const Vector3 &v) {
+        x *= v.x;
+        y *= v.y;
+        z *= v.z;
+        return *this;
+    }
+
+    Vector3 operator/=(const Vector3 &v) {
+        x /= v.x;
+        y /= v.y;
+        z /= v.z;
+        return *this;
+    }
+
+    float Length(const Vector3 &v) {
+        return sqrt(x * x + y * y + z * z);
+    }
+
+    Vector3 Normalize() {
+        float length = Length(*this);
+
+        // if length == 0, vector can't be normalized
+        if (length == 0.0f) {
+            return Zero();
+        }
+
+        return Vector3(x / length, y / length, z / length);
     }
 };
 
@@ -80,14 +128,9 @@ public:
     float m[4][4];
 };
 
-class Vertex {
-public:
-    float x, y, z;
-};
-
 class Triangle {
 public:
-    Vertex vertices[3];
+    Vector3 vertices[3];
 };
 
 class Mesh {
@@ -107,11 +150,11 @@ public:
     Vector3 Up;
 
     glm::mat4x4 ViewMatrix() const {
-        const glm::vec3 cameraPos = {Position.x, Position.y, Position.z};
-        const glm::vec3 cameraAt = {Forward.x, Forward.y, Forward.z};
-        const glm::vec3 cameraUp = {Up.x, Up.y, Up.z};
+        const glm::vec3 cameraPos = { Position.x, Position.y, Position.z };
+        const glm::vec3 cameraAt = { Forward.x, Forward.y, Forward.z };
+        const glm::vec3 cameraUp = { Up.x, Up.y, Up.z };
 
-        const glm::mat4 view = glm::lookAt(cameraPos, cameraAt, cameraUp);
+        const glm::mat4 view = glm::lookAt(cameraPos, cameraAt + cameraPos, cameraUp);
         return glm::perspective(fov, aspectRatio, near, far) * view;
     }
 
@@ -191,6 +234,8 @@ public:
 
     Camera *camera;
 
+    Vector3 position;
+
     unsigned int VBO, VAO;
 
     GLuint shaderProgram;
@@ -221,11 +266,12 @@ public:
 
         GLint mvpLocation = glGetUniformLocation(shaderProgram, "uMVP");
 
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0, 1.0f, 0.0f));
+        glm::mat4 model =
+            //glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0, 1.0f, 0.0f)) *
+            glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y,  position.z));
         glm::mat4 mvp = camera->ViewMatrix() * model;
 
         glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
-        glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
@@ -291,6 +337,13 @@ int main() {
     MeshRenderer mesh_renderer;
     mesh_renderer.camera = camera;
     mesh_renderer.mesh = Box;
+    mesh_renderer.position = Vector3(-2.0f, 0.0f, 0.0f);
+
+    auto Box2 = MeshPrimitives::CreateBox();
+    MeshRenderer mesh_renderer2;
+    mesh_renderer2.camera = camera;
+    mesh_renderer2.mesh = Box2;
+    mesh_renderer2.position = Vector3(2.0f, 0.0f, 0.0f);
 
     float last_time = glfwGetTime();
     float delta_time = 0;
@@ -299,15 +352,37 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         mesh_renderer.Render();
+        mesh_renderer2.Render();
         window.SwapBuffers();
         glfwPollEvents();
 
         delta_time = glfwGetTime() - last_time;
         last_time = glfwGetTime();
 
+        auto direction = Vector3(0.0f, 0.0f, 0.0f);
+
         if (window.GetInputKey(GLFW_KEY_W)) {
-            camera->Translate(Vector3(1.0f, 0.0f, 1.0f), 2 * delta_time);
+            direction += Vector3(0.0f, 0.0f, 1.0f);
+            //camera->Translate(Vector3(0.0f, 0.0f, 1.0f), 2 * delta_time);
         }
+        if (window.GetInputKey(GLFW_KEY_S)) {
+            direction += Vector3(0.0f, 0.0f, -1.0f);
+            //camera->Translate(Vector3(0.0f, 0.0f, -1.0f), 2 * delta_time);
+        }
+        if (window.GetInputKey(GLFW_KEY_A)) {
+            direction += Vector3(1.0f, 0.0f, 0.0f);
+            //camera->Translate(Vector3(1.0f, 0.0f, 0.0f), 2 * delta_time);
+        }
+        if (window.GetInputKey(GLFW_KEY_D)) {
+            direction += Vector3(-1.0f, 0.0f, 0.0f);
+            //camera->Translate(Vector3(-1.0f, 0.0f, 0.0f), 2 * delta_time);
+        }
+
+        if (window.GetInputKey(GLFW_KEY_W) || window.GetInputKey(GLFW_KEY_S) || window.GetInputKey(GLFW_KEY_A) || window.GetInputKey(GLFW_KEY_D)) {
+            direction = direction.Normalize();
+            camera->Translate(direction, 2 * delta_time);
+        }
+
     }
     return 0;
 }
