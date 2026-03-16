@@ -7,8 +7,6 @@
 #include "Component.h"
 #include "glad/glad.h"
 #include "../graphics/Mesh.h"
-#include "../math/Vector3.h"
-
 
 class Camera;
 
@@ -20,8 +18,6 @@ public:
     Mesh mesh;
 
     Camera *camera;
-
-    Vector3 position;
 
     unsigned int VBO, VAO;
 

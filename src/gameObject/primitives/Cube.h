@@ -10,7 +10,7 @@
 
 class Cube : public GameObject{
 public:
-    static Cube BuildCube(Camera* camera);
+    static Cube* BuildCube(Camera* camera);
 };
 
 

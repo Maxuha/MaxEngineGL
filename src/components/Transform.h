@@ -16,6 +16,8 @@ class Transform : public Component {
     Vector3 forward;
     Vector3 up;
 
+    Vector3 pivot = { 0.5f, 0.5f, 0.5f };
+
     Vector3 Right() const;
     void Translate(Vector3 dir);
     void RotateYaw(float angle);

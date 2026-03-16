@@ -16,11 +16,6 @@ public:
     float far;
     float aspectRatio;
 
-    // Vector3 Position;
-    //
-    // Vector3 Forward;
-    // Vector3 Up;
-
     glm::mat4 ViewMatrix();
 
     glm::mat4 ProjectionMatrix() const;

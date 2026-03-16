@@ -5,8 +5,12 @@
 #ifndef MAXENGINE_COMPONENT_H
 #define MAXENGINE_COMPONENT_H
 
-class Component {
 
+class GameObject;
+
+class Component {
+public:
+    GameObject* gameObject = nullptr;
 };
 
 

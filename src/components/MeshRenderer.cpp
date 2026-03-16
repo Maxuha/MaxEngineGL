@@ -9,6 +9,8 @@
 #include "glad/glad.h"
 #include "../graphics/Triangle.h"
 #include <glm/gtc/type_ptr.hpp>
+
+#include "Transform.h"
 #include "glm/fwd.hpp"
 #include "glm/ext/matrix_transform.hpp"
 
@@ -83,10 +85,15 @@ void MeshRenderer::Render() {
     GLint mvpLocation = glGetUniformLocation(shaderProgram, "uMVP");
     GLint color = glGetUniformLocation(shaderProgram, "color");
 
-    glm::mat4 model =
-            //glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0, 1.0f, 0.0f)) *
-            glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
-    glm::mat4 mvp = camera->ViewProjectionMatrix() * model;
+    Vector3 pivot = gameObject->GetComponent<Transform>()->pivot;
+    Vector3 position = gameObject->GetComponent<Transform>()->position;
+    Vector3 rotation = gameObject->GetComponent<Transform>()->rotation;
+
+    glm::mat4 model2 = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
+    model2 = glm::rotate(model2, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f)) ;
+    model2 = glm::translate(model2, -glm::vec3(pivot.x, pivot.y, pivot.z));
+
+    glm::mat4 mvp = camera->ViewProjectionMatrix() * model2;
 
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
     glUniform3f(color, 0.0f, 0.5f, 0.0f);

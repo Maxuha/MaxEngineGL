@@ -101,6 +101,7 @@ int main() {
 
     //render cube
     auto Cube = Cube::BuildCube(camera);
+    auto Cube2 = Cube::BuildCube(camera);
 
     double last_time = glfwGetTime();
     double delta_time = 0;
@@ -112,14 +113,21 @@ int main() {
     float minCameraSpeed = 2.0f;
     float cameraSpeed = minCameraSpeed;
 
-    //Cube.GetComponent<Transform>()->Translate({0, 0, -3});
-    auto* mesh_renderer1 = Cube.GetComponent<MeshRenderer>();
+    auto* mesh_renderer1 = Cube->GetComponent<MeshRenderer>();
+    auto* transform1 = Cube->GetComponent<Transform>();
+    auto* mesh_renderer2 = Cube2->GetComponent<MeshRenderer>();
+    auto* transform2 = Cube2->GetComponent<Transform>();
 
     while (!window.IsClosed()) {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+     //   transform1->Translate(Vector3::Forward() * cameraSpeed / 3 * delta_time);
+      //  transform2->Translate(Vector3::Up() * cameraSpeed / 3 * delta_time);
+        transform1->RotateYaw(delta_time * 0.5f);
+
         mesh_renderer1->Render();
+      //  mesh_renderer2->Render();
 
         window.SwapBuffers();
         glfwPollEvents();
@@ -149,8 +157,10 @@ int main() {
             direction -= Vector3::Right();
         }
 
-        if (window.GetInputKey(GLFW_KEY_W) || window.GetInputKey(GLFW_KEY_S) || window.GetInputKey(GLFW_KEY_A) || window
-            .GetInputKey(GLFW_KEY_D)) {
+        if (window.GetInputKey(GLFW_KEY_W) ||
+            window.GetInputKey(GLFW_KEY_S) ||
+            window.GetInputKey(GLFW_KEY_A) ||
+            window.GetInputKey(GLFW_KEY_D)) {
             Transform* cameraTransform = camera->GetComponent<Transform>();
             cameraTransform->Translate(direction * cameraSpeed * delta_time);
         }
