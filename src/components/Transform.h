@@ -11,8 +11,9 @@ class Transform : public Component {
     public:
     Vector3 position;
     Vector3 rotation;
-    Vector3 scale;
+    Vector3 scale = { 1.0f, 1.0f, 1.0f };
 
+    Vector3 right;
     Vector3 forward;
     Vector3 up;
 
@@ -21,6 +22,7 @@ class Transform : public Component {
     Vector3 Right() const;
     void Translate(Vector3 dir);
     void RotateYaw(float angle);
+    void RotatePitch(float angle);
 };
 
 

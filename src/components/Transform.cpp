@@ -17,10 +17,21 @@ void Transform::Translate(Vector3 dir) {
 }
 
 void Transform::RotateYaw(float angle) {
-    glm::mat4 rotMat = glm::rotate(glm::mat4(1), angle, glm::vec3(Vector3::Up().x, Vector3::Up().y, Vector3::Up().z));
-    glm::vec4 rotatedVector = glm::vec4(forward.x, forward.y, forward.z, 0) * rotMat;
-    forward = Vector3(rotatedVector.x, rotatedVector.y, rotatedVector.z);
+    glm::mat4 rotMat = glm::rotate(glm::mat4(1), glm::radians(angle), glm::vec3(Vector3::Up().x, Vector3::Up().y, Vector3::Up().z));
+    glm::vec4 rotatedVector = rotMat * glm::vec4(forward.x, forward.y, forward.z, 0);
+    forward = Vector3(rotatedVector.x, rotatedVector.y, rotatedVector.z).Normalize();
+    right = Vector3().CrossProduct(Vector3::Up(), forward).Normalize();
+    up = Vector3().CrossProduct(forward, right);
     rotation.y += angle;
+}
+
+void Transform::RotatePitch(float angle) {
+    glm::mat4 rotMat = glm::rotate(glm::mat4(1), glm::radians(angle), glm::vec3(right.x, right.y, right.z));
+    glm::vec4 rotatedVector = rotMat * glm::vec4(forward.x, forward.y, forward.z, 0);
+    forward = Vector3(rotatedVector.x, rotatedVector.y, rotatedVector.z).Normalize();
+    right = Vector3().CrossProduct(Vector3::Up(), forward);
+    up = Vector3().CrossProduct(forward, right).Normalize();
+    rotation.x += angle;
 }
 
 

@@ -16,8 +16,9 @@ Cube* Cube::BuildCube(Camera* camera) {
     renderer->camera = camera;
     renderer->gameObject = obj;
     auto* transform = obj->AddComponent<Transform>();
-    transform->position = Vector3(0, 0, 0);
+    transform->position = Vector3(-3, 0, 0);
     transform->forward = Vector3::Forward();
     transform->up = Vector3::Up();
+    transform->right = Vector3::Right();
     return obj;
 }

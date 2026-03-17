@@ -88,12 +88,28 @@ void MeshRenderer::Render() {
     Vector3 pivot = gameObject->GetComponent<Transform>()->pivot;
     Vector3 position = gameObject->GetComponent<Transform>()->position;
     Vector3 rotation = gameObject->GetComponent<Transform>()->rotation;
+    Vector3 scale = gameObject->GetComponent<Transform>()->scale;
 
-    glm::mat4 model2 = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
-    model2 = glm::rotate(model2, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f)) ;
-    model2 = glm::translate(model2, -glm::vec3(pivot.x, pivot.y, pivot.z));
+    Vector3 up = gameObject->GetComponent<Transform>()->up;
+    Vector3 forward = gameObject->GetComponent<Transform>()->forward;
+    Vector3 right = gameObject->GetComponent<Transform>()->Right();
 
-    glm::mat4 mvp = camera->ViewProjectionMatrix() * model2;
+    // std::cout << "Position: " << position.x << " " << position.y << " " << position.z << " " << std::endl;
+    // std::cout << "Up: " << up.x << " " << up.y << " " << up.z << " " << std::endl;
+    // std::cout << "Forward: " << forward.x << " " << forward.y << " " << forward.z << " " << std::endl;
+    // std::cout << "Right: " << right.x << " " << right.y << " " << right.z << " " << std::endl;
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    model = glm::translate(model, glm::vec3(position.x, position.y, position.z));
+    model = glm::translate(model, glm::vec3(pivot.x, pivot.y, pivot.z));
+    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(right.x, right.y, right.z));
+    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(up.x, up.y, up.z));
+    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(forward.x, forward.y, forward.z));
+    model = glm::scale(model, glm::vec3(scale.x, scale.y, scale.z));
+    model = glm::translate(model, glm::vec3(-pivot.x, -pivot.y, -pivot.z));
+
+    glm::mat4 mvp = camera->ViewProjectionMatrix() * model;
 
     glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvp));
     glUniform3f(color, 0.0f, 0.5f, 0.0f);

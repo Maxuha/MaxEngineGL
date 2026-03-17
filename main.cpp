@@ -5,8 +5,6 @@
 #include "src/components/MeshRenderer.h"
 #include "src/components/Transform.h"
 #include "src/gameObject/primitives/Cube.h"
-#include "src/graphics/Mesh.h"
-#include "src/graphics/MeshPrimitives.h"
 #include "src/math/Vector3.h"
 
 class Camera;
@@ -83,10 +81,8 @@ public:
     }
 };
 
-
-
 int main() {
-    Window window = Window(2000, 1500);
+    Window window = Window(1280, 720);
     window.MakeWindow();
 
     auto *camera = new Camera();
@@ -94,6 +90,7 @@ int main() {
     cameraTransform->position = {0.0, 1.0, -3.0};
     cameraTransform->forward = Vector3::Forward();
     cameraTransform->up = Vector3::Up();
+    cameraTransform->right = Vector3::Right();
     camera->fov = 90;
     camera->near = 0.01;
     camera->far = 100;
@@ -122,9 +119,9 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-     //   transform1->Translate(Vector3::Forward() * cameraSpeed / 3 * delta_time);
+       transform1->Translate(Vector3::Forward() * 1 * delta_time);
       //  transform2->Translate(Vector3::Up() * cameraSpeed / 3 * delta_time);
-        transform1->RotateYaw(delta_time * 0.5f);
+        transform1->RotateYaw(30 * delta_time);
 
         mesh_renderer1->Render();
       //  mesh_renderer2->Render();
@@ -157,11 +154,12 @@ int main() {
             direction -= Vector3::Right();
         }
 
+        auto* cameraTransform = camera->GetComponent<Transform>();
         if (window.GetInputKey(GLFW_KEY_W) ||
             window.GetInputKey(GLFW_KEY_S) ||
             window.GetInputKey(GLFW_KEY_A) ||
             window.GetInputKey(GLFW_KEY_D)) {
-            Transform* cameraTransform = camera->GetComponent<Transform>();
+
             cameraTransform->Translate(direction * cameraSpeed * delta_time);
         }
 
@@ -169,14 +167,17 @@ int main() {
 
         window.GetCursorPos(&x, &y);
 
-        directionRot = Vector3(x - directionRot.x, directionRot.y, directionRot.z);
+        directionRot = Vector3(x - directionRot.x, y - directionRot.y, directionRot.z);
 
-        float Yaw = directionRot.x * delta_time * 1;
-        if (Yaw != 0) {
-            Transform* cameraTransform = camera->GetComponent<Transform>();
-            cameraTransform->RotateYaw(Yaw);
+        float Yaw = directionRot.x * delta_time * 30;
+        float Pitch = directionRot.y * delta_time * 30;
+
+        if (Yaw != 0 || Pitch != 0) {
+            cameraTransform = camera->GetComponent<Transform>();
+            cameraTransform->RotateYaw(-Yaw);
+            cameraTransform->RotatePitch(Pitch);
         }
-        directionRot = Vector3(x, directionRot.y, directionRot.z);
+        directionRot = Vector3(x, y, directionRot.z);
     }
     return 0;
 }
