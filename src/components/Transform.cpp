@@ -7,12 +7,8 @@
 #include "glm/fwd.hpp"
 #include "glm/ext/matrix_transform.hpp"
 
-Vector3 Transform::Right() const {
-    return Vector3::CrossProduct(up, forward);
-}
-
 void Transform::Translate(Vector3 dir) {
-    Vector3 relativeDir = Right() * dir.x + up * dir.y + forward * dir.z;
+    Vector3 relativeDir = right * dir.x + up * dir.y + forward * dir.z;
     position += relativeDir;
 }
 

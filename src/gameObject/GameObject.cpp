@@ -4,5 +4,17 @@
 
 #include "../gameObject/GameObject.h"
 
+#include "../components/MeshRenderer.h"
 
+void GameObject::Start() {
+    GetComponent<MeshRenderer>()->Init();
+}
 
+void GameObject::Update() {
+    GetComponent<MeshRenderer>()->Render();
+}
+
+void GameObject::InternalUpdate() {
+    Update();
+    GetComponent<MeshRenderer>()->Render();
+}

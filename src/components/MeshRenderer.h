@@ -17,11 +17,11 @@ public:
 
     Mesh mesh;
 
-    Camera *camera;
-
     unsigned int VBO, VAO;
 
     GLuint shaderProgram;
+
+    void Init();
 
     void Render();
 

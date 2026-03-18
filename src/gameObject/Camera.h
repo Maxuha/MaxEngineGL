@@ -5,12 +5,18 @@
 #ifndef MAXENGINE_CAMERA_H
 #define MAXENGINE_CAMERA_H
 
-#include "../gameObject/GameObject.h"
+#include "GameObject.h"
+#include "../components/Transform.h"
 #include "glm/fwd.hpp"
 #include "glm/ext/matrix_transform.hpp"
 
 class Camera : public GameObject {
 public:
+    Camera() {
+        auto* transform = AddComponent<Transform>();
+        transform->position = Vector3(0.0f, 0.0f, -3.0f);
+    }
+
     float fov;
     float near;
     float far;

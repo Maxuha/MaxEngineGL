@@ -4,12 +4,12 @@
 
 #ifndef MAXENGINE_TRIANGLE_H
 #define MAXENGINE_TRIANGLE_H
-#include "../math/Vector3.h"
+#include "Vertex.h"
 
 
 class Triangle {
 public:
-    Vector3 vertices[3];
+    Vertex vertices[3];
 };
 
 

@@ -30,12 +30,22 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/components/Component.h
         src/components/Transform.cpp
         src/components/Transform.h
-        src/components/Camera.cpp
-        src/components/Camera.h
+        src/gameObject/Camera.cpp
+        src/gameObject/Camera.h
         src/components/MeshRenderer.cpp
         src/components/MeshRenderer.h
         src/gameObject/primitives/Cube.cpp
         src/gameObject/primitives/Cube.h
+        src/gameObject/light/Light.cpp
+        src/gameObject/light/Light.h
+        src/gameObject/light/DirectionalLight.cpp
+        src/gameObject/light/DirectionalLight.h
+        src/graphics/Vertex.cpp
+        src/graphics/Vertex.h
+        src/Scene.cpp
+        src/Scene.h
+        src/Window.cpp
+        src/Window.h
 )
 
 target_include_directories(MaxEngine PRIVATE

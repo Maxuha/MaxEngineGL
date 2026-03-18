@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "Transform.h"
+#include "../components/Transform.h"
 #include "glm/ext/matrix_clip_space.hpp"
 
 glm::mat4 Camera::ViewMatrix() {
@@ -23,7 +23,7 @@ glm::mat4 Camera::ViewMatrix() {
     std::cout << "Position: " << Position.x << " " << Position.y << " " << Position.z << " " << std::endl;
     std::cout << "Up: " << Up.x << " " << Up.y << " " << Up.z << " " << std::endl;
     std::cout << "Forward: " << Forward.x << " " << Forward.y << " " << Forward.z << " " << std::endl;
-    std::cout << "Right: " << transform->Right().x << " " << transform->Right().y << " " << transform->Right().z << " " << std::endl;
+    std::cout << "Right: " << transform->right.x << " " << transform->right.y << " " << transform->right.z << " " << std::endl;
 
     return glm::lookAt(cameraPos, cameraPos + cameraAt, cameraUp);
 }

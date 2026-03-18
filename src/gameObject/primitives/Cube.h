@@ -5,12 +5,16 @@
 #ifndef MAXENGINE_CUBE_H
 #define MAXENGINE_CUBE_H
 #include "../GameObject.h"
-#include "../../components/Camera.h"
+#include "../Camera.h"
 
 
 class Cube : public GameObject{
 public:
-    static Cube* BuildCube(Camera* camera);
+    static Cube* BuildCube();
+
+    void Start() override;
+
+    void Update() override;
 };
 
 

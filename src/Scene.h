@@ -1,0 +1,40 @@
+//
+// Created by zykov on 3/17/2026.
+//
+
+#ifndef MAXENGINE_SCENE_H
+#define MAXENGINE_SCENE_H
+#include <string>
+
+#include "gameObject/Camera.h"
+#include "gameObject/light/DirectionalLight.h"
+#include "gameObject/light/Light.h"
+#include "glad/glad.h"
+
+class Window;
+
+class Scene {
+public:
+    Scene(const int width, const int height) {
+        aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    }
+
+    float aspectRatio;
+
+    std::string name;
+    Camera *camera = nullptr;
+    DirectionalLight *light = nullptr;
+    std::vector<GameObject*> gameObject = {};
+
+    GLuint shaderProgram;
+
+    void Init();
+
+    void Render() const;
+
+    void Cleanup();
+
+};
+
+
+#endif //MAXENGINE_SCENE_H
