@@ -3,19 +3,18 @@
 //
 
 #include "Cube.h"
-
 #include "../../components/MeshRenderer.h"
 #include "../../components/Transform.h"
 #include "../../graphics/MeshPrimitives.h"
 
 Cube* Cube::BuildCube() {
-    Mesh mesh = MeshPrimitives::CreateBox();
-    Cube* obj = new Cube();
+    const Mesh mesh = MeshPrimitives::CreateBox();
+    const auto obj = new Cube();
     auto* renderer = obj->AddComponent<MeshRenderer>();
     renderer->mesh = mesh;
     renderer->gameObject = obj;
     auto* transform = obj->AddComponent<Transform>();
-    transform->position = Vector3(-3, 0, 0);
+    transform->position = Vector3(0, 0, 0);
     transform->forward = Vector3::Forward();
     transform->up = Vector3::Up();
     transform->right = Vector3::Right();

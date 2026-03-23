@@ -23,6 +23,10 @@ Vector3 Vector3::Forward() {
     return Vector3(0.0f, 0.0f, 1.0f);
 }
 
+Vector3 Vector3::operator-() const {
+    return Vector3(-x, -y, -z);
+}
+
 Vector3 Vector3::operator-(const Vector3 &v) const {
     return Vector3(x - v.x, y - v.y, z - v.z);
 }

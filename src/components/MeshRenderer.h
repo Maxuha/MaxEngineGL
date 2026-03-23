@@ -5,8 +5,10 @@
 #ifndef MAXENGINE_MESHRENDERER_H
 #define MAXENGINE_MESHRENDERER_H
 #include "Component.h"
-#include "glad/glad.h"
+#include "../gameObject/light/DirectionalLight.h"
+#include "../graphics/Material.h"
 #include "../graphics/Mesh.h"
+#include "../graphics/SimpleMaterial.h"
 
 class Camera;
 
@@ -17,13 +19,15 @@ public:
 
     Mesh mesh;
 
-    unsigned int VBO, VAO;
+    SimpleMaterial* material = nullptr;
 
-    GLuint shaderProgram;
+    std::vector<float> Vertecies;
+
+    unsigned int VBO, VAO;
 
     void Init();
 
-    void Render();
+    void Render(RenderContext context) const;
 
     void Clear() const;
 };

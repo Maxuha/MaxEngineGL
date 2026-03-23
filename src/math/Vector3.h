@@ -5,6 +5,7 @@
 #ifndef MAXENGINE_VECTOR_H
 #define MAXENGINE_VECTOR_H
 
+#include <glm/glm.hpp>
 
 class Vector3 {
 public:
@@ -17,6 +18,8 @@ public:
     static Vector3 Right();
 
     static Vector3 Forward();
+
+    Vector3 operator-() const;
 
     Vector3 operator-(const Vector3 &v) const;
 
@@ -41,6 +44,15 @@ public:
     static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b);
 
     static float DotProduct(const Vector3 &a, const Vector3 &b);
+
+    template <typename T>
+    T Convert() {
+        auto result = glm::vec3();
+        result.x = x;
+        result.y = y;
+        result.z = z;
+        return result;
+    }
 };
 
 

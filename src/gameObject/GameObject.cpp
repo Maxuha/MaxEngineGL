@@ -11,10 +11,10 @@ void GameObject::Start() {
 }
 
 void GameObject::Update() {
-    GetComponent<MeshRenderer>()->Render();
+    //GetComponent<MeshRenderer>()->Render();
 }
 
 void GameObject::InternalUpdate() {
     Update();
-    GetComponent<MeshRenderer>()->Render();
+    //GetComponent<MeshRenderer>()->Render();
 }

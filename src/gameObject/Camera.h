@@ -7,6 +7,7 @@
 
 #include "GameObject.h"
 #include "../components/Transform.h"
+#include "../math/Matrix4x4.h"
 #include "glm/fwd.hpp"
 #include "glm/ext/matrix_transform.hpp"
 
@@ -14,7 +15,7 @@ class Camera : public GameObject {
 public:
     Camera() {
         auto* transform = AddComponent<Transform>();
-        transform->position = Vector3(0.0f, 0.0f, -3.0f);
+        transform->position = Vector3(0.0f, 0.0f, -2.0f);
     }
 
     float fov;
@@ -22,9 +23,9 @@ public:
     float far;
     float aspectRatio;
 
-    glm::mat4 ViewMatrix();
+    Matrix4x4 ViewMatrix();
 
-    glm::mat4 ProjectionMatrix() const;
+    Matrix4x4 ProjectionMatrix() const;
 
     glm::mat4 ViewProjectionMatrix();
 };

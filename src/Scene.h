@@ -5,11 +5,10 @@
 #ifndef MAXENGINE_SCENE_H
 #define MAXENGINE_SCENE_H
 #include <string>
-
 #include "gameObject/Camera.h"
 #include "gameObject/light/DirectionalLight.h"
 #include "gameObject/light/Light.h"
-#include "glad/glad.h"
+#include "graphics/RenderContext.h"
 
 class Window;
 
@@ -22,17 +21,20 @@ public:
     float aspectRatio;
 
     std::string name;
+
     Camera *camera = nullptr;
     DirectionalLight *light = nullptr;
-    std::vector<GameObject*> gameObject = {};
 
-    GLuint shaderProgram;
+    std::vector<GameObject*> gameObject = {};
 
     void Init();
 
-    void Render() const;
+    void Render();
 
     void Cleanup();
+
+private:
+    RenderContext render_context;
 
 };
 
