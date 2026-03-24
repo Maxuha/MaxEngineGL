@@ -5,8 +5,6 @@
 #ifndef MAXENGINE_CUBE_H
 #define MAXENGINE_CUBE_H
 #include "../GameObject.h"
-#include "../Camera.h"
-
 
 class Cube : public GameObject{
 public:
@@ -14,7 +12,7 @@ public:
 
     void Start() override;
 
-    void Update() override;
+    void Update(float delta_time) override;
 };
 
 

@@ -14,13 +14,15 @@ Matrix4x4 Camera::ViewMatrix() {
 
     auto Position = transform->position;
     auto Forward = transform->forward;
-    auto Right = Vector3::CrossProduct(Forward, transform->up);
-    auto Up = Vector3::CrossProduct(Right, Forward);
+    auto Right = transform->right;
+    auto Up = transform->up;
+    // auto Right = Vector3::CrossProduct(Forward, transform->up);
+    // auto Up = Vector3::CrossProduct(Right, Forward);
 
-    std::cout << "Position: " << Position.x << " " << Position.y << " " << Position.z << " " << std::endl;
-    std::cout << "Up: " << Up.x << " " << Up.y << " " << Up.z << " " << std::endl;
-    std::cout << "Forward: " << Forward.x << " " << Forward.y << " " << Forward.z << " " << std::endl;
-    std::cout << "Right: " << transform->right.x << " " << transform->right.y << " " << transform->right.z << " " << std::endl;
+    // std::cout << "Position: " << Position.x << " " << Position.y << " " << Position.z << " " << std::endl;
+    // std::cout << "Up: " << Up.x << " " << Up.y << " " << Up.z << " " << std::endl;
+    // std::cout << "Forward: " << Forward.x << " " << Forward.y << " " << Forward.z << " " << std::endl;
+    // std::cout << "Right: " << transform->right.x << " " << transform->right.y << " " << transform->right.z << " " << std::endl;
 
     Matrix4x4 viewMatrix = Matrix4x4(1);
 

@@ -17,6 +17,7 @@ class Shader {
 public:
     void LoadShader(const char *vertexShaderPath, const char *fragmentShaderPath);
     GLuint compileShader();
+    void Use() const;
 
     void SetMat4(const std::string& var, Matrix4x4 mat) const;
     void SetVec3(const std::string& var, Vector3 vec) const;

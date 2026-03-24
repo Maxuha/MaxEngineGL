@@ -40,6 +40,10 @@ GLuint Shader::compileShader() {
     return program;
 }
 
+void Shader::Use() const {
+    glUseProgram(cachedShader);
+}
+
 void Shader::SetMat4(const std::string& var, Matrix4x4 mat) const {
     const GLint varId = glGetUniformLocation(cachedShader, var.c_str());
 

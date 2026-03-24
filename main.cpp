@@ -33,13 +33,13 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        scene->Render();
+        delta_time = glfwGetTime() - last_time;
+        last_time = glfwGetTime();
+
+        scene->Render(delta_time);
 
         window->SwapBuffers();
         glfwPollEvents();
-
-        delta_time = glfwGetTime() - last_time;
-        last_time = glfwGetTime();
 
         // Camera translate
         auto direction = Vector3::Zero();
@@ -57,10 +57,10 @@ int main() {
             direction -= Vector3::Forward();
         }
         if (window->GetInputKey(GLFW_KEY_A)) {
-            direction += Vector3::Right();
+            direction -= Vector3::Right();
         }
         if (window->GetInputKey(GLFW_KEY_D)) {
-            direction -= Vector3::Right();
+            direction += Vector3::Right();
         }
 
         auto* cameraTransform = scene->camera->GetComponent<Transform>();
@@ -81,9 +81,11 @@ int main() {
         float Yaw = directionRot.x * delta_time * 30;
         float Pitch = directionRot.y * delta_time * 30;
 
+        Pitch = std::clamp(Pitch, -89.0f, 89.0f);
+
         if (Yaw != 0 || Pitch != 0) {
             cameraTransform = scene->camera->GetComponent<Transform>();
-            cameraTransform->RotateYaw(-Yaw);
+            cameraTransform->RotateYaw(Yaw);
             cameraTransform->RotatePitch(Pitch);
         }
         directionRot = Vector3(x, y, directionRot.z);

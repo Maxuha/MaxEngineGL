@@ -29,7 +29,7 @@ public:
 
     void Init();
 
-    void Render();
+    void Render(float delta_time);
 
     void Cleanup();
 

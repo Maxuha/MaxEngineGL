@@ -17,7 +17,7 @@ public:
 
     virtual void Start();
 
-    virtual void Update();
+    virtual void Update(float delta_time);
 
     template<typename T>
     requires std::derived_from<T, Component>

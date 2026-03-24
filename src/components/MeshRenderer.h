@@ -27,7 +27,7 @@ public:
 
     void Init();
 
-    void Render(RenderContext context) const;
+    void Render(const RenderContext &context) const;
 
     void Clear() const;
 };

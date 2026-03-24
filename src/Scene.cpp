@@ -14,8 +14,8 @@ void Scene::Init() {
 
     camera = new Camera();
     camera->fov = 45;
-    camera->near = 0.01;
-    camera->far = 1000;
+    camera->near = 0.1;
+    camera->far = 100;
     camera->aspectRatio = aspectRatio;
 
     gameObject = { Cube::BuildCube() };
@@ -25,7 +25,7 @@ void Scene::Init() {
     }
 }
 
-void Scene::Render() {
+void Scene::Render(float delta_time) {
     render_context.viewMatrix = camera->ViewMatrix();
     render_context.projectionMatrix = camera->ProjectionMatrix();
     render_context.lightDirection = light->direction;
@@ -33,8 +33,8 @@ void Scene::Render() {
     render_context.lightIntensity = light->intensity;
 
     for (GameObject *obj : gameObject) {
+        obj->Update(delta_time);
         obj->GetComponent<MeshRenderer>()->Render(render_context);
-        obj->Update();
     }
 }
 

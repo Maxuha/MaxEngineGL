@@ -19,9 +19,14 @@ class Transform : public Component {
 
     Vector3 pivot = { 0.5f, 0.5f, 0.5f };
 
+    glm::mat4 model = glm::mat4(1);
+
     void Translate(Vector3 dir);
+
     void RotateYaw(float angle);
     void RotatePitch(float angle);
+
+    void UpdateMatrix();
 };
 
 
