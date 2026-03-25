@@ -15,8 +15,6 @@ void Window::MakeWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_DEPTH_BITS, 24);
-
 
     window = glfwCreateWindow(width, height, "Max Engine", nullptr, nullptr);
     if (!window) {
