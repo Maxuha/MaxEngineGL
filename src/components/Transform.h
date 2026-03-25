@@ -9,13 +9,21 @@
 
 class Transform : public Component {
     public:
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 scale = { 1.0f, 1.0f, 1.0f };
+    // Vector3 position { 0, 0, 0 };
+    // Vector3 rotation = { 0, 0, 0 };
+    // Vector3 scale = { 1.0f, 1.0f, 1.0f };
+    //
+    // Vector3 right { Vector3::Right() };
+    // Vector3 forward { Vector3::Forward() };
+    // Vector3 up { Vector3::Up() };
 
-    Vector3 right { Vector3::Right() };
-    Vector3 forward { Vector3::Forward() };
-    Vector3 up { Vector3::Up() };
+    Vector3 position();
+    Vector3 rotation();
+    Vector3 scale();
+
+    Vector3 right();
+    Vector3 forward();
+    Vector3 up();
 
     Vector3 pivot = { 0.5f, 0.5f, 0.5f };
 

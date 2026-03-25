@@ -81,7 +81,7 @@ int main() {
         float Yaw = directionRot.x * delta_time * 30;
         float Pitch = directionRot.y * delta_time * 30;
 
-        Pitch = std::clamp(Pitch, -89.0f, 89.0f);
+        //Pitch = std::clamp(Pitch, -89.0f, 89.0f);
 
         if (Yaw != 0 || Pitch != 0) {
             cameraTransform = scene->camera->GetComponent<Transform>();

@@ -14,7 +14,7 @@ void Scene::Init() {
 
     camera = new Camera();
     camera->fov = 45;
-    camera->near = 0.1;
+    camera->near = 0.01;
     camera->far = 100;
     camera->aspectRatio = aspectRatio;
 

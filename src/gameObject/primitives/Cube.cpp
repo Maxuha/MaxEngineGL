@@ -18,10 +18,10 @@ Cube* Cube::BuildCube() {
     renderer->mesh = mesh;
     renderer->gameObject = obj;
     auto* transform = obj->AddComponent<Transform>();
-    transform->position = Vector3(0, 0, 0);
-    transform->forward = Vector3::Forward();
-    transform->up = Vector3::Up();
-    transform->right = Vector3::Right();
+   // transform->position = Vector3(0, 0, 0);
+    // transform->forward = Vector3::Forward();
+    // transform->up = Vector3::Up();
+    // transform->right = Vector3::Right();
     return obj;
 }
 
@@ -37,10 +37,10 @@ void Cube::Update(float delta_time) {
     auto up = GetComponent<Transform>()->rotation;
     auto forward = GetComponent<Transform>()->scale;
 
-    std::cout << right.x << " " << right.y << " " << right.z << std::endl;
-    std::cout << forward.x << " " << forward.y << " " << forward.z << std::endl;
-    std::cout << up.x << " " << up.y << " " << up.z << std::endl;
-    //GetComponent<Transform>()->Translate(Vector3::Forward() * delta_time * 1);
+    // std::cout << right.x << " " << right.y << " " << right.z << std::endl;
+    // std::cout << forward.x << " " << forward.y << " " << forward.z << std::endl;
+    // std::cout << up.x << " " << up.y << " " << up.z << std::endl;
+   // GetComponent<Transform>()->Translate(Vector3::Forward() * delta_time * 1);
     //GetComponent<Transform>()->RotateYaw(60.0f * delta_time);
-    GetComponent<Transform>()->UpdateMatrix();
+    //GetComponent<Transform>()->UpdateMatrix();
 }
