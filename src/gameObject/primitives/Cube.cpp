@@ -14,17 +14,17 @@ Cube* Cube::BuildCube() {
     renderer->mesh = mesh;
     renderer->gameObject = obj;
     auto* transform = obj->AddComponent<Transform>();
-    transform->position = Vector3(0, 0, 0);
-    transform->forward = Vector3::Forward();
-    transform->up = Vector3::Up();
-    transform->right = Vector3::Right();
+    transform->position = Vector3(3, 0, 10);
     return obj;
 }
 
 void Cube::Start() {
     GameObject::Start();
+    transform = GetComponent<Transform>();
 }
 
 void Cube::Update(float delta_time) {
     GameObject::Update(delta_time);
+    GetComponent<Transform>()->Translate(transform->Forward() * delta_time * 2);
+    //GetComponent<Transform>()->RotateYaw(delta_time * 30);
 }

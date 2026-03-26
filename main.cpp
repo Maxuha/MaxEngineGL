@@ -1,3 +1,5 @@
+#include <iostream>
+#include <ostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -57,10 +59,10 @@ int main() {
             direction -= Vector3::Forward();
         }
         if (window->GetInputKey(GLFW_KEY_A)) {
-            direction += Vector3::Right();
+            direction -= Vector3::Right();
         }
         if (window->GetInputKey(GLFW_KEY_D)) {
-            direction -= Vector3::Right();
+            direction += Vector3::Right();
         }
 
         auto* cameraTransform = scene->camera->GetComponent<Transform>();
@@ -83,7 +85,7 @@ int main() {
 
         if (Yaw != 0 || Pitch != 0) {
             cameraTransform = scene->camera->GetComponent<Transform>();
-            cameraTransform->RotateYaw(-Yaw);
+            cameraTransform->RotateYaw(Yaw);
             cameraTransform->RotatePitch(Pitch);
         }
         directionRot = Vector3(x, y, directionRot.z);

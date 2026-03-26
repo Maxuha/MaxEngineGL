@@ -4,11 +4,13 @@
 
 #include "Vector3.h"
 #include <cmath>
-#include "glm/ext/quaternion_geometric.hpp"
-
 
 Vector3 Vector3::Zero() {
     return Vector3(0.0f, 0.0f, 0.0f);
+}
+
+Vector3 Vector3::One() {
+    return Vector3(1.0f, 1.0f, 1.0f);
 }
 
 Vector3 Vector3::Up() {

@@ -13,6 +13,8 @@ public:
 
     static Vector3 Zero();
 
+    static Vector3 One();
+
     static Vector3 Up();
 
     static Vector3 Right();
