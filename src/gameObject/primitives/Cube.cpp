@@ -3,6 +3,9 @@
 //
 
 #include "Cube.h"
+
+#include <ranges>
+
 #include "../../components/MeshRenderer.h"
 #include "../../components/Transform.h"
 #include "../../graphics/MeshPrimitives.h"
@@ -15,16 +18,16 @@ Cube* Cube::BuildCube() {
     renderer->gameObject = obj;
     auto* transform = obj->AddComponent<Transform>();
     transform->position = Vector3(0, 0, 0);
-    transform->forward = Vector3::Forward();
-    transform->up = Vector3::Up();
-    transform->right = Vector3::Right();
     return obj;
 }
 
 void Cube::Start() {
     GameObject::Start();
+
+    transform = GetComponent<Transform>();
 }
 
 void Cube::Update(float delta_time) {
     GameObject::Update(delta_time);
+    GetComponent<Transform>()->Translate(transform->Forward() * delta_time * 1);
 }

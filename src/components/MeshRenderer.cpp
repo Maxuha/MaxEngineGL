@@ -5,7 +5,6 @@
 #include "MeshRenderer.h"
 
 #include <iostream>
-#include <ostream>
 #include <vector>
 #include "../gameObject/Camera.h"
 #include "glad/glad.h"
@@ -61,19 +60,19 @@ void MeshRenderer::Render(RenderContext context) const {
     Vector3 rotation = gameObject->GetComponent<Transform>()->rotation;
     Vector3 scale = gameObject->GetComponent<Transform>()->scale;
 
-    Vector3 up = gameObject->GetComponent<Transform>()->up;
-    Vector3 forward = gameObject->GetComponent<Transform>()->forward;
-    Vector3 right = gameObject->GetComponent<Transform>()->right;
+    Vector3 up = gameObject->GetComponent<Transform>()->Up();
+    Vector3 forward = gameObject->GetComponent<Transform>()->Forward();
+    Vector3 right = gameObject->GetComponent<Transform>()->Right();
 
     auto model = glm::mat4(1.0f);
 
     model = glm::translate(model, glm::vec3(position.x, position.y, position.z));
-    model = glm::translate(model, glm::vec3(pivot.x, pivot.y, pivot.z));
+    // model = glm::translate(model, glm::vec3(pivot.x, pivot.y, pivot.z));
     model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(right.x, right.y, right.z));
     model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(up.x, up.y, up.z));
     model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(forward.x, forward.y, forward.z));
-    model = glm::scale(model, glm::vec3(scale.x, scale.y, scale.z));
-    model = glm::translate(model, glm::vec3(-pivot.x, -pivot.y, -pivot.z));
+    // model = glm::scale(model, glm::vec3(scale.x, scale.y, scale.z));
+    // model = glm::translate(model, glm::vec3(-pivot.x, -pivot.y, -pivot.z));
 
     material->color = Color(0.0f, 0.5f, 0.0f);
 

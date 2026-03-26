@@ -7,6 +7,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Vector3.h"
+
 class Matrix4x4 {
 public:
     Matrix4x4(float value);
@@ -22,7 +24,14 @@ public:
         return result;
     }
 
-    float m[4][4];
+    float m[4][4]{};
+
+    static Matrix4x4 Rotate(Vector3 axis);
+    static Matrix4x4 RotateX(float angle);
+    static Matrix4x4 RotateY(float angle);
+    static Matrix4x4 RotateZ(float angle);
+
+    Matrix4x4 operator*(const Matrix4x4& m1) const;
 };
 
 

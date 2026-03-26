@@ -8,8 +8,6 @@
 #include "GameObject.h"
 #include "../components/Transform.h"
 #include "../math/Matrix4x4.h"
-#include "glm/fwd.hpp"
-#include "glm/ext/matrix_transform.hpp"
 
 class Camera : public GameObject {
 public:
@@ -27,7 +25,7 @@ public:
 
     Matrix4x4 ProjectionMatrix() const;
 
-    glm::mat4 ViewProjectionMatrix();
+    Matrix4x4 ViewProjectionMatrix();
 };
 
 
