@@ -18,11 +18,13 @@ void Scene::Init() {
     camera->far = 100;
     camera->aspectRatio = aspectRatio;
 
-    gameObject = { Cube::BuildCube() };
+    gameObject = { Cube::BuildCube(), Cube::BuildCube() };
 
     for (GameObject *obj : gameObject) {
         obj->Start();
     }
+
+    gameObject[1]->GetComponent<Transform>()->Translate(gameObject[1]->GetComponent<Transform>()->Up() * -4);
 }
 
 void Scene::Render(float delta_time) {

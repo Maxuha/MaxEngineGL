@@ -7,7 +7,7 @@
 #include <string>
 
 
-class FileLoader {
+class FileReader {
 public:
     static std::string LoadFile(const char *path);
 };

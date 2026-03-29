@@ -8,12 +8,12 @@
 #include <ostream>
 #include <glm/glm.hpp>
 
-#include "../utils/FileLoader.h"
+#include "../utils/FileReader.h"
 #include "glm/gtc/type_ptr.hpp"
 
 void Shader::LoadShader(const char *vertexShaderPath, const char *fragmentShaderPath) {
-    vertexShaderSource = FileLoader::LoadFile(vertexShaderPath);
-    fragmentShaderSource = FileLoader::LoadFile(fragmentShaderPath);
+    vertexShaderSource = FileReader::LoadFile(vertexShaderPath);
+    fragmentShaderSource = FileReader::LoadFile(fragmentShaderPath);
 }
 
 GLuint Shader::compileShader() {

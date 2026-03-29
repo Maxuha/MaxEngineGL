@@ -13,8 +13,8 @@ class DirectionalLight : public Light {
     public:
     DirectionalLight() {
         AddComponent<Transform>();
-        intensity = 10.0f;
-        direction = Vector3(-0.2f, -1.0f, -1.0f);
+        intensity = 5.0f;
+        direction = Vector3(-0.0f, -1.0f, -0.0f);
         color = Vector3(1.0f, 1.0f, 1.0f);
     }
 

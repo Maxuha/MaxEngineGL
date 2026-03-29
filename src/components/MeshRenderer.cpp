@@ -50,7 +50,7 @@ void MeshRenderer::Render(RenderContext context) const {
 
     material->shader->Use();
 
-    Matrix4x4 model = gameObject->GetComponent<Transform>()->GetModelMatrix();
+    const Matrix4x4 model = gameObject->GetComponent<Transform>()->GetModelMatrix();
 
     material->color = Color(0.0f, 0.5f, 0.0f);
 

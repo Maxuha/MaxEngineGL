@@ -54,12 +54,16 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/graphics/SimpleMaterial.h
         src/math/converter/TypesConverterToGlad.cpp
         src/math/converter/TypesConverterToGlad.h
-        src/utils/FileLoader.cpp
-        src/utils/FileLoader.h
+        src/utils/FileReader.cpp
+        src/utils/FileReader.h
         src/graphics/RenderContext.cpp
         src/graphics/RenderContext.h
         src/math/Color.cpp
         src/math/Color.h
+        src/IO/FileReader.cpp
+        src/IO/FileReader.h
+        src/IO/ObjImporter.cpp
+        src/IO/ObjImporter.h
 )
 
 target_include_directories(MaxEngine PRIVATE
