@@ -10,11 +10,11 @@ void GameObject::Start() {
     GetComponent<MeshRenderer>()->Init();
 }
 
-void GameObject::Update() {
-    GetComponent<MeshRenderer>()->Render();
+void GameObject::Update(float delta_time) {
+    //GetComponent<MeshRenderer>()->Render();
 }
 
 void GameObject::InternalUpdate() {
-    Update();
-    GetComponent<MeshRenderer>()->Render();
+    //Update();
+    //GetComponent<MeshRenderer>()->Render();
 }

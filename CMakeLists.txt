@@ -46,6 +46,29 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/Scene.h
         src/Window.cpp
         src/Window.h
+        src/graphics/Shader.cpp
+        src/graphics/Shader.h
+        src/graphics/Material.cpp
+        src/graphics/Material.h
+        src/graphics/DefaultMaterial.cpp
+        src/graphics/DefaultMaterial.h
+        src/math/converter/TypesConverterToGlad.cpp
+        src/math/converter/TypesConverterToGlad.h
+        src/utils/FileReader.cpp
+        src/utils/FileReader.h
+        src/graphics/RenderContext.cpp
+        src/graphics/RenderContext.h
+        src/math/Color.cpp
+        src/math/Color.h
+        src/IO/FileReader.cpp
+        src/IO/FileReader.h
+        src/IO/ObjImporter.cpp
+        src/IO/ObjImporter.h
+        src/game/components/InputController.cpp
+        src/game/components/InputController.h
+        src/IO/MeshImporter.h
+        src/math/AABB.cpp
+        src/math/AABB.h
 )
 
 target_include_directories(MaxEngine PRIVATE
@@ -56,3 +79,7 @@ target_link_libraries(MaxEngine PRIVATE
         glfw
         opengl32
 )
+
+add_definitions(-DSHADERS_ROOT="${CMAKE_SOURCE_DIR}")
+
+file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})

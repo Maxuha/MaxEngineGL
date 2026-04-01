@@ -1,6 +1,6 @@
+#include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include "src/Scene.h"
 #include "src/Window.h"
 #include "src/gameObject/Camera.h"
@@ -11,7 +11,8 @@
 class Camera;
 
 int main() {
-    int width = 1280, height = 720;
+    constexpr int width = 1280;
+    constexpr int height = 720;
 
     auto* window = new Window(width, height);
     window->MakeWindow();
@@ -30,16 +31,15 @@ int main() {
     float cameraSpeed = minCameraSpeed;
 
     while (!window->IsClosed()) {
-        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        scene->Render();
+        // calculate delta time
+        delta_time = glfwGetTime() - last_time;
+        last_time = glfwGetTime();
+
+        scene->Render(delta_time);
 
         window->SwapBuffers();
         glfwPollEvents();
-
-        delta_time = glfwGetTime() - last_time;
-        last_time = glfwGetTime();
 
         // Camera translate
         auto direction = Vector3::Zero();
@@ -57,10 +57,10 @@ int main() {
             direction -= Vector3::Forward();
         }
         if (window->GetInputKey(GLFW_KEY_A)) {
-            direction += Vector3::Right();
+            direction -= Vector3::Right();
         }
         if (window->GetInputKey(GLFW_KEY_D)) {
-            direction -= Vector3::Right();
+            direction += Vector3::Right();
         }
 
         auto* cameraTransform = scene->camera->GetComponent<Transform>();
@@ -83,7 +83,7 @@ int main() {
 
         if (Yaw != 0 || Pitch != 0) {
             cameraTransform = scene->camera->GetComponent<Transform>();
-            cameraTransform->RotateYaw(-Yaw);
+            cameraTransform->RotateYaw(Yaw);
             cameraTransform->RotatePitch(Pitch);
         }
         directionRot = Vector3(x, y, directionRot.z);

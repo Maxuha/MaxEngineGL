@@ -3,35 +3,57 @@
 //
 
 #include "Camera.h"
-
+#include <cmath>
 #include <iostream>
-
 #include "../components/Transform.h"
+#include "../math/Matrix4x4.h"
 #include "glm/ext/matrix_clip_space.hpp"
 
-glm::mat4 Camera::ViewMatrix() {
+Matrix4x4 Camera::ViewMatrix() {
     auto transform = GetComponent<Transform>();
+
     auto Position = transform->position;
+    auto Forward = transform->Forward();
+    auto Right = transform->Right();
+    auto Up = transform->Up();
 
-    auto Forward = transform->forward;
-    auto Up = transform->up;
+    auto viewMatrix = Matrix4x4(1);
 
-    const glm::vec3 cameraPos = {Position.x, Position.y, Position.z};
-    const glm::vec3 cameraAt = {Forward.x, Forward.y, Forward.z};
-    const glm::vec3 cameraUp = {Up.x, Up.y, Up.z};
+    viewMatrix.m[0][0] = Right.x;
+    viewMatrix.m[1][0] = Right.y;
+    viewMatrix.m[2][0] = Right.z;
 
-    std::cout << "Position: " << Position.x << " " << Position.y << " " << Position.z << " " << std::endl;
-    std::cout << "Up: " << Up.x << " " << Up.y << " " << Up.z << " " << std::endl;
-    std::cout << "Forward: " << Forward.x << " " << Forward.y << " " << Forward.z << " " << std::endl;
-    std::cout << "Right: " << transform->right.x << " " << transform->right.y << " " << transform->right.z << " " << std::endl;
+    viewMatrix.m[0][1] = Up.x;
+    viewMatrix.m[1][1] = Up.y;
+    viewMatrix.m[2][1] = Up.z;
 
-    return glm::lookAt(cameraPos, cameraPos + cameraAt, cameraUp);
+    viewMatrix.m[0][2] = -Forward.x;
+    viewMatrix.m[1][2] = -Forward.y;
+    viewMatrix.m[2][2] = -Forward.z;
+
+    viewMatrix.m[3][0] = -Vector3::DotProduct(Right, Position);
+    viewMatrix.m[3][1] = -Vector3::DotProduct(Up, Position);
+    viewMatrix.m[3][2] = Vector3::DotProduct(Forward, Position);
+
+    return viewMatrix;
 }
 
-glm::mat4 Camera::ProjectionMatrix() const {
-    return glm::perspective(glm::radians(fov), aspectRatio, near, far);
+Matrix4x4 Camera::ProjectionMatrix() const {
+    auto projectionMatrix = Matrix4x4(0);
+
+    const float fovRad = glm::radians(fov);
+    const float tanHalfFov = std::tan(fovRad / 2);
+
+    projectionMatrix.m[0][0] = 1 / tanHalfFov / aspectRatio;
+    projectionMatrix.m[1][1] = 1 / tanHalfFov;
+    projectionMatrix.m[2][2] = -far / (far - near) ;
+    projectionMatrix.m[3][2] = -(near * far) / (far - near);
+    projectionMatrix.m[2][3] = -1;
+
+    return projectionMatrix;
 }
 
-glm::mat4 Camera::ViewProjectionMatrix() {
-    return ProjectionMatrix() * ViewMatrix();
+Matrix4x4 Camera::ViewProjectionMatrix() {
+    return ViewMatrix() * ProjectionMatrix();
+    // return ProjectionMatrix() * ViewMatrix();
 }

@@ -5,11 +5,10 @@
 #ifndef MAXENGINE_SCENE_H
 #define MAXENGINE_SCENE_H
 #include <string>
-
 #include "gameObject/Camera.h"
 #include "gameObject/light/DirectionalLight.h"
 #include "gameObject/light/Light.h"
-#include "glad/glad.h"
+#include "graphics/RenderContext.h"
 
 class Window;
 
@@ -19,20 +18,27 @@ public:
         aspectRatio = static_cast<float>(width) / static_cast<float>(height);
     }
 
+    ~Scene() {
+        delete camera;
+        delete light;
+        //GOs are needed for delete too
+    }
+
     float aspectRatio;
 
     std::string name;
+
     Camera *camera = nullptr;
     DirectionalLight *light = nullptr;
-    std::vector<GameObject*> gameObject = {};
 
-    GLuint shaderProgram;
+    std::vector<GameObject*> gameObjects = {};
 
     void Init();
 
-    void Render() const;
+    void Render(float delta_time);
 
-    void Cleanup();
+private:
+    RenderContext render_context;
 
 };
 

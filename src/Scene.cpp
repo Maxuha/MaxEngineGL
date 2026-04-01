@@ -4,86 +4,19 @@
 
 #include "Scene.h"
 
+#include <iostream>
+
 #include "components/MeshRenderer.h"
 #include "gameObject/light/DirectionalLight.h"
 #include "gameObject/primitives/Cube.h"
-#include "glad/glad.h"
-#include "glm/gtc/type_ptr.hpp"
-
-GLuint createShaderProgram() {
-    const char *vertexShaderSource = R"(
-        #version 330 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aNormal;
-
-        out vec3 Normal;
-        out vec3 FragPos;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        void main()
-        {
-            FragPos = vec3(model * vec4(aPos, 1.0));
-            Normal = mat3(transpose(inverse(model))) * aNormal;
-
-            gl_Position = projection * view * vec4(FragPos, 1.0);
-        }
-    )";
-
-    const char *fragmentShaderSource = R"(
-        #version 330 core
-
-        in vec3 Normal;
-        in vec3 FragPos;
-
-        out vec4 FragColor;
-
-        uniform vec3 color;
-
-        uniform vec3 lightDirection;
-        uniform vec3 lightColor;
-        uniform float lightIntensity;
-
-        void main()
-        {
-            vec3 norm = normalize(Normal);
-
-            // light comes from opposite direction
-            vec3 lightDir = normalize(-lightDirection);
-
-            float diff = max(dot(norm, lightDir), 0.0);
-
-            vec3 diffuse = diff * lightColor * color * lightIntensity;
-
-            FragColor = vec4(diffuse, 1.0);
-        }
-    )";
-
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
-
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glLinkProgram(program);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return program;
-}
+#include "IO/ObjImporter.h"
+#include "math/AABB.h"
 
 void Scene::Init() {
-    shaderProgram = createShaderProgram();
-
     light = new DirectionalLight();
+    light->direction = Vector3(1.0f, -1.0f, -1.0f);
+    light->intensity = 3.0f;
+    light->color = Color(1.0f, 1.0f, 1.0f);
 
     camera = new Camera();
     camera->fov = 45;
@@ -91,38 +24,59 @@ void Scene::Init() {
     camera->far = 100;
     camera->aspectRatio = aspectRatio;
 
-    light = new DirectionalLight();
+    auto *litShader = new Shader(
+        (std::string(SHADERS_ROOT) + "/assets/shaders/basic_lit.vert").c_str(),
+        (std::string(SHADERS_ROOT) + "/assets/shaders/basic_lit.frag").c_str()
+    );
 
-    gameObject = { Cube::BuildCube() };
-    for (GameObject *obj : gameObject) {
+    auto *defaultMaterial = new DefaultMaterial(litShader);
+
+    defaultMaterial->color = Color(0.5f, 1.0f, 0.0f);
+
+    //Building a glove
+    ObjImporter importer(R"(assets/glove.obj)");
+
+    auto glove = new GameObject();
+    glove->name = "glove";
+
+    auto *gloveMeshRenderer = glove->AddComponent<MeshRenderer>();
+    gloveMeshRenderer->mesh = importer.Import();
+    gloveMeshRenderer->gameObject = glove;
+    gloveMeshRenderer->material = defaultMaterial;
+
+    const std::vector<Vertex> vertices = gloveMeshRenderer->mesh.vertices;
+    auto *gloveTransform = glove->AddComponent<Transform>();
+    gloveTransform->pivot = AABB::GetCenter(vertices);
+
+    const auto cube1 = Cube::BuildCube();
+    cube1->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    const auto cube2 = Cube::BuildCube();
+    cube2->GetComponent<MeshRenderer>()->material = defaultMaterial;
+
+    gameObjects = {cube1, cube2, glove };
+
+    for (GameObject *obj: gameObjects) {
         obj->Start();
-        obj->GetComponent<MeshRenderer>()->shaderProgram = shaderProgram;
     }
+
 }
 
-void Scene::Render() const {
-    glUseProgram(shaderProgram);
+void Scene::Render(const float delta_time) {
+    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    GLint vLocation = glGetUniformLocation(shaderProgram, "view");
-    GLint pLocation = glGetUniformLocation(shaderProgram, "projection");
-    GLint lightDirection = glGetUniformLocation(shaderProgram, "lightDirection");
-    GLint lightColor = glGetUniformLocation(shaderProgram, "lightColor");
-    GLint lightIntensity = glGetUniformLocation(shaderProgram, "lightIntensity");
+    gameObjects[0]->GetComponent<Transform>()->Translate(gameObjects[0]->GetComponent<Transform>()->Forward() * 4 * delta_time);
+    gameObjects[1]->GetComponent<Transform>()->RotateYaw(-60.0f * delta_time);
+    gameObjects[2]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
 
-    glm::vec3 lightDir(light->direction.x, light->direction.y, light->direction.z);
-    glm::vec3 lightCol(light->color.x, light->color.y, light->color.z);
-    glm::float32 lightInt(light->intensity);
+    render_context.viewMatrix = camera->ViewMatrix();
+    render_context.projectionMatrix = camera->ProjectionMatrix();
+    render_context.lightDirection = light->direction;
+    render_context.lightColor = light->color;
+    render_context.lightIntensity = light->intensity;
 
-    glUniformMatrix4fv(vLocation, 1, GL_FALSE, glm::value_ptr(camera->ViewMatrix()));
-    glUniformMatrix4fv(pLocation, 1, GL_FALSE, glm::value_ptr(camera->ProjectionMatrix()));
-    glUniform3fv(lightDirection, 1, glm::value_ptr(lightDir));
-    glUniform3fv(lightColor, 1, glm::value_ptr(lightCol));
-    glUniform1f(lightIntensity, lightInt);
-
-    for (GameObject *obj : gameObject) {
-        obj->Update();
+    for (GameObject *obj: gameObjects) {
+        obj->Update(delta_time);
+        obj->GetComponent<MeshRenderer>()->Render(render_context);
     }
-}
-
-void Scene::Cleanup() {
 }

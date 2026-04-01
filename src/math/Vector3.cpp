@@ -4,11 +4,13 @@
 
 #include "Vector3.h"
 #include <cmath>
-#include "glm/ext/quaternion_geometric.hpp"
-
 
 Vector3 Vector3::Zero() {
     return Vector3(0.0f, 0.0f, 0.0f);
+}
+
+Vector3 Vector3::One() {
+    return Vector3(1.0f, 1.0f, 1.0f);
 }
 
 Vector3 Vector3::Up() {
@@ -21,6 +23,10 @@ Vector3 Vector3::Right() {
 
 Vector3 Vector3::Forward() {
     return Vector3(0.0f, 0.0f, 1.0f);
+}
+
+Vector3 Vector3::operator-() const {
+    return Vector3(-x, -y, -z);
 }
 
 Vector3 Vector3::operator-(const Vector3 &v) const {
@@ -72,16 +78,12 @@ float Vector3::Length(const Vector3 &v) const {
 }
 
 Vector3 Vector3::Normalize() {
-    float length = Length(*this);
-
     // if length == 0, vector can't be normalized
-    if (length == 0.0f) {
-        return Zero();
+    if (const float length = Length(*this); length != 0.0f) {
+        x /= length;
+        y /= length;
+        z /= length;
     }
-
-    x /= length;
-    y /= length;
-    z /= length;
 
     return *this;
 }

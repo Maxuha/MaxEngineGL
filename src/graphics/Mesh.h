@@ -6,10 +6,12 @@
 #define MAXENGINE_MESH_H
 #include <vector>
 #include "Triangle.h"
+#include "../IO/MeshImporter.h"
 
 class Mesh {
 public:
     std::vector<Triangle> tries;
+    std::vector<Vertex> vertices;
 };
 
 
