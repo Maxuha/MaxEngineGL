@@ -10,21 +10,19 @@ struct RenderContext;
 
 class Material {
 public:
-    Shader* shader;
-    GLuint shaderCompiled;
+    virtual ~Material() = default;
 
-    Material(Shader* shader) {
+    explicit Material(Shader* shader) {
         this->shader = shader;
-        shaderCompiled = shader->compileShader();
     };
+
+    Shader* shader;
 
     virtual void Apply();
 
 private:
     GLint viewLocation{};
     GLint projectionLocation{};
-
-    void compileShader() const;
 };
 
 

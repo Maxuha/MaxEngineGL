@@ -18,6 +18,12 @@ public:
         aspectRatio = static_cast<float>(width) / static_cast<float>(height);
     }
 
+    ~Scene() {
+        delete camera;
+        delete light;
+        //GOs are needed for delete too
+    }
+
     float aspectRatio;
 
     std::string name;
@@ -25,13 +31,11 @@ public:
     Camera *camera = nullptr;
     DirectionalLight *light = nullptr;
 
-    std::vector<GameObject*> gameObject = {};
+    std::vector<GameObject*> gameObjects = {};
 
     void Init();
 
     void Render(float delta_time);
-
-    void Cleanup();
 
 private:
     RenderContext render_context;

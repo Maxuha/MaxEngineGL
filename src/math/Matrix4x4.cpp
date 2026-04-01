@@ -4,7 +4,7 @@
 
 #include "Matrix4x4.h"
 
-Matrix4x4::Matrix4x4(float value) {
+Matrix4x4::Matrix4x4(const float value) {
     m[0][0] = 0;
     m[1][0] = 0;
     m[2][0] = 0;
@@ -24,20 +24,23 @@ Matrix4x4::Matrix4x4(float value) {
 
     if (value == 1) {
         //identity
-        m[0][0] = 1;
-        m[1][1] = 1;
-        m[2][2] = 1;
-        m[3][3] = 1;
+        Identity();
     }
 }
 
+Matrix4x4 Matrix4x4::Identity() {
+    m[0][0] = 1;
+    m[1][1] = 1;
+    m[2][2] = 1;
+    m[3][3] = 1;
+    return *this;
+}
 
-
-Matrix4x4 Matrix4x4::Rotate(Vector3 axis) {
+Matrix4x4 Matrix4x4::Rotate(const Vector3 axis) {
     return RotateZ(axis.z) * RotateY(axis.y) * RotateX(axis.x);
 }
 
-Matrix4x4 Matrix4x4::RotateX(float angle) {
+Matrix4x4 Matrix4x4::RotateX(const float angle) {
     auto s = std::sin(glm::radians(angle));
     auto c = std::cos(glm::radians(angle));
 
@@ -51,7 +54,7 @@ Matrix4x4 Matrix4x4::RotateX(float angle) {
     return temp;
 }
 
-Matrix4x4 Matrix4x4::RotateY(float angle) {
+Matrix4x4 Matrix4x4::RotateY(const float angle) {
     auto s = std::sin(glm::radians(angle));
     auto c = std::cos(glm::radians(angle));
 
@@ -65,7 +68,7 @@ Matrix4x4 Matrix4x4::RotateY(float angle) {
     return temp;
 }
 
-Matrix4x4 Matrix4x4::RotateZ(float angle) {
+Matrix4x4 Matrix4x4::RotateZ(const float angle) {
     auto s = std::sin(glm::radians(angle));
     auto c = std::cos(glm::radians(angle));
 
@@ -95,7 +98,6 @@ Matrix4x4 Matrix4x4::Scale(const Vector3 scale) {
     return result;
 }
 
-
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &m1) const {
     const auto a = m;
     const auto b = m1.m;
@@ -107,6 +109,18 @@ Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &m1) const {
             for (int k = 0; k < 4; k++) {
                 temp.m[i][j] += a[i][k] * b[k][j];
             }
+        }
+    }
+
+    return temp;
+}
+
+Matrix4x4 Matrix4x4::Transpose() const {
+    auto temp = Matrix4x4(0);
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            temp.m[i][j] = m[j][i];
         }
     }
 

@@ -6,7 +6,6 @@
 #define MAXENGINE_SHADER_H
 
 #include <string>
-
 #include "../math/Color.h"
 #include "../math/Matrix4x4.h"
 #include "../math/Vector3.h"
@@ -15,21 +14,25 @@
 
 class Shader {
 public:
-    void LoadShader(const char *vertexShaderPath, const char *fragmentShaderPath);
-    GLuint compileShader();
+    Shader(const char *vertexShaderPath, const char *fragmentShaderPath) {
+        Init(vertexShaderPath, fragmentShaderPath);
+    }
+
+    ~Shader() {
+        glDeleteProgram(Id);
+    }
+
     void Use() const;
 
-    void SetMat4(const std::string& var, Matrix4x4 mat) const;
-    void SetVec3(const std::string& var, Vector3 vec) const;
-    void SetFloat(const std::string& var, float val) const;
-    void SetColor(const std::string& var, Color color) const;
+    void SetUniform(const std::string& var, Matrix4x4 mat) const;
+    void SetUniform(const std::string& var, Vector3 vec) const;
+    void SetUniform(const std::string& var, float val) const;
+    void SetUniform(const std::string& var, Color color) const;
 
 
 private:
-    GLuint cachedShader = 0;
-    std::string vertexShaderSource;
-    std::string fragmentShaderSource;
-
+    void Init(const char *vertexShaderPath, const char *fragmentShaderPath);
+    GLuint Id = 0;
 };
 
 

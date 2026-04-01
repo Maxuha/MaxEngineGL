@@ -7,12 +7,12 @@
 #include "Material.h"
 #include "../math/Color.h"
 
-class SimpleMaterial: public Material {
+class DefaultMaterial: public Material {
 
 public:
-    SimpleMaterial(Shader* shader);
+    explicit DefaultMaterial(Shader* shader);
 
-    Color color;
+    Color color{};
 
     void Apply() override;
 

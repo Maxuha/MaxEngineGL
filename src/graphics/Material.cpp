@@ -10,7 +10,3 @@
 void Material::Apply() {
 
 }
-
-void Material::compileShader() const {
-    shader->compileShader();
-}

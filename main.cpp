@@ -1,8 +1,6 @@
 #include <iostream>
-#include <ostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #include "src/Scene.h"
 #include "src/Window.h"
 #include "src/gameObject/Camera.h"
@@ -13,7 +11,8 @@
 class Camera;
 
 int main() {
-    int width = 1280, height = 720;
+    constexpr int width = 1280;
+    constexpr int height = 720;
 
     auto* window = new Window(width, height);
     window->MakeWindow();
@@ -32,9 +31,8 @@ int main() {
     float cameraSpeed = minCameraSpeed;
 
     while (!window->IsClosed()) {
-        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // calculate delta time
         delta_time = glfwGetTime() - last_time;
         last_time = glfwGetTime();
 

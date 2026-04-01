@@ -26,6 +26,8 @@ public:
 
     float m[4][4]{};
 
+    Matrix4x4 Identity();
+
     static Matrix4x4 Rotate(Vector3 axis);
     static Matrix4x4 RotateX(float angle);
     static Matrix4x4 RotateY(float angle);
@@ -34,6 +36,8 @@ public:
     static Matrix4x4 Transform(Vector3 translation);
 
     static Matrix4x4 Scale(Vector3 scale);
+
+    Matrix4x4 Transpose() const;
 
     Matrix4x4 operator*(const Matrix4x4& m1) const;
 };

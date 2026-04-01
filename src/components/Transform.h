@@ -12,7 +12,7 @@ class Transform : public Component {
     public:
     Vector3 position = Vector3::Zero();
     Vector3 rotation = Vector3::Zero();
-    Vector3 scale = Vector3{1, 1,1};
+    Vector3 scale = Vector3::One();
 
     Vector3 Forward() const;
     Vector3 Up() const;

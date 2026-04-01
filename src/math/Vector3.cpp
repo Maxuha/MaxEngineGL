@@ -78,16 +78,12 @@ float Vector3::Length(const Vector3 &v) const {
 }
 
 Vector3 Vector3::Normalize() {
-    float length = Length(*this);
-
     // if length == 0, vector can't be normalized
-    if (length == 0.0f) {
-        return Zero();
+    if (const float length = Length(*this); length != 0.0f) {
+        x /= length;
+        y /= length;
+        z /= length;
     }
-
-    x /= length;
-    y /= length;
-    z /= length;
 
     return *this;
 }

@@ -5,47 +5,47 @@
 #include "Shader.h"
 
 #include <fstream>
+#include <iostream>
 #include <ostream>
 #include <glm/glm.hpp>
 
 #include "../utils/FileReader.h"
 #include "glm/gtc/type_ptr.hpp"
 
-void Shader::LoadShader(const char *vertexShaderPath, const char *fragmentShaderPath) {
-    vertexShaderSource = FileReader::LoadFile(vertexShaderPath);
-    fragmentShaderSource = FileReader::LoadFile(fragmentShaderPath);
-}
+void Shader::Init(const char *vertexShaderPath, const char *fragmentShaderPath) {
+    std::string vSource = FileReader::LoadFile(vertexShaderPath);
+    std::string fSource = FileReader::LoadFile(fragmentShaderPath);
 
-GLuint Shader::compileShader() {
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const GLchar* vertexShaderPtr = vertexShaderSource.c_str();
-    glShaderSource(vertexShader, 1, &vertexShaderPtr, nullptr);
+    const char* vCode = vSource.c_str();
+    const char* fCode = fSource.c_str();
+
+    // Vertex shader
+    const GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vCode, nullptr);
     glCompileShader(vertexShader);
 
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar* fragmentShaderPtr = fragmentShaderSource.c_str();
-    glShaderSource(fragmentShader, 1, &fragmentShaderPtr, nullptr);
+    // Fragment shader
+    const GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fCode, nullptr);
     glCompileShader(fragmentShader);
 
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glLinkProgram(program);
+    // Create program and attach our shaders
+    Id = glCreateProgram();
+    glAttachShader(Id, vertexShader);
+    glAttachShader(Id, fragmentShader);
+    glLinkProgram(Id);
 
+    // Delete shaders
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-
-    cachedShader = program;
-
-    return program;
 }
 
 void Shader::Use() const {
-    glUseProgram(cachedShader);
+    glUseProgram(Id);
 }
 
-void Shader::SetMat4(const std::string& var, Matrix4x4 mat) const {
-    const GLint varId = glGetUniformLocation(cachedShader, var.c_str());
+void Shader::SetUniform(const std::string& var, Matrix4x4 mat) const {
+    const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
         throw std::runtime_error("Invalid variable " + var);
@@ -54,8 +54,8 @@ void Shader::SetMat4(const std::string& var, Matrix4x4 mat) const {
     glUniformMatrix4fv(varId, 1, false, glm::value_ptr(mat.Convert<glm::mat4>()));
 }
 
-void Shader::SetVec3(const std::string& var, Vector3 vec) const {
-    const GLint varId = glGetUniformLocation(cachedShader, var.c_str());
+void Shader::SetUniform(const std::string& var, Vector3 vec) const {
+    const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
         throw std::runtime_error("Invalid variable " + var);
@@ -64,8 +64,8 @@ void Shader::SetVec3(const std::string& var, Vector3 vec) const {
     glUniform3fv(varId, 1, glm::value_ptr(vec.Convert<glm::vec3>()));
 }
 
-void Shader::SetFloat(const std::string& var, const float val) const {
-    const GLint varId = glGetUniformLocation(cachedShader, var.c_str());
+void Shader::SetUniform(const std::string& var, const float val) const {
+    const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
         throw std::runtime_error("Invalid variable " + var);
@@ -74,8 +74,8 @@ void Shader::SetFloat(const std::string& var, const float val) const {
     glUniform1f(varId, val);
 }
 
-void Shader::SetColor(const std::string &var, Color color) const {
-    const GLint varId = glGetUniformLocation(cachedShader, var.c_str());
+void Shader::SetUniform(const std::string &var, Color color) const {
+    const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
         throw std::runtime_error("Invalid variable " + var);

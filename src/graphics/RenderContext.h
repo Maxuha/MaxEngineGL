@@ -6,12 +6,13 @@
 #define MAXENGINE_RENDERCONTEXT_H
 #include "../math/Matrix4x4.h"
 #include "../math/Vector3.h"
+#include "../math/Color.h"
 
 struct RenderContext {
     Matrix4x4 viewMatrix{0};
     Matrix4x4 projectionMatrix{0};
 
-    Vector3 lightColor{};
+    Color lightColor{};
     Vector3 lightDirection{};
     float lightIntensity{};
 };

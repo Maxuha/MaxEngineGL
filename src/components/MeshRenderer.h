@@ -5,31 +5,32 @@
 #ifndef MAXENGINE_MESHRENDERER_H
 #define MAXENGINE_MESHRENDERER_H
 #include "Component.h"
-#include "../gameObject/light/DirectionalLight.h"
 #include "../graphics/Material.h"
 #include "../graphics/Mesh.h"
-#include "../graphics/SimpleMaterial.h"
+#include "../graphics/DefaultMaterial.h"
 
 class Camera;
 
 class MeshRenderer : public Component {
 public:
-    MeshRenderer() {
+    MeshRenderer() = default;
+
+    ~MeshRenderer() {
+        glDeleteBuffers(1, &VBO);
+        glDeleteVertexArrays(1, &VAO);
     }
 
     Mesh mesh;
 
-    SimpleMaterial* material = nullptr;
+    DefaultMaterial* material = nullptr;
 
-    std::vector<float> Vertecies;
+    std::vector<float> Vertex;
 
-    unsigned int VBO, VAO;
+    unsigned int VBO{}, VAO{};
 
     void Init();
 
-    void Render(RenderContext context) const;
-
-    void Clear() const;
+    void Render(const RenderContext &context) const;
 };
 
 
