@@ -18,8 +18,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/math/Vector3.h
         src/math/Matrix4x4.cpp
         src/math/Matrix4x4.h
-        src/graphics/Triangle.cpp
-        src/graphics/Triangle.h
         src/graphics/Mesh.cpp
         src/graphics/Mesh.h
         src/graphics/MeshPrimitives.cpp
@@ -54,8 +52,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/graphics/DefaultMaterial.h
         src/math/converter/TypesConverterToGlad.cpp
         src/math/converter/TypesConverterToGlad.h
-        src/utils/FileReader.cpp
-        src/utils/FileReader.h
         src/graphics/RenderContext.cpp
         src/graphics/RenderContext.h
         src/math/Color.cpp
@@ -69,6 +65,16 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/MeshImporter.h
         src/math/AABB.cpp
         src/math/AABB.h
+        src/graphics/buffers/VertexArray.cpp
+        src/graphics/buffers/VertexArray.h
+        src/graphics/buffers/VertexBuffer.cpp
+        src/graphics/buffers/VertexBuffer.h
+        src/graphics/buffers/IndexBuffer.cpp
+        src/graphics/buffers/IndexBuffer.h
+        src/IO/model/VertexSet.h
+        src/IO/model/IndexSet.h
+        src/Engine.cpp
+        src/Engine.h
 )
 
 target_include_directories(MaxEngine PRIVATE

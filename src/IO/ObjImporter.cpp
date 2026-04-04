@@ -7,12 +7,24 @@
 #include <iostream>
 #include <string>
 #include <strstream>
+#include <vector>
+#include "../graphics/Vertex.h"
+#include "../math/Vector3.h"
+#include "model/IndexSet.h"
+#include "model/VertexSet.h"
 
-Mesh ObjImporter::Import() {
-    Mesh mesh;
+
+Mesh* ObjImporter::Import() {
+    Mesh* mesh ;
 
     std::vector<Vector3> verts{};
     std::vector<Vector3> normals{};
+
+    std::vector<Vertex> vertxs{};
+    std::vector<unsigned int> indices{};
+
+    auto* vertexSet = new VertexSet();
+    auto* indexSet = new IndexSet();
 
     if (std::ifstream file(fileName); file.is_open()) {
         std::string line;
@@ -31,12 +43,16 @@ Mesh ObjImporter::Import() {
 
                     s >> prefix >> vn.x >> vn.y >> vn.z;
                     normals.push_back(vn);
+                    vertexSet->Normal.push_back(vn);
                 } else if (line.substr(0, 2) == "vt") {
                     //
                 } else {
                     Vector3 v{};
                     s >> junk >> v.x >> v.y >> v.z;
                     verts.push_back(v);
+                    Vertex vertex1 { v, Vector3::Zero() };
+                    vertxs.push_back(vertex1);
+                    vertexSet->Position.push_back(v);
                 }
             } else if (line.substr(0, 1) == "f") {
                 int v_idx[3], vt_idx[3], vn_idx[3];
@@ -70,22 +86,26 @@ Mesh ObjImporter::Import() {
                     vn.push_back(normals[vn_idx[2]-1]);
                 }
 
-                Vertex vertex1 { verts[v_idx[0]-1], vn[0] };
-                Vertex vertex2 { verts[v_idx[1]-1], vn[1] };
-                Vertex vertex3 { verts[v_idx[2]-1], vn[2] };
+                vertxs[v_idx[0]-1].normal = vn[0];
+                vertxs[v_idx[1]-1].normal = vn[1];
+                vertxs[v_idx[2]-1].normal = vn[2];
 
-                mesh.vertices.push_back(vertex1);
-                mesh.vertices.push_back(vertex2);
-                mesh.vertices.push_back(vertex3);
+                indices.push_back(v_idx[0]-1);
+                indices.push_back(v_idx[1]-1);
+                indices.push_back(v_idx[2]-1);
 
-                Triangle triangle = {
-                    vertex1,
-                    vertex2,
-                    vertex3
-                    };
-                mesh.tries.push_back(triangle);
+                indexSet->PositionIndex.push_back(v_idx[0]-1);
+                indexSet->PositionIndex.push_back(v_idx[1]-1);
+                indexSet->PositionIndex.push_back(v_idx[2]-1);
+
+                indexSet->NormalIndex.push_back(vn_idx[0]-1);
+                indexSet->NormalIndex.push_back(vn_idx[1]-1);
+                indexSet->NormalIndex.push_back(vn_idx[2]-1);
             }
         }
+
+        mesh = new Mesh(vertxs, indices);
+
         file.close();
     } else {
         std::cerr << "Failed open file" << std::endl;

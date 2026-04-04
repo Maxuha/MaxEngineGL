@@ -7,7 +7,7 @@
 
 #include "glad/glad.h"
 
-void Window::MakeWindow() {
+void Window::Open() {
     if (!glfwInit()) {
         std::cout << "Failed to init GLFW\n";
     }
@@ -38,16 +38,13 @@ void Window::MakeWindow() {
 
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
-
-    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Window::SwapBuffers() const {
     glfwSwapBuffers(window);
 }
 
-void Window::DestroyWindow() const {
+void Window::Close() const {
     if (IsClosed()) return;
 
     glfwDestroyWindow(window);

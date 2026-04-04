@@ -21,11 +21,11 @@ public:
     int width, height;
     float aspectRatio;
 
-    void MakeWindow();
+    void Open();
 
     void SwapBuffers() const;
 
-    void DestroyWindow() const;
+    void Close() const;
 
     bool GetInputKey(int key) const;
 

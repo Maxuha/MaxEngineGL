@@ -5,16 +5,14 @@
 #include "Shader.h"
 
 #include <fstream>
-#include <iostream>
 #include <ostream>
 #include <glm/glm.hpp>
-
-#include "../utils/FileReader.h"
+#include "../IO/FileReader.h"
 #include "glm/gtc/type_ptr.hpp"
 
 void Shader::Init(const char *vertexShaderPath, const char *fragmentShaderPath) {
-    std::string vSource = FileReader::LoadFile(vertexShaderPath);
-    std::string fSource = FileReader::LoadFile(fragmentShaderPath);
+    const std::string vSource = FileReader::ReadFileString(vertexShaderPath);
+    const std::string fSource = FileReader::ReadFileString(fragmentShaderPath);
 
     const char* vCode = vSource.c_str();
     const char* fCode = fSource.c_str();
@@ -40,8 +38,12 @@ void Shader::Init(const char *vertexShaderPath, const char *fragmentShaderPath) 
     glDeleteShader(fragmentShader);
 }
 
-void Shader::Use() const {
+void Shader::Enable() const {
     glUseProgram(Id);
+}
+
+void Shader::Disable() const {
+    glUseProgram(0);
 }
 
 void Shader::SetUniform(const std::string& var, Matrix4x4 mat) const {

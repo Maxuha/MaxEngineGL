@@ -35,7 +35,7 @@ public:
 
     void Init();
 
-    void Render(float delta_time);
+    void Update(float delta_time);
 
 private:
     RenderContext render_context;

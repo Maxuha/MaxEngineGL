@@ -33,35 +33,34 @@ void Scene::Init() {
 
     defaultMaterial->color = Color(0.5f, 1.0f, 0.0f);
 
-    //Building a glove
+    // Building a glove
     ObjImporter importer(R"(assets/glove.obj)");
+    Mesh *mesh = importer.Import();
 
     auto glove = new GameObject();
     glove->name = "glove";
 
     auto *gloveMeshRenderer = glove->AddComponent<MeshRenderer>();
-    gloveMeshRenderer->mesh = importer.Import();
+    gloveMeshRenderer->mesh = mesh;
     gloveMeshRenderer->gameObject = glove;
     gloveMeshRenderer->material = defaultMaterial;
 
-    const std::vector<Vertex> vertices = gloveMeshRenderer->mesh.vertices;
-    auto *gloveTransform = glove->AddComponent<Transform>();
-    gloveTransform->pivot = AABB::GetCenter(vertices);
+    auto *gloveTransform = glove->GetComponent<Transform>();
+    gloveTransform->pivot = mesh->center;
 
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = defaultMaterial;
     const auto cube2 = Cube::BuildCube();
     cube2->GetComponent<MeshRenderer>()->material = defaultMaterial;
 
-    gameObjects = {cube1, cube2, glove };
+    gameObjects = { cube1, cube2,  glove};
 
     for (GameObject *obj: gameObjects) {
         obj->Start();
     }
-
 }
 
-void Scene::Render(const float delta_time) {
+void Scene::Update(const float delta_time) {
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -77,6 +76,6 @@ void Scene::Render(const float delta_time) {
 
     for (GameObject *obj: gameObjects) {
         obj->Update(delta_time);
-        obj->GetComponent<MeshRenderer>()->Render(render_context);
+        obj->GetComponent<MeshRenderer>()->Draw(render_context);
     }
 }

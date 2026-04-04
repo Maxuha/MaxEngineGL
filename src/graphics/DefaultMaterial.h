@@ -7,6 +7,8 @@
 #include "Material.h"
 #include "../math/Color.h"
 
+class GameObject;
+
 class DefaultMaterial: public Material {
 
 public:
@@ -14,7 +16,8 @@ public:
 
     Color color{};
 
-    void Apply() override;
+    void Enable(const RenderContext &context, GameObject* gameObject) override;
+    void Disable() override;
 
 };
 

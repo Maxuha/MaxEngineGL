@@ -11,6 +11,10 @@
 
 class GameObject {
 public:
+    virtual ~GameObject() = default;
+
+    GameObject();
+
     std::string name;
 
     std::multimap<std::type_index, Component*> components;
@@ -45,9 +49,6 @@ public:
         if (component == components.end()) return nullptr;
         return static_cast<T*>(component->second);
     }
-
-private:
-    void InternalUpdate();
 };
 
 

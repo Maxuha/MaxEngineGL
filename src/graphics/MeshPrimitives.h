@@ -12,7 +12,7 @@ class MeshPrimitives {
 public:
     MeshPrimitives() = delete;
 
-    static Mesh CreateBox();
+    static Mesh* CreateBox();
 
     static Mesh CreateLine(Vector3 direction);
 };

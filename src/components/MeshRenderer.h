@@ -13,24 +13,13 @@ class Camera;
 
 class MeshRenderer : public Component {
 public:
-    MeshRenderer() = default;
+    ~MeshRenderer() = default;
 
-    ~MeshRenderer() {
-        glDeleteBuffers(1, &VBO);
-        glDeleteVertexArrays(1, &VAO);
-    }
-
-    Mesh mesh;
+    Mesh* mesh;
 
     DefaultMaterial* material = nullptr;
 
-    std::vector<float> Vertex;
-
-    unsigned int VBO{}, VAO{};
-
-    void Init();
-
-    void Render(const RenderContext &context) const;
+    void Draw(const RenderContext &context) const;
 };
 
 

@@ -8,12 +8,11 @@
 #include "../../graphics/MeshPrimitives.h"
 
 Cube* Cube::BuildCube() {
-    Mesh mesh = MeshPrimitives::CreateBox();
-    const auto obj = new Cube();
+    Mesh* mesh = MeshPrimitives::CreateBox();
+    auto* obj = new Cube();
     auto* renderer = obj->AddComponent<MeshRenderer>();
     renderer->mesh = mesh;
     renderer->gameObject = obj;
-    obj->AddComponent<Transform>();
     return obj;
 }
 

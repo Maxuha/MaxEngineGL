@@ -15,7 +15,7 @@ int main() {
     constexpr int height = 720;
 
     auto* window = new Window(width, height);
-    window->MakeWindow();
+    window->Open();
 
     auto* scene = new Scene(width, height);
     scene->Init();
@@ -36,13 +36,17 @@ int main() {
         delta_time = glfwGetTime() - last_time;
         last_time = glfwGetTime();
 
-        scene->Render(delta_time);
+        scene->Update(delta_time);
 
         window->SwapBuffers();
         glfwPollEvents();
 
         // Camera translate
         auto direction = Vector3::Zero();
+
+        if (window->GetInputKey(GLFW_KEY_ESCAPE)) {
+            window->Close();
+        }
 
         if (window->GetInputKey(GLFW_KEY_LEFT_SHIFT)) {
             cameraSpeed = maxCamaraSpeed;

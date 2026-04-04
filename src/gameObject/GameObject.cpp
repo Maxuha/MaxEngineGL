@@ -3,18 +3,15 @@
 //
 
 #include "../gameObject/GameObject.h"
+#include "../components/Transform.h"
 
-#include "../components/MeshRenderer.h"
+GameObject::GameObject() {
+    AddComponent<Transform>();
+}
 
 void GameObject::Start() {
-    GetComponent<MeshRenderer>()->Init();
 }
 
 void GameObject::Update(float delta_time) {
-    //GetComponent<MeshRenderer>()->Render();
-}
-
-void GameObject::InternalUpdate() {
-    //Update();
     //GetComponent<MeshRenderer>()->Render();
 }

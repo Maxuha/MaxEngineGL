@@ -12,7 +12,7 @@ class MeshImporter {
     public:
     virtual ~MeshImporter() = default;
 
-    virtual Mesh Import() = 0;
+    virtual Mesh* Import() = 0;
 };
 
 #endif //MAXENGINE_MESHIMPORTER_H

@@ -3,70 +3,54 @@
 //
 
 #include "MeshPrimitives.h"
+#include "Vertex.h"
 #include "../math/Vector3.h"
-#include "Triangle.h"
 
-Mesh MeshPrimitives::CreateBox() {
-    auto box = Mesh();
-
-    box.tries = {
-
-        // SOUTH (0,0,-1)
-        {{{{0,0,0},{0,0,-1}}, {{0,1,0},{0,0,-1}}, {{1,1,0},{0,0,-1}}}},
-        {{{{0,0,0},{0,0,-1}}, {{1,1,0},{0,0,-1}}, {{1,0,0},{0,0,-1}}}},
-
-        // EAST (1,0,0)
-        {{{{1,0,0},{1,0,0}}, {{1,1,0},{1,0,0}}, {{1,1,1},{1,0,0}}}},
-        {{{{1,0,0},{1,0,0}}, {{1,1,1},{1,0,0}}, {{1,0,1},{1,0,0}}}},
-
-        // NORTH (0,0,1)
-        {{{{1,0,1},{0,0,1}}, {{1,1,1},{0,0,1}}, {{0,1,1},{0,0,1}}}},
-        {{{{1,0,1},{0,0,1}}, {{0,1,1},{0,0,1}}, {{0,0,1},{0,0,1}}}},
-
-        // WEST (-1,0,0)
-        {{{{0,0,1},{-1,0,0}}, {{0,1,1},{-1,0,0}}, {{0,1,0},{-1,0,0}}}},
-        {{{{0,0,1},{-1,0,0}}, {{0,1,0},{-1,0,0}}, {{0,0,0},{-1,0,0}}}},
-
-        // TOP (0,1,0)
-        {{{{0,1,0},{0,1,0}}, {{0,1,1},{0,1,0}}, {{1,1,1},{0,1,0}}}},
-        {{{{0,1,0},{0,1,0}}, {{1,1,1},{0,1,0}}, {{1,1,0},{0,1,0}}}},
-
-        // BOTTOM (0,-1,0)
-        {{{{1,0,1},{0,-1,0}}, {{0,0,1},{0,-1,0}}, {{0,0,0},{0,-1,0}}}},
-        {{{{1,0,1},{0,-1,0}}, {{0,0,0},{0,-1,0}}, {{1,0,0},{0,-1,0}}}}
+Mesh* MeshPrimitives::CreateBox() {
+    const Vertex vertices[] = {
+        // Front (Z-)
+        {{0,0,0},{0,0,-1}}, // 0
+        {{0,1,0},{0,0,-1}}, // 1
+        {{1,1,0},{0,0,-1}}, // 2
+        {{1,0,0},{0,0,-1}}, // 3
+        // Right (X+)
+        {{1,0,0},{1,0,0}},  // 4
+        {{1,1,0},{1,0,0}},  // 5
+        {{1,1,1},{1,0,0}},  // 6
+        {{1,0,1},{1,0,0}},  // 7
+        // Back (Z+)
+        {{1,0,1},{0,0,1}},  // 8
+        {{1,1,1},{0,0,1}},  // 9
+        {{0,1,1},{0,0,1}},  // 10
+        {{0,0,1},{0,0,1}},  // 11
+        // Left (X-)
+        {{0,0,1},{-1,0,0}}, // 12
+        {{0,1,1},{-1,0,0}}, // 13
+        {{0,1,0},{-1,0,0}}, // 14
+        {{0,0,0},{-1,0,0}}, // 15
+        // Top (Y+)
+        {{0,1,0},{0,1,0}},  // 16
+        {{0,1,1},{0,1,0}},  // 17
+        {{1,1,1},{0,1,0}},  // 18
+        {{1,1,0},{0,1,0}},  // 19
+        // Bottom (Y-)
+        {{1,0,1},{0,-1,0}}, // 20
+        {{0,0,1},{0,-1,0}}, // 21
+        {{0,0,0},{0,-1,0}}, // 22
+        {{1,0,0},{0,-1,0}}  // 23
     };
+
+    unsigned int indices[] = {
+        0, 1, 2,   0, 2, 3,    // Front
+        4, 5, 6,   4, 6, 7,    // Right
+        8, 9, 10,  8, 10, 11,  // Back
+        12, 13, 14, 12, 14, 15, // Left
+        16, 17, 18, 16, 18, 19, // Top
+        20, 21, 22, 20, 22, 23  // Bottom
+    };
+
+
+    auto box = new Mesh(vertices, indices);
 
     return box;
-}
-
-Mesh MeshPrimitives::CreateLine(Vector3 direction) {
-    auto line = Mesh();
-
-    line.tries = {
-        // SOUTH
-        {{{0.0f, 0.0f, 0.0f}, {0.0f, direction.y, 0.0f}, {direction.x, direction.y, 0.0f}}},
-        {{{0.0f, 0.0f, 0.0f}, {direction.x, direction.y, 0.0f}, {direction.x, 0.0f, 0.0f}}},
-
-        // EAST
-        {{{direction.x, 0.0f, 0.0f}, {direction.x, direction.y, 0.0f}, {direction.x, direction.y, direction.z}}},
-        {{{direction.x, 0.0f, 0.0f}, {direction.x, direction.y, direction.z}, {direction.x, 0.0f, direction.z}}},
-
-        // NORTH
-        {{{direction.x, 0.0f, direction.z}, {direction.x, direction.y, direction.z},{0.0f, direction.y, direction.z}}},
-        {{{direction.x, 0.0f, direction.z}, {0.0f, direction.y, direction.z}, {0.0f, 0.0f, direction.z}}},
-
-        // WEST
-        {{{0.0f, 0.0f, direction.z}, {0.0f, direction.y, direction.z}, {0.0f, direction.y, 0.0f}}},
-        {{{0.0f, 0.0f, direction.z}, {0.0f, direction.y, 0.0f}, {0.0f, 0.0f, 0.0f}}},
-
-        // TOP
-        {{{0.0f, direction.y, 0.0f}, {0.0f, direction.y, direction.z}, {direction.x, direction.y, direction.z}}},
-        {{{0.0f, direction.y, 0.0f}, {direction.x, direction.y, direction.z}, {direction.x, direction.y, 0.0f}}},
-
-        // BOTTOM
-        {{{direction.x, 0.0f, direction.z}, {0.0f, 0.0f, direction.z}, {0.0f, 0.0f, 0.0f}}},
-        {{{direction.x, 0.0f, direction.z}, {0.0f, 0.0f, 0.0f}, {direction.x, 0.0f, 0.0f}}}
-    };
-
-    return line;
 }

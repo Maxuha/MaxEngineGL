@@ -4,14 +4,33 @@
 
 #ifndef MAXENGINE_MESH_H
 #define MAXENGINE_MESH_H
-#include <vector>
-#include "Triangle.h"
-#include "../IO/MeshImporter.h"
+#include <span>
+#include "Vertex.h"
+#include "buffers/IndexBuffer.h"
+#include "buffers/VertexArray.h"
+#include "buffers/VertexBuffer.h"
 
 class Mesh {
 public:
-    std::vector<Triangle> tries;
-    std::vector<Vertex> vertices;
+    explicit Mesh(std::span<const Vertex> vertices, std::span<const unsigned int> indices);
+
+    ~Mesh() {
+        delete vertexArray;
+        delete vertexBuffer;
+        delete indexBuffer;
+    }
+
+    unsigned int Size;
+    Vector3 center{};
+
+    VertexArray* vertexArray;
+    VertexBuffer* vertexBuffer;
+    IndexBuffer* indexBuffer;
+
+    void Bind() const;
+    void Unbind() const;
+
+    unsigned int GetIndexCount() const;
 };
 
 

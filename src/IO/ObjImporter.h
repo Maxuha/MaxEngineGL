@@ -15,7 +15,7 @@ public:
 
     const char* fileName;
 
-    Mesh Import() override;
+    Mesh* Import() override;
 };
 
 #endif //MAXENGINE_OBJIMPRORTER_H

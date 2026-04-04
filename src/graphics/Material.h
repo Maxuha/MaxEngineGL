@@ -6,6 +6,7 @@
 #define MAXENGINE_MATERIAL_H
 #include "Shader.h"
 
+class GameObject;
 struct RenderContext;
 
 class Material {
@@ -16,13 +17,16 @@ public:
         this->shader = shader;
     };
 
-    Shader* shader;
-
-    virtual void Apply();
+    virtual void Enable(const RenderContext &context, GameObject* gameObject);
+    virtual void Disable();
 
 private:
     GLint viewLocation{};
     GLint projectionLocation{};
+
+protected:
+    Shader* shader;
+
 };
 
 

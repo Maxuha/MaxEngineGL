@@ -3,9 +3,11 @@
 //
 
 #include "AABB.h"
+
+#include <span>
 #include "../graphics/Vertex.h"
 
-Vector3 AABB::GetCenter(const std::vector<Vertex> &vertices) {
+Vector3 AABB::GetCenter(std::span<const Vertex> vertices) {
     Vector3 min = vertices[0].position;
     Vector3 max = vertices[0].position;
 

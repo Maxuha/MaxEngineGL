@@ -22,7 +22,8 @@ public:
         glDeleteProgram(Id);
     }
 
-    void Use() const;
+    void Enable() const;
+    void Disable() const;
 
     void SetUniform(const std::string& var, Matrix4x4 mat) const;
     void SetUniform(const std::string& var, Vector3 vec) const;
