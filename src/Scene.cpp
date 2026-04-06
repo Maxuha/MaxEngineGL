@@ -10,12 +10,13 @@
 #include "gameObject/light/DirectionalLight.h"
 #include "gameObject/primitives/Cube.h"
 #include "IO/ObjImporter.h"
+#include "IO/TextureImporter.h"
 #include "math/AABB.h"
 
 void Scene::Init() {
     light = new DirectionalLight();
     light->direction = Vector3(1.0f, -1.0f, -1.0f);
-    light->intensity = 3.0f;
+    light->intensity = 1.5f;
     light->color = Color(1.0f, 1.0f, 1.0f);
 
     camera = new Camera();
@@ -29,9 +30,13 @@ void Scene::Init() {
         (std::string(SHADERS_ROOT) + "/assets/shaders/basic_lit.frag").c_str()
     );
 
+    TextureImporter textureImporter;
+    Texture texture = textureImporter.Import(R"(C:/Users/zykov/CLionProjects/MaxEngine/assets/models/glove/texture/diffuse.jpg)");
+
     auto *defaultMaterial = new DefaultMaterial(litShader);
 
-    defaultMaterial->color = Color(0.5f, 1.0f, 0.0f);
+    defaultMaterial->color = Color(1.0f, 1.0f, 1.0f);
+    defaultMaterial->texture = &texture;
 
     // Building a glove
     ObjImporter importer(R"(assets/glove.obj)");
@@ -53,7 +58,7 @@ void Scene::Init() {
     const auto cube2 = Cube::BuildCube();
     cube2->GetComponent<MeshRenderer>()->material = defaultMaterial;
 
-    gameObjects = { cube1, cube2,  glove};
+    gameObjects = { cube1, cube2, glove };
 
     for (GameObject *obj: gameObjects) {
         obj->Start();

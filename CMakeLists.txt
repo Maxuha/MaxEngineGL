@@ -62,7 +62,7 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/ObjImporter.h
         src/game/components/InputController.cpp
         src/game/components/InputController.h
-        src/IO/MeshImporter.h
+        src/IO/ModelImporter.h
         src/math/AABB.cpp
         src/math/AABB.h
         src/graphics/buffers/VertexArray.cpp
@@ -75,6 +75,13 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/model/IndexSet.h
         src/Engine.cpp
         src/Engine.h
+        src/IO/TextureImporter.cpp
+        src/IO/TextureImporter.h
+        src/graphics/Texture.cpp
+        src/graphics/Texture.h
+        include/stb_image.h
+        src/math/Vector2.cpp
+        src/math/Vector2.h
 )
 
 target_include_directories(MaxEngine PRIVATE

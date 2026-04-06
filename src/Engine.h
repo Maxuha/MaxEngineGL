@@ -5,12 +5,9 @@
 #ifndef MAXENGINE_ENGINE_H
 #define MAXENGINE_ENGINE_H
 
-
-
 class Engine {
-
+public:
+    void Start();
 };
-
-
 
 #endif //MAXENGINE_ENGINE_H

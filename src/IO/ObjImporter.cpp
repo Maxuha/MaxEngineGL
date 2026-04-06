@@ -3,28 +3,31 @@
 //
 
 #include "ObjImporter.h"
+
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <string>
 #include <strstream>
 #include <vector>
 #include "../graphics/Vertex.h"
 #include "../math/Vector3.h"
+#include "../math/Vector2.h"
 #include "model/IndexSet.h"
-#include "model/VertexSet.h"
-
 
 Mesh* ObjImporter::Import() {
     Mesh* mesh ;
 
-    std::vector<Vector3> verts{};
-    std::vector<Vector3> normals{};
+    std::vector<Vector3> vPos{};
+    std::vector<Vector3> vNormals{};
+    std::vector<Vector2> vTexcoords{};
 
     std::vector<Vertex> vertxs{};
     std::vector<unsigned int> indices{};
 
-    auto* vertexSet = new VertexSet();
-    auto* indexSet = new IndexSet();
+    std::set<Vertex> vertx_set;
+
+    std::unordered_map<IndexSet, int> indices_set;
 
     if (std::ifstream file(fileName); file.is_open()) {
         std::string line;
@@ -42,17 +45,17 @@ Mesh* ObjImporter::Import() {
                     std::string prefix;
 
                     s >> prefix >> vn.x >> vn.y >> vn.z;
-                    normals.push_back(vn);
-                    vertexSet->Normal.push_back(vn);
+                    vNormals.push_back(vn);
                 } else if (line.substr(0, 2) == "vt") {
-                    //
+                    Vector2 vt{};
+                    std::string prefix;
+
+                    s >> prefix >> vt.x >> vt.y;
+                    vTexcoords.push_back(vt);
                 } else {
                     Vector3 v{};
                     s >> junk >> v.x >> v.y >> v.z;
-                    verts.push_back(v);
-                    Vertex vertex1 { v, Vector3::Zero() };
-                    vertxs.push_back(vertex1);
-                    vertexSet->Position.push_back(v);
+                    vPos.push_back(v);
                 }
             } else if (line.substr(0, 1) == "f") {
                 int v_idx[3], vt_idx[3], vn_idx[3];
@@ -72,37 +75,67 @@ Mesh* ObjImporter::Import() {
                 std::vector<Vector3> vn{};
 
                 // if file does not contain normal then calculate and add them
-                if (normals.empty()) {
-                    Vector3 line1 = verts[v_idx[1]-1] - verts[v_idx[0]-1];
-                    Vector3 line2 = verts[v_idx[2]-1] - verts[v_idx[0]-1];
+                if (vNormals.empty()) {
+                    Vector3 line1 = vPos[v_idx[1]-1] - vPos[v_idx[0]-1];
+                    Vector3 line2 = vPos[v_idx[2]-1] - vPos[v_idx[0]-1];
                     Vector3 v = Vector3::CrossProduct(line1, line2).Normalize();
 
                     vn.push_back(v);
                     vn.push_back(v);
                     vn.push_back(v);
                 } else {
-                    vn.push_back(normals[vn_idx[0]-1]);
-                    vn.push_back(normals[vn_idx[1]-1]);
-                    vn.push_back(normals[vn_idx[2]-1]);
+                    vn.push_back(vNormals[vn_idx[0]-1]);
+                    vn.push_back(vNormals[vn_idx[1]-1]);
+                    vn.push_back(vNormals[vn_idx[2]-1]);
                 }
 
-                vertxs[v_idx[0]-1].normal = vn[0];
-                vertxs[v_idx[1]-1].normal = vn[1];
-                vertxs[v_idx[2]-1].normal = vn[2];
+                Vertex vertex1;
+                vertex1.position = vPos[v_idx[0]-1];
+                vertex1.normal = vNormals[vn_idx[0]-1];
+                vertex1.uv = Vector2(vTexcoords[vt_idx[0]-1].x, 1 - vTexcoords[vt_idx[0]-1].y);
 
-                indices.push_back(v_idx[0]-1);
-                indices.push_back(v_idx[1]-1);
-                indices.push_back(v_idx[2]-1);
+                Vertex vertex2;
+                vertex2.position = vPos[v_idx[1]-1];
+                vertex2.normal = vNormals[vn_idx[1]-1];
+                vertex2.uv = Vector2(vTexcoords[vt_idx[1]-1].x, 1 - vTexcoords[vt_idx[1]-1].y);
 
-                indexSet->PositionIndex.push_back(v_idx[0]-1);
-                indexSet->PositionIndex.push_back(v_idx[1]-1);
-                indexSet->PositionIndex.push_back(v_idx[2]-1);
+                Vertex vertex3;
+                vertex3.position = vPos[v_idx[2]-1];
+                vertex3.normal = vNormals[vn_idx[2]-1];
+                vertex3.uv = Vector2(vTexcoords[vt_idx[2]-1].x, 1 - vTexcoords[vt_idx[2]-1].y);
 
-                indexSet->NormalIndex.push_back(vn_idx[0]-1);
-                indexSet->NormalIndex.push_back(vn_idx[1]-1);
-                indexSet->NormalIndex.push_back(vn_idx[2]-1);
+                IndexSet index_set1 { v_idx[0]-1, vn_idx[0]-1, vt_idx[0]-1 };
+                IndexSet index_set2 { v_idx[1]-1, vn_idx[1]-1, vt_idx[1]-1 };
+                IndexSet index_set3 { v_idx[2]-1, vn_idx[2]-1, vt_idx[2]-1 };
+
+                if (indices_set.contains(index_set1)) {
+                    indices.push_back(indices_set[index_set1]);
+                } else {
+                    vertxs.push_back(vertex1);
+                    indices_set[index_set1] = vertxs.size() - 1;
+                    indices.push_back(indices_set[index_set1]);
+                }
+
+                if (indices_set.contains(index_set2)) {
+                    indices.push_back(indices_set[index_set2]);
+                } else {
+                    vertxs.push_back(vertex2);
+                    indices_set[index_set2] = vertxs.size() - 1;
+                    indices.push_back(indices_set[index_set2]);
+                }
+
+                if (indices_set.contains(index_set3)) {
+                    indices.push_back(indices_set[index_set3]);
+                } else {
+                    vertxs.push_back(vertex3);
+                    indices_set[index_set3] = vertxs.size() - 1;
+                    indices.push_back(indices_set[index_set3]);
+                }
             }
         }
+
+        std::cout << "vertex_size: " << vertxs.size() << std::endl;
+        std::cout << "indices: " << indices.size() << std::endl;
 
         mesh = new Mesh(vertxs, indices);
 

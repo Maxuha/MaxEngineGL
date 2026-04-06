@@ -4,8 +4,10 @@
 #pragma once
 
 #include "../../math/Vector3.h"
+#include "../../math/Vector2.h"
 
 struct VertexSet {
-    std::vector<Vector3> Position;
-    std::vector<Vector3> Normal;
+    Vector3 Position;
+    Vector3 Normal;
+    Vector2 TexCoord;
 };

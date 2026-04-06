@@ -21,8 +21,9 @@ Mesh::Mesh(const std::span<const Vertex> vertices, const std::span<const unsigne
     indexBuffer = new IndexBuffer(indices.data(), indices.size_bytes());
     indexBuffer->Bind();
 
-    vertexArray->AddAttribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
-    vertexArray->AddAttribute(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+    vertexArray->AddAttribute(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
+    vertexArray->AddAttribute(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+    vertexArray->AddAttribute(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(6 * sizeof(float)));
 
     vertexArray->Unbind();
     vertexBuffer->Unbind();
