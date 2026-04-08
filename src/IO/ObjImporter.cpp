@@ -15,7 +15,7 @@
 #include "../math/Vector2.h"
 #include "model/IndexSet.h"
 
-Mesh* ObjImporter::Import() {
+Mesh* ObjImporter::Import(const char* fileName) {
     Mesh* mesh ;
 
     std::vector<Vector3> vPos{};

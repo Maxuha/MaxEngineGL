@@ -1,96 +1,73 @@
-#include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "src/DIContainer.h"
+#include "src/FPSCamera.h"
 #include "src/Scene.h"
 #include "src/Window.h"
 #include "src/gameObject/Camera.h"
-#include "src/components/Transform.h"
 #include "src/gameObject/primitives/Cube.h"
-#include "src/math/Vector3.h"
+#include "src/graphics/DefaultMaterial.h"
+#include "src/components/MeshRenderer.h"
 
+class MeshRenderer;
 class Camera;
 
 int main() {
+    const auto* container = new DIContainer();
+
     constexpr int width = 1280;
     constexpr int height = 720;
 
     auto* window = new Window(width, height);
     window->Open();
 
-    auto* scene = new Scene(width, height);
-    scene->Init();
+    auto* camera = new FPSCamera();
+    camera->fov = 45;
+    camera->near = 0.01;
+    camera->far = 100;
+    camera->aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
-    double last_time = glfwGetTime();
-    double delta_time = 0;
+    auto* light = new DirectionalLight();
+    light->direction = Vector3(1.0f, -1.0f, -1.0f);
+    light->intensity = 1.5f;
+    light->color = Color(1.0f, 1.0f, 1.0f);
 
-    //Warning
-    Vector3 directionRot = Vector3::Zero();
+    auto* litShader = container->assetManager->Import<Shader>("basic_lit");
+    auto* texture = container->assetManager->Import<Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
+    auto* defaultMaterial = new DefaultMaterial(litShader);
 
-    float maxCamaraSpeed = 10.0f;
-    float minCameraSpeed = 2.0f;
-    float cameraSpeed = minCameraSpeed;
+    defaultMaterial->color = Color(1.0f, 1.0f, 1.0f);
+    defaultMaterial->texture = texture;
+
+    // Building a glove
+    Mesh* mesh = container->assetManager->Import<Mesh>(R"(assets/glove.obj)");
+
+    const auto glove = new GameObject();
+    glove->name = "glove";
+
+    auto *gloveMeshRenderer = glove->AddComponent<MeshRenderer>();
+    gloveMeshRenderer->mesh = mesh;
+    gloveMeshRenderer->gameObject = glove;
+    gloveMeshRenderer->material = defaultMaterial;
+
+    auto *gloveTransform = glove->GetComponent<Transform>();
+    gloveTransform->pivot = mesh->center;
+
+    const auto cube1 = Cube::BuildCube();
+    cube1->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    const auto cube2 = Cube::BuildCube();
+    cube2->GetComponent<MeshRenderer>()->material = defaultMaterial;
+
+    auto* scene = new Scene(camera);
+    scene->AddLight(light);
+    scene->AddGameObject(cube1);
+    scene->AddGameObject(cube2);
+    scene->AddGameObject(glove);
+
+    window->AttachScene(scene);
+
+    // scene->Init();
 
     while (!window->IsClosed()) {
-
-        // calculate delta time
-        delta_time = glfwGetTime() - last_time;
-        last_time = glfwGetTime();
-
-        scene->Update(delta_time);
-
-        window->SwapBuffers();
-        glfwPollEvents();
-
-        // Camera translate
-        auto direction = Vector3::Zero();
-
-        if (window->GetInputKey(GLFW_KEY_ESCAPE)) {
-            window->Close();
-        }
-
-        if (window->GetInputKey(GLFW_KEY_LEFT_SHIFT)) {
-            cameraSpeed = maxCamaraSpeed;
-        } else {
-            cameraSpeed = minCameraSpeed;
-        }
-
-        if (window->GetInputKey(GLFW_KEY_W)) {
-            direction += Vector3::Forward();
-        }
-        if (window->GetInputKey(GLFW_KEY_S)) {
-            direction -= Vector3::Forward();
-        }
-        if (window->GetInputKey(GLFW_KEY_A)) {
-            direction -= Vector3::Right();
-        }
-        if (window->GetInputKey(GLFW_KEY_D)) {
-            direction += Vector3::Right();
-        }
-
-        auto* cameraTransform = scene->camera->GetComponent<Transform>();
-        if (window->GetInputKey(GLFW_KEY_W) ||
-            window->GetInputKey(GLFW_KEY_S) ||
-            window->GetInputKey(GLFW_KEY_A) ||
-            window->GetInputKey(GLFW_KEY_D)) {
-
-            cameraTransform->Translate(direction * cameraSpeed * delta_time);
-        }
-
-        double x, y;
-
-        window->GetCursorPos(&x, &y);
-
-        directionRot = Vector3(x - directionRot.x, y - directionRot.y, directionRot.z);
-
-        float Yaw = directionRot.x * delta_time * 30;
-        float Pitch = directionRot.y * delta_time * 30;
-
-        if (Yaw != 0 || Pitch != 0) {
-            cameraTransform = scene->camera->GetComponent<Transform>();
-            cameraTransform->RotateYaw(Yaw);
-            cameraTransform->RotatePitch(Pitch);
-        }
-        directionRot = Vector3(x, y, directionRot.z);
+        window->Update();
     }
     return 0;
 }

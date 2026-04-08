@@ -4,12 +4,14 @@
 
 #ifndef MAXENGINE_TEXTUREINPORTER_H
 #define MAXENGINE_TEXTUREINPORTER_H
+
+#include <string>
 #include "../graphics/Texture.h"
 
 
 class TextureImporter {
 public:
-    Texture Import(const char* fileName);
+    Texture* Import(const std::string& fileName);
 };
 
 

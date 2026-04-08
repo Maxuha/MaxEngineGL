@@ -21,6 +21,12 @@ Texture::Texture(const unsigned char *data, const int width, const int height) {
 
 }
 
+Texture::~Texture() {
+    if (Id != 0) {
+        glDeleteTextures(1, &Id);
+    }
+}
+
 void Texture::Bind() {
     glBindTexture(GL_TEXTURE_2D, Id);
 }

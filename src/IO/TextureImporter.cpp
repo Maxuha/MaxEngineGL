@@ -5,13 +5,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "TextureImporter.h"
+#include <string>
 #include "stb_image.h"
 
-Texture TextureImporter::Import(const char* fileName) {
-    int width, height, nrChannels;
-    const unsigned char *data = stbi_load(fileName, &width, &height, &nrChannels, 4);
-    const Texture texture {
-        data, width, height
-    };
+Texture* TextureImporter::Import(const std::string& fileName) {
+    int width {}, height {}, nrChannels {};
+    unsigned char *data = stbi_load(fileName.c_str(), &width, &height, &nrChannels, 4);
+    Texture* texture = new Texture(data, width, height);
+    stbi_image_free(data);
     return texture;
 }

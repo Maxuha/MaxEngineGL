@@ -14,30 +14,32 @@ class Window;
 
 class Scene {
 public:
-    Scene(const int width, const int height) {
-        aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    explicit Scene(Camera *camera) {
+        this->camera = camera;
     }
 
     ~Scene() {
         delete camera;
-        delete light;
+        delete lights.data();
         //GOs are needed for delete too
     }
 
-    float aspectRatio;
-
     std::string name;
 
-    Camera *camera = nullptr;
-    DirectionalLight *light = nullptr;
+    std::vector<Light*> lights = {};
 
     std::vector<GameObject*> gameObjects = {};
 
     void Init();
 
-    void Update(float delta_time);
+    void Update(double delta_time);
+
+    void AddLight(Light *light);
+
+    void AddGameObject(GameObject *gameObject);
 
 private:
+    Camera *camera = nullptr;
     RenderContext render_context;
 
 };

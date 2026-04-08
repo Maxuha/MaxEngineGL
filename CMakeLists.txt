@@ -82,6 +82,19 @@ add_executable(MaxEngine main.cpp src/glad.c
         include/stb_image.h
         src/math/Vector2.cpp
         src/math/Vector2.h
+        src/Demo.cpp
+        src/Demo.h
+        src/InputController.cpp
+        src/InputController.h
+        src/FPSCamera.cpp
+        src/FPSCamera.h
+        src/DIContainer.h
+        src/IO/AssetManager.cpp
+        src/IO/AssetManager.h
+        src/IO/MeshAssetManager.cpp
+        src/IO/MeshAssetManager.h
+        src/IO/ShaderImporter.cpp
+        src/IO/ShaderImporter.h
 )
 
 target_include_directories(MaxEngine PRIVATE
@@ -93,6 +106,7 @@ target_link_libraries(MaxEngine PRIVATE
         opengl32
 )
 
-add_definitions(-DSHADERS_ROOT="${CMAKE_SOURCE_DIR}")
+add_definitions(-DROOT="${CMAKE_SOURCE_DIR}")
+add_definitions(-DASSETS_ROOT="${CMAKE_SOURCE_DIR}/assets")
 
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})

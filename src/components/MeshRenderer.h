@@ -5,7 +5,6 @@
 #ifndef MAXENGINE_MESHRENDERER_H
 #define MAXENGINE_MESHRENDERER_H
 #include "Component.h"
-#include "../graphics/Material.h"
 #include "../graphics/Mesh.h"
 #include "../graphics/DefaultMaterial.h"
 
@@ -17,7 +16,7 @@ public:
 
     Mesh* mesh;
 
-    DefaultMaterial* material = nullptr;
+    Material* material = nullptr;
 
     void Draw(const RenderContext &context) const;
 };

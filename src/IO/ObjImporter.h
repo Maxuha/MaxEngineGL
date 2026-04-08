@@ -8,13 +8,7 @@
 
 class ObjImporter : public ModelImporter {
 public:
-    explicit ObjImporter(const char* fileName) {
-        this->fileName = fileName;
-    }
-
-    const char* fileName;
-
-    Mesh* Import() override;
+    Mesh* Import(const char* fileName) override;
 };
 
 #endif //MAXENGINE_OBJIMPRORTER_H

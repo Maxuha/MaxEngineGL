@@ -9,9 +9,7 @@
 
 class ModelImporter {
     public:
-    virtual ~ModelImporter() = default;
-
-    virtual Mesh* Import() = 0;
+    virtual Mesh* Import(const char* fileName) = 0;
 };
 
 #endif //MAXENGINE_MESHIMPORTER_H
