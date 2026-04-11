@@ -1,4 +1,7 @@
 #include "Transform.h"
+
+#include <iostream>
+
 #include "../math/Matrix4x4.h"
 
 Vector3 Transform::Forward() const {
@@ -16,8 +19,38 @@ Vector3 Transform::Right() const {
     return Vector3(rotMat.m[0][0], rotMat.m[1][0], rotMat.m[2][0]);
 }
 
+Matrix4x4 Transform::GetLocalMatrix() const {
+    const auto model = Matrix4x4::Transform(-pivot) * Matrix4x4::Scale(scale) * Matrix4x4::Rotate(rotation) * Matrix4x4::Transform(pivot) * Matrix4x4::Transform(position);
+    return model;
+}
+
 Matrix4x4 Transform::GetModelMatrix() const {
-    return Matrix4x4::Transform(-pivot) * Matrix4x4::Scale(scale) * Matrix4x4::Rotate(rotation) * Matrix4x4::Transform(pivot) * Matrix4x4::Transform(position);
+    auto model = GetLocalMatrix();
+
+    if (parent != nullptr) {
+        model = model * parent->GetModelMatrix();
+    }
+
+    return model;
+}
+
+void Transform::SetParent(Transform *parent) {
+    std::cout << "GlobalPos:" << position.x << " " << position.y << " " << position.z << std::endl;
+
+    auto localMatrix = Matrix4x4(0);
+
+    if (parent == nullptr) {
+        localMatrix = GetLocalMatrix() * this->parent->GetModelMatrix();
+    } else {
+        localMatrix = GetLocalMatrix() * parent->GetModelMatrix().Inverse();
+    }
+
+    position.x = localMatrix.m[3][0];
+    position.y = localMatrix.m[3][1];
+    position.z = localMatrix.m[3][2];
+
+    std::cout << "localPos: " << position.x << " " << position.y << " " << position.z << std::endl;
+    this->parent = parent;
 }
 
 void Transform::Translate(const Vector3 dir) {

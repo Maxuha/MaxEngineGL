@@ -4,15 +4,12 @@
 
 #ifndef MAXENGINE_MESHIMPORTER_H
 #define MAXENGINE_MESHIMPORTER_H
+#include "../graphics/Mesh.h"
 
 
-class Mesh;
-
-class MeshImporter {
+class ModelImporter {
     public:
-    virtual ~MeshImporter() = default;
-
-    virtual Mesh Import() = 0;
+    virtual Mesh* Import(const char* fileName) = 0;
 };
 
 #endif //MAXENGINE_MESHIMPORTER_H

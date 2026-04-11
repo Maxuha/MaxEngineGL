@@ -5,12 +5,10 @@
 #ifndef MAXENGINE_WINDOW_H
 #define MAXENGINE_WINDOW_H
 
+#include "Scene.h"
 #include "GLFW/glfw3.h"
 
 class Window {
-private:
-    GLFWwindow *window{};
-
 public:
     Window(const int width, const int height) {
         this->width = width;
@@ -18,20 +16,25 @@ public:
         aspectRatio = static_cast<float>(width) / static_cast<float>(height);
     }
 
+    void AttachScene(Scene* scene);
+
+    void Open();
+
+    void Update();
+
+    void Close() const;
+
+    int IsClosed() const;
+
+private:
+    GLFWwindow *window{};
+    Scene* scene{};
+
     int width, height;
     float aspectRatio;
 
-    void MakeWindow();
-
-    void SwapBuffers() const;
-
-    void DestroyWindow() const;
-
-    bool GetInputKey(int key) const;
-
-    void GetCursorPos(double *x, double *y) const;
-
-    int IsClosed() const;
+    double last_time = glfwGetTime();
+    double delta_time = 0;
 };
 
 

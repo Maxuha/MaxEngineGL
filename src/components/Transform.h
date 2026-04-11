@@ -4,6 +4,8 @@
 
 #ifndef MAXENGINE_TRANSFORM_H
 #define MAXENGINE_TRANSFORM_H
+#include <iostream>
+
 #include "Component.h"
 #include "../math/Matrix4x4.h"
 #include "../math/Vector3.h"
@@ -14,13 +16,18 @@ class Transform : public Component {
     Vector3 rotation = Vector3::Zero();
     Vector3 scale = Vector3::One();
 
+    Transform* parent = nullptr;
+
     Vector3 Forward() const;
     Vector3 Up() const;
     Vector3 Right() const;
 
+    Matrix4x4 GetLocalMatrix() const;
     Matrix4x4 GetModelMatrix() const;
 
     Vector3 pivot = { 0.5f, 0.5f, 0.5f };
+
+    void SetParent(Transform* parent);
 
     void Translate(Vector3 dir);
 

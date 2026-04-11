@@ -5,9 +5,18 @@
 #include "Window.h"
 #include <iostream>
 
+#include "InputController.h"
 #include "glad/glad.h"
+#include "math/Vector3.h"
 
-void Window::MakeWindow() {
+class Transform;
+
+void Window::AttachScene(Scene *scene) {
+    this->scene = scene;
+    scene->Init();
+}
+
+void Window::Open() {
     if (!glfwInit()) {
         std::cout << "Failed to init GLFW\n";
     }
@@ -17,6 +26,7 @@ void Window::MakeWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window = glfwCreateWindow(width, height, "Max Engine", nullptr, nullptr);
+
     if (!window) {
         std::cout << "Failed to create window\n";
         glfwTerminate();
@@ -36,30 +46,32 @@ void Window::MakeWindow() {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 
+    InputController::GetInstance().Init(window);
+
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, width, height);
-
-    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Window::SwapBuffers() const {
+void Window::Update() {
+    // calculate delta time
+    delta_time = glfwGetTime() - last_time;
+    last_time = glfwGetTime();
+
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        Close();
+    }
+
+    scene->Update(delta_time);
+
     glfwSwapBuffers(window);
+    glfwPollEvents();
 }
 
-void Window::DestroyWindow() const {
+void Window::Close() const {
     if (IsClosed()) return;
 
     glfwDestroyWindow(window);
     glfwTerminate();
-}
-
-bool Window::GetInputKey(const int key) const {
-    return glfwGetKey(window, key) == GLFW_PRESS;
-}
-
-void Window::GetCursorPos(double *x, double *y) const {
-    glfwGetCursorPos(window, x, y);
 }
 
 int Window::IsClosed() const {

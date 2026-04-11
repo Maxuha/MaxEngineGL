@@ -7,7 +7,9 @@
 
 #include <glm/glm.hpp>
 
+#include "Matrix3x3.h"
 #include "Vector3.h"
+#include "Vector4.h"
 
 class Matrix4x4 {
 public:
@@ -38,8 +40,12 @@ public:
     static Matrix4x4 Scale(Vector3 scale);
 
     Matrix4x4 Transpose() const;
+    Matrix4x4 Inverse() const;
+    Matrix3x3 Minor(int column, int row) const;
+    float Determinant() const;
 
     Matrix4x4 operator*(const Matrix4x4& m1) const;
+    Vector4 operator*(const Vector4& v1) const;
 };
 
 

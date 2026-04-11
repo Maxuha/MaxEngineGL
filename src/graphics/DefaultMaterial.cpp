@@ -3,12 +3,17 @@
 //
 
 #include "DefaultMaterial.h"
+#include "../gameObject/GameObject.h"
 
-DefaultMaterial::DefaultMaterial(Shader* shader) : Material(shader), color() {
+DefaultMaterial::DefaultMaterial(Shader* shader) : Material(shader) {
 }
 
-void DefaultMaterial::Apply() {
-    Material::Apply();
-
+void DefaultMaterial::Enable(const RenderContext &context, GameObject* gameObject) {
+    Material::Enable(context, gameObject);
     shader->SetUniform("color", color);
+    texture->Bind();
+}
+
+void DefaultMaterial::Disable() {
+    Material::Disable();
 }

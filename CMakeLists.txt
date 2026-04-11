@@ -18,8 +18,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/math/Vector3.h
         src/math/Matrix4x4.cpp
         src/math/Matrix4x4.h
-        src/graphics/Triangle.cpp
-        src/graphics/Triangle.h
         src/graphics/Mesh.cpp
         src/graphics/Mesh.h
         src/graphics/MeshPrimitives.cpp
@@ -54,8 +52,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/graphics/DefaultMaterial.h
         src/math/converter/TypesConverterToGlad.cpp
         src/math/converter/TypesConverterToGlad.h
-        src/utils/FileReader.cpp
-        src/utils/FileReader.h
         src/graphics/RenderContext.cpp
         src/graphics/RenderContext.h
         src/math/Color.cpp
@@ -66,9 +62,43 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/ObjImporter.h
         src/game/components/InputController.cpp
         src/game/components/InputController.h
-        src/IO/MeshImporter.h
+        src/IO/ModelImporter.h
         src/math/AABB.cpp
         src/math/AABB.h
+        src/graphics/buffers/VertexArray.cpp
+        src/graphics/buffers/VertexArray.h
+        src/graphics/buffers/VertexBuffer.cpp
+        src/graphics/buffers/VertexBuffer.h
+        src/graphics/buffers/IndexBuffer.cpp
+        src/graphics/buffers/IndexBuffer.h
+        src/IO/model/VertexSet.h
+        src/IO/model/IndexSet.h
+        src/Engine.cpp
+        src/Engine.h
+        src/IO/TextureImporter.cpp
+        src/IO/TextureImporter.h
+        src/graphics/Texture.cpp
+        src/graphics/Texture.h
+        include/stb_image.h
+        src/math/Vector2.cpp
+        src/math/Vector2.h
+        src/Demo.cpp
+        src/Demo.h
+        src/InputController.cpp
+        src/InputController.h
+        src/FPSCamera.cpp
+        src/FPSCamera.h
+        src/DIContainer.h
+        src/IO/AssetManager.cpp
+        src/IO/AssetManager.h
+        src/IO/MeshAssetManager.cpp
+        src/IO/MeshAssetManager.h
+        src/IO/ShaderImporter.cpp
+        src/IO/ShaderImporter.h
+        src/math/Vector4.cpp
+        src/math/Vector4.h
+        src/math/Matrix3x3.cpp
+        src/math/Matrix3x3.h
 )
 
 target_include_directories(MaxEngine PRIVATE
@@ -80,6 +110,7 @@ target_link_libraries(MaxEngine PRIVATE
         opengl32
 )
 
-add_definitions(-DSHADERS_ROOT="${CMAKE_SOURCE_DIR}")
+add_definitions(-DROOT="${CMAKE_SOURCE_DIR}")
+add_definitions(-DASSETS_ROOT="${CMAKE_SOURCE_DIR}/assets")
 
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})

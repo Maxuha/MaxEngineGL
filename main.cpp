@@ -1,92 +1,125 @@
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+
+#include "src/DIContainer.h"
+#include "src/FPSCamera.h"
 #include "src/Scene.h"
 #include "src/Window.h"
 #include "src/gameObject/Camera.h"
-#include "src/components/Transform.h"
 #include "src/gameObject/primitives/Cube.h"
-#include "src/math/Vector3.h"
+#include "src/graphics/DefaultMaterial.h"
+#include "src/components/MeshRenderer.h"
+#include "src/math/Matrix3x3.h"
 
+class MeshRenderer;
 class Camera;
 
 int main() {
+    Matrix3x3 mat = Matrix3x3();
+    mat.m[0][0] = 1.0f;     mat.m[1][0] = 2.0f;     mat.m[2][0] = 3.0f;
+    mat.m[0][1] = 0.0f;     mat.m[1][1] = 4.0f;     mat.m[2][1] = 5.0f;
+    mat.m[0][2] = 1.0f;     mat.m[1][2] = 0.0f;     mat.m[2][2] = 6.0f;
+
+    // mat.m[0][0] = 5.0f;     mat.m[1][0] = 2.0f;     mat.m[2][0] = 0.0f;
+    // mat.m[0][1] = 3.0f;     mat.m[1][1] = 0.0f;     mat.m[2][1] = 1.0f;
+    // mat.m[0][2] = 1.0f;     mat.m[1][2] = 2.0f;     mat.m[2][2] = 2.0f;
+
+    float det = mat.Determinant();
+
+    std::cout << "det: " << det << std::endl;
+
+    //return 0;
+
+    Matrix4x4 mat2 = Matrix4x4(0);
+    mat2.m[0][0] = 2.0f;     mat2.m[1][0] = 0.0f;     mat2.m[2][0] = 3.0f;     mat2.m[3][0] = 1.0f;
+    mat2.m[0][1] = 1.0f;     mat2.m[1][1] = 5.0f;     mat2.m[2][1] = 2.0f;     mat2.m[3][1] = 0.0f;
+    mat2.m[0][2] = 0.0f;     mat2.m[1][2] = 3.0f;     mat2.m[2][2] = 0.0f;     mat2.m[3][2] = 1.0f;
+    mat2.m[0][3] = 4.0f;     mat2.m[1][3] = 1.0f;     mat2.m[2][3] = 2.0f;     mat2.m[3][3] = 2.0f;
+
+    float det2 = mat2.Determinant();
+
+    std::cout << "det2: " << det2 << std::endl;
+
+    float det3  = mat2.Minor(3, 3).Determinant();
+
+    std::cout << "det3: " << det3 << std::endl;
+
+    Matrix4x4 mat3 = mat2.Inverse();
+
+    Matrix4x4 mat4 = Matrix4x4(0);
+    mat4 = mat3 * mat2;
+
+    // return 0;
+
+    const auto* container = new DIContainer();
+
     constexpr int width = 1280;
     constexpr int height = 720;
 
     auto* window = new Window(width, height);
-    window->MakeWindow();
+    window->Open();
 
-    auto* scene = new Scene(width, height);
-    scene->Init();
+    auto* camera = new FPSCamera();
+    camera->fov = 45;
+    camera->near = 0.01;
+    camera->far = 100;
+    camera->aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
-    double last_time = glfwGetTime();
-    double delta_time = 0;
+    auto* light = new DirectionalLight();
+    light->direction = Vector3(1.0f, -1.0f, -1.0f);
+    light->intensity = 1.5f;
+    light->color = Color(1.0f, 1.0f, 1.0f);
 
-    //Warning
-    Vector3 directionRot = Vector3::Zero();
+    auto* litShader = container->assetManager->Import<Shader>("basic_lit");
+    auto* texture = container->assetManager->Import<Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
+    auto* defaultMaterial = new DefaultMaterial(litShader);
 
-    float maxCamaraSpeed = 10.0f;
-    float minCameraSpeed = 2.0f;
-    float cameraSpeed = minCameraSpeed;
+    defaultMaterial->color = Color(1.0f, 1.0f, 1.0f);
+    defaultMaterial->texture = texture;
+
+    // Building a glove
+    Mesh* mesh = container->assetManager->Import<Mesh>(R"(assets/glove.obj)");
+
+    const auto glove = new GameObject();
+    glove->name = "glove";
+
+    auto *gloveMeshRenderer = glove->AddComponent<MeshRenderer>();
+    gloveMeshRenderer->mesh = mesh;
+    gloveMeshRenderer->gameObject = glove;
+    gloveMeshRenderer->material = defaultMaterial;
+
+    auto *gloveTransform = glove->GetComponent<Transform>();
+    gloveTransform->pivot = mesh->center;
+
+    const auto cube1 = Cube::BuildCube();
+    cube1->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    const auto cube2 = Cube::BuildCube();
+    cube2->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    const auto cube3 = Cube::BuildCube();
+    cube3->GetComponent<MeshRenderer>()->material = defaultMaterial;
+
+    auto* scene = new Scene(camera);
+    scene->AddLight(light);
+    scene->AddGameObject(cube1);
+    scene->AddGameObject(cube2);
+    scene->AddGameObject(cube3);
+    scene->AddGameObject(glove);
+
+    cube1->GetComponent<Transform>()->Translate(cube1->GetComponent<Transform>()->Forward() * -1);
+    cube2->GetComponent<Transform>()->Translate(cube2->GetComponent<Transform>()->Forward() * 4);
+    cube3->GetComponent<Transform>()->Translate(cube3->GetComponent<Transform>()->Forward() * 6);
+
+    cube2->GetComponent<Transform>()->SetParent(cube1->GetComponent<Transform>());
+    cube3->GetComponent<Transform>()->SetParent(cube2->GetComponent<Transform>());
+    // cube2->GetComponent<Transform>()->SetParent(nullptr);
+    // cube3->GetComponent<Transform>()->SetParent(nullptr);
+
+    window->AttachScene(scene);
+
+    // scene->Init();
 
     while (!window->IsClosed()) {
-
-        // calculate delta time
-        delta_time = glfwGetTime() - last_time;
-        last_time = glfwGetTime();
-
-        scene->Render(delta_time);
-
-        window->SwapBuffers();
-        glfwPollEvents();
-
-        // Camera translate
-        auto direction = Vector3::Zero();
-
-        if (window->GetInputKey(GLFW_KEY_LEFT_SHIFT)) {
-            cameraSpeed = maxCamaraSpeed;
-        } else {
-            cameraSpeed = minCameraSpeed;
-        }
-
-        if (window->GetInputKey(GLFW_KEY_W)) {
-            direction += Vector3::Forward();
-        }
-        if (window->GetInputKey(GLFW_KEY_S)) {
-            direction -= Vector3::Forward();
-        }
-        if (window->GetInputKey(GLFW_KEY_A)) {
-            direction -= Vector3::Right();
-        }
-        if (window->GetInputKey(GLFW_KEY_D)) {
-            direction += Vector3::Right();
-        }
-
-        auto* cameraTransform = scene->camera->GetComponent<Transform>();
-        if (window->GetInputKey(GLFW_KEY_W) ||
-            window->GetInputKey(GLFW_KEY_S) ||
-            window->GetInputKey(GLFW_KEY_A) ||
-            window->GetInputKey(GLFW_KEY_D)) {
-
-            cameraTransform->Translate(direction * cameraSpeed * delta_time);
-        }
-
-        double x, y;
-
-        window->GetCursorPos(&x, &y);
-
-        directionRot = Vector3(x - directionRot.x, y - directionRot.y, directionRot.z);
-
-        float Yaw = directionRot.x * delta_time * 30;
-        float Pitch = directionRot.y * delta_time * 30;
-
-        if (Yaw != 0 || Pitch != 0) {
-            cameraTransform = scene->camera->GetComponent<Transform>();
-            cameraTransform->RotateYaw(Yaw);
-            cameraTransform->RotatePitch(Pitch);
-        }
-        directionRot = Vector3(x, y, directionRot.z);
+        window->Update();
     }
+
     return 0;
 }

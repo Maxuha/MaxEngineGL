@@ -3,12 +3,11 @@
 //
 
 #include "FileReader.h"
-
 #include <fstream>
 #include <sstream>
 
 std::string FileReader::ReadFileString(const char *path) {
-    const std::ifstream file("data.txt");
+    const std::ifstream file(path);
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();

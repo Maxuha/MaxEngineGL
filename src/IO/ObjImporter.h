@@ -4,18 +4,11 @@
 
 #ifndef MAXENGINE_OBJIMPRORTER_H
 #define MAXENGINE_OBJIMPRORTER_H
-#include "MeshImporter.h"
-#include "../graphics/Mesh.h"
+#include "ModelImporter.h"
 
-class ObjImporter : public MeshImporter {
+class ObjImporter : public ModelImporter {
 public:
-    explicit ObjImporter(const char* fileName) {
-        this->fileName = fileName;
-    }
-
-    const char* fileName;
-
-    Mesh Import() override;
+    Mesh* Import(const char* fileName) override;
 };
 
 #endif //MAXENGINE_OBJIMPRORTER_H
