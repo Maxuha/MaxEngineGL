@@ -4,6 +4,9 @@
 
 #include "Matrix4x4.h"
 
+#include "Matrix3x3.h"
+#include "Vector4.h"
+
 Matrix4x4::Matrix4x4(const float value) {
     m[0][0] = 0;
     m[1][0] = 0;
@@ -115,6 +118,17 @@ Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &m1) const {
     return temp;
 }
 
+Vector4 Matrix4x4::operator*(const Vector4 &v1) const {
+    const auto result = Vector4(
+        m[0][0] * v1.x + m[1][0] * v1.y + m[2][0] * v1.z + m[3][0] * v1.w,
+        m[0][1] * v1.x + m[1][1] * v1.y + m[2][1] * v1.z + m[3][1] * v1.w,
+        m[0][2] * v1.x + m[1][2] * v1.y + m[2][2] * v1.z + m[3][2] * v1.w,
+        m[0][3] * v1.x + m[1][3] * v1.y + m[2][3] * v1.z + m[3][3] * v1.w
+        );
+
+    return result;
+}
+
 Matrix4x4 Matrix4x4::Transpose() const {
     auto temp = Matrix4x4(0);
 
@@ -125,4 +139,73 @@ Matrix4x4 Matrix4x4::Transpose() const {
     }
 
     return temp;
+}
+
+Matrix4x4 Matrix4x4::Inverse() const {
+    Matrix4x4 result = Matrix4x4(0);
+
+    for (int c = 0; c < 4; c++) {
+        for (int r = 0; r < 4; r++) {
+            if ((c + r) % 2 == 0) {
+                result.m[c][r] = Minor(c, r).Determinant();
+            } else {
+                result.m[c][r] = -Minor(c, r).Determinant();
+            }
+        }
+    }
+
+    result = result.Transpose();
+
+    for (int c = 0; c < 4; c++) {
+        for (int r = 0; r < 4; r++) {
+            result.m[c][r] /= Determinant();
+        }
+    }
+
+    return result;
+}
+
+Matrix3x3 Matrix4x4::Minor(const int column, const int row) const {
+    Matrix3x3 result;
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            //exclude passed column and row
+            if (i != column && j != row) {
+                //if current column > column then we need offset indexes
+                if (i > column) {
+                    //if current row > row then we need offset indexes
+                    if (j > row) {
+                        result.m[i-1][j-1] = m[i][j];
+                    } else {
+                        result.m[i-1][j] = m[i][j];
+                    }
+                } else {
+                    if (j > row) {
+                        result.m[i][j-1] = m[i][j];
+                    } else {
+                        result.m[i][j] = m[i][j];
+                    }
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+float Matrix4x4::Determinant() const {
+    float det = 0;
+
+    for (int k = 0; k < 4; k++) {
+        Matrix3x3 result = Minor(k, 0);
+
+        if (k % 2 == 0) {
+            det += result.Determinant() * m[k][0];
+        } else {
+            det -= result.Determinant() * m[k][0];
+        }
+    }
+
+    return det;
 }

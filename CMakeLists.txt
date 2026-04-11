@@ -95,6 +95,10 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/MeshAssetManager.h
         src/IO/ShaderImporter.cpp
         src/IO/ShaderImporter.h
+        src/math/Vector4.cpp
+        src/math/Vector4.h
+        src/math/Matrix3x3.cpp
+        src/math/Matrix3x3.h
 )
 
 target_include_directories(MaxEngine PRIVATE

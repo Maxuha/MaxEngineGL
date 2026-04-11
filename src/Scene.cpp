@@ -3,6 +3,9 @@
 //
 
 #include "Scene.h"
+
+#include <iostream>
+
 #include "components/MeshRenderer.h"
 #include "gameObject/light/DirectionalLight.h"
 #include "gameObject/primitives/Cube.h"
@@ -19,10 +22,9 @@ void Scene::Update(const double delta_time) {
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    gameObjects[0]->GetComponent<Transform>()->Translate(gameObjects[0]->GetComponent<Transform>()->Forward() * 4 * delta_time);
-    gameObjects[0]->GetComponent<Transform>()->RotateYaw(10.0f * delta_time);
-    gameObjects[1]->GetComponent<Transform>()->RotateYaw(-60.0f * delta_time);
-    gameObjects[2]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
+     gameObjects[0]->GetComponent<Transform>()->RotateYaw(10.0f * delta_time);
+     gameObjects[1]->GetComponent<Transform>()->RotateYaw(-50.0f * delta_time);
+     gameObjects[2]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
 
     render_context.viewMatrix = camera->ViewMatrix();
     render_context.projectionMatrix = camera->ProjectionMatrix();
