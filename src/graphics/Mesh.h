@@ -12,7 +12,7 @@
 
 class Mesh {
 public:
-    explicit Mesh(std::span<const Vertex> vertices, std::span<const unsigned int> indices);
+    explicit Mesh(std::span<Vertex> vertices, std::span<const unsigned int> indices);
 
     ~Mesh() {
         delete vertexArray;

@@ -9,8 +9,12 @@
 #include "buffers/VertexBuffer.h"
 #include "glad/glad.h"
 
-Mesh::Mesh(const std::span<const Vertex> vertices, const std::span<const unsigned int> indices) : Size(vertices.size_bytes()) {
+Mesh::Mesh(std::span<Vertex> vertices, std::span<const unsigned int> indices) : Size(vertices.size_bytes()) {
     center = AABB::GetCenter(vertices);
+
+    for (auto &vertex: vertices) {
+        vertex.position -= center;
+    }
 
     vertexArray = new VertexArray();
     vertexArray->Bind();

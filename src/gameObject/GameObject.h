@@ -26,7 +26,7 @@ public:
     template<typename T>
     requires std::derived_from<T, Component>
     T* AddComponent(){
-        auto component = new T();
+        auto component = new T(this);
         components.insert(std::make_pair(std::type_index(typeid(T)), component));
         return component;
     }

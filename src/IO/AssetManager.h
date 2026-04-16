@@ -5,7 +5,7 @@
 #ifndef MAXENGINE_ASSETMANAGER_H
 #define MAXENGINE_ASSETMANAGER_H
 
-#include <memory>
+// #include <memory>
 #include <string>
 #include <utility>
 #include "MeshAssetManager.h"

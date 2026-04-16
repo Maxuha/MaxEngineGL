@@ -13,12 +13,12 @@ class ModelImporter;
 
 class MeshAssetManager {
 public:
-    explicit MeshAssetManager(std::map<std::string, ModelImporter*> modelImporters) : importers(std::move(modelImporters)) {}
+    explicit MeshAssetManager(std::unordered_map<std::string, ModelImporter*> modelImporters) : importers(std::move(modelImporters)) {}
 
     Mesh* Import(std::string path);
 
 private:
-    std::map<std::string, ModelImporter*> importers;
+    std::unordered_map<std::string, ModelImporter*> importers;
     std::string GetExtension(const std::string& path);
 };
 

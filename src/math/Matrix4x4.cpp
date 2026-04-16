@@ -129,6 +129,17 @@ Vector4 Matrix4x4::operator*(const Vector4 &v1) const {
     return result;
 }
 
+Vector3 Matrix4x4::operator*(const Vector3 &v1) const {
+    const auto result = Vector4(
+        m[0][0] * v1.x + m[1][0] * v1.y + m[2][0] * v1.z + m[3][0],
+        m[0][1] * v1.x + m[1][1] * v1.y + m[2][1] * v1.z + m[3][1],
+        m[0][2] * v1.x + m[1][2] * v1.y + m[2][2] * v1.z + m[3][2],
+        m[0][3] * v1.x + m[1][3] * v1.y + m[2][3] * v1.z + m[3][3]
+        );
+
+    return Vector3(result.x / result.w, result.y / result.w, result.z / result.w);
+}
+
 Matrix4x4 Matrix4x4::Transpose() const {
     auto temp = Matrix4x4(0);
 

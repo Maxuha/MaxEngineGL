@@ -46,6 +46,7 @@ public:
 
     Matrix4x4 operator*(const Matrix4x4& m1) const;
     Vector4 operator*(const Vector4& v1) const;
+    Vector3 operator*(const Vector3& v1) const;
 };
 
 

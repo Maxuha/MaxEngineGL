@@ -5,13 +5,14 @@
 #ifndef MAXENGINE_TRANSFORM_H
 #define MAXENGINE_TRANSFORM_H
 #include <iostream>
-
 #include "Component.h"
 #include "../math/Matrix4x4.h"
 #include "../math/Vector3.h"
 
 class Transform : public Component {
     public:
+    explicit Transform(GameObject* gameObject) : Component(gameObject) {}
+
     Vector3 position = Vector3::Zero();
     Vector3 rotation = Vector3::Zero();
     Vector3 scale = Vector3::One();
@@ -23,7 +24,7 @@ class Transform : public Component {
     Vector3 Right() const;
 
     Matrix4x4 GetLocalMatrix() const;
-    Matrix4x4 GetModelMatrix() const;
+    Matrix4x4 GetWorldMatrix() const;
 
     Vector3 pivot = { 0.5f, 0.5f, 0.5f };
 
@@ -34,6 +35,8 @@ class Transform : public Component {
     void RotateYaw(float angle);
     void RotatePitch(float angle);
     void RotateRoll(float angle);
+
+    friend std::ostream& operator<<(std::ostream& os, const Transform& transform);
 };
 
 

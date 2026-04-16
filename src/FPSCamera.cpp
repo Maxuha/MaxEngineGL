@@ -39,7 +39,7 @@ void FPSCamera::Update(float delta_time) {
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_W) ||
         InputController::GetInstance().GetKeyDown(GLFW_KEY_S) ||
         InputController::GetInstance().GetKeyDown(GLFW_KEY_A) ||
-        InputController::GetInstance().GetKeyDown(GLFW_KEY_A)) {
+        InputController::GetInstance().GetKeyDown(GLFW_KEY_D)) {
             cameraTransform->Translate(direction * cameraSpeed * delta_time);
         }
 
