@@ -10,30 +10,17 @@
 #include "glm/ext/matrix_clip_space.hpp"
 
 Matrix4x4 Camera::ViewMatrix() {
-    auto transform = GetComponent<Transform>();
+    const auto transform = GetComponent<Transform>();
 
-    auto Position = transform->position;
-    auto Forward = transform->Forward();
-    auto Right = transform->Right();
-    auto Up = transform->Up();
+    auto viewMatrix = transform->GetWorldMatrix();
 
-    auto viewMatrix = Matrix4x4(1);
+    // Invert z for OpenGL
+    viewMatrix.m[2][0] = -viewMatrix.m[2][0];
+    viewMatrix.m[2][1] = -viewMatrix.m[2][1];
+    viewMatrix.m[2][2] = -viewMatrix.m[2][2];
+    viewMatrix.m[2][3] = -viewMatrix.m[2][3];
 
-    viewMatrix.m[0][0] = Right.x;
-    viewMatrix.m[1][0] = Right.y;
-    viewMatrix.m[2][0] = Right.z;
-
-    viewMatrix.m[0][1] = Up.x;
-    viewMatrix.m[1][1] = Up.y;
-    viewMatrix.m[2][1] = Up.z;
-
-    viewMatrix.m[0][2] = -Forward.x;
-    viewMatrix.m[1][2] = -Forward.y;
-    viewMatrix.m[2][2] = -Forward.z;
-
-    viewMatrix.m[3][0] = -Vector3::DotProduct(Right, Position);
-    viewMatrix.m[3][1] = -Vector3::DotProduct(Up, Position);
-    viewMatrix.m[3][2] = Vector3::DotProduct(Forward, Position);
+    viewMatrix = viewMatrix.Inverse();
 
     return viewMatrix;
 }

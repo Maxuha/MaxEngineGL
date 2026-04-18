@@ -30,6 +30,8 @@ public:
 
     Matrix4x4 Identity();
 
+    Vector4 GetColumn(int column) const;
+
     static Matrix4x4 Rotate(Vector3 axis);
     static Matrix4x4 RotateX(float angle);
     static Matrix4x4 RotateY(float angle);
@@ -47,6 +49,8 @@ public:
     Matrix4x4 operator*(const Matrix4x4& m1) const;
     Vector4 operator*(const Vector4& v1) const;
     Vector3 operator*(const Vector3& v1) const;
+
+    Vector4 operator[](unsigned int row) const;
 };
 
 

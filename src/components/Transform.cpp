@@ -3,23 +3,22 @@
 #include "../math/Matrix4x4.h"
 
 Vector3 Transform::Forward() const {
-    const Matrix4x4 rotMat = Matrix4x4::RotateZ(rotation.z) * Matrix4x4::RotateY(rotation.y) * Matrix4x4::RotateX(rotation.x);
-    return Vector3(rotMat.m[0][2], rotMat.m[1][2], rotMat.m[2][2]);
+    const Matrix4x4 rotMat = Matrix4x4::Rotate(rotation);
+    return Vector3(rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2]);
 }
 
 Vector3 Transform::Up() const {
-    const Matrix4x4 rotMat = Matrix4x4::RotateZ(rotation.z) * Matrix4x4::RotateY(rotation.y) * Matrix4x4::RotateX(rotation.x);
-    return Vector3(rotMat.m[0][1], rotMat.m[1][1], rotMat.m[2][1]);
+    const Matrix4x4 rotMat = Matrix4x4::Rotate(rotation);
+    return Vector3(rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2]);
 }
 
 Vector3 Transform::Right() const {
-    const Matrix4x4 rotMat = Matrix4x4::RotateZ(rotation.z) * Matrix4x4::RotateY(rotation.y) * Matrix4x4::RotateX(rotation.x);
-    return Vector3(rotMat.m[0][0], rotMat.m[1][0], rotMat.m[2][0]);
+    const Matrix4x4 rotMat = Matrix4x4::Rotate(rotation);
+    return Vector3(rotMat.m[0][0], rotMat.m[0][1], rotMat.m[0][2]);
 }
 
 Matrix4x4 Transform::GetLocalMatrix() const {
-    const auto model = Matrix4x4::Scale(scale) * Matrix4x4::Rotate(rotation) * Matrix4x4::Transform(position);
-   // const auto model = Matrix4x4::Transform(position) * Matrix4x4::Rotate(rotation) * Matrix4x4::Scale(scale) ;
+    const auto model = Matrix4x4::Transform(position) * Matrix4x4::Rotate(rotation) * Matrix4x4::Scale(scale);
     return model;
 }
 
@@ -51,8 +50,7 @@ void Transform::SetParent(Transform *parent) {
 }
 
 void Transform::Translate(const Vector3 dir) {
-    const Vector3 relativeDir = Right() * dir.x + Up() * dir.y + Forward() * dir.z;
-    position += relativeDir;
+    position += dir;
 }
 
 void Transform::RotateYaw(const float angle) {
