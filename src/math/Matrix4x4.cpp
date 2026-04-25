@@ -4,6 +4,8 @@
 
 #include "Matrix4x4.h"
 
+#include <iostream>
+
 #include "Matrix3x3.h"
 #include "Vector4.h"
 
@@ -39,6 +41,10 @@ Matrix4x4 Matrix4x4::Identity() {
     return *this;
 }
 
+Vector4 Matrix4x4::GetColumn(const int column) const {
+    return Vector4(m[column][0], m[column][1], m[column][2], m[column][3]);
+}
+
 Matrix4x4 Matrix4x4::Rotate(const Vector3 axis) {
     return RotateZ(axis.z) * RotateY(axis.y) * RotateX(axis.x);
 }
@@ -50,8 +56,8 @@ Matrix4x4 Matrix4x4::RotateX(const float angle) {
     auto temp = Matrix4x4(1);
 
     temp.m[1][1] = c;
-    temp.m[1][2] = -s;
-    temp.m[2][1] = s;
+    temp.m[1][2] = s;
+    temp.m[2][1] = -s;
     temp.m[2][2] = c;
 
     return temp;
@@ -64,8 +70,8 @@ Matrix4x4 Matrix4x4::RotateY(const float angle) {
     auto temp = Matrix4x4(1);
 
     temp.m[0][0] = c;
-    temp.m[2][0] = -s;
-    temp.m[0][2] = s;
+    temp.m[2][0] = s;
+    temp.m[0][2] = -s;
     temp.m[2][2] = c;
 
     return temp;
@@ -78,8 +84,8 @@ Matrix4x4 Matrix4x4::RotateZ(const float angle) {
     auto temp = Matrix4x4(1);
 
     temp.m[0][0] = c;
-    temp.m[0][1] = -s;
-    temp.m[1][0] = s;
+    temp.m[1][0] = -s;
+    temp.m[0][1] = s;
     temp.m[1][1] = c;
 
     return temp;
@@ -102,16 +108,13 @@ Matrix4x4 Matrix4x4::Scale(const Vector3 scale) {
 }
 
 Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &m1) const {
-    const auto a = m;
-    const auto b = m1.m;
-
     auto temp = Matrix4x4(0);
 
     for (int i = 0; i < 4; i++) {
+        Vector4 column = m1.GetColumn(i);
         for (int j = 0; j < 4; j++) {
-            for (int k = 0; k < 4; k++) {
-                temp.m[i][j] += a[i][k] * b[k][j];
-            }
+            Vector4 row = (*this)[j];
+            temp.m[i][j] = Vector4::DotProduct(column, row);
         }
     }
 
@@ -127,6 +130,17 @@ Vector4 Matrix4x4::operator*(const Vector4 &v1) const {
         );
 
     return result;
+}
+
+Vector3 Matrix4x4::operator*(const Vector3 &v1) const {
+    const auto result = Vector4(
+        m[0][0] * v1.x + m[1][0] * v1.y + m[2][0] * v1.z + m[3][0],
+        m[0][1] * v1.x + m[1][1] * v1.y + m[2][1] * v1.z + m[3][1],
+        m[0][2] * v1.x + m[1][2] * v1.y + m[2][2] * v1.z + m[3][2],
+        m[0][3] * v1.x + m[1][3] * v1.y + m[2][3] * v1.z + m[3][3]
+        );
+
+    return Vector3(result.x / result.w, result.y / result.w, result.z / result.w);
 }
 
 Matrix4x4 Matrix4x4::Transpose() const {
@@ -208,4 +222,8 @@ float Matrix4x4::Determinant() const {
     }
 
     return det;
+}
+
+Vector4 Matrix4x4::operator[](const unsigned int row) const {
+    return Vector4(m[0][row], m[1][row], m[2][row], m[3][row]);
 }

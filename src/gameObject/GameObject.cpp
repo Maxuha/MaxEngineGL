@@ -12,6 +12,8 @@ GameObject::GameObject() {
 void GameObject::Start() {
 }
 
-void GameObject::Update(float delta_time) {
-    //GetComponent<MeshRenderer>()->Render();
+void GameObject::Update(const float delta_time) {
+    for (const auto& pair: components) {
+        pair.second->Update(delta_time);
+    }
 }

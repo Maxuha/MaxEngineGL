@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "InputController.h"
+#include "di/DIContainer.h"
 #include "glad/glad.h"
 #include "math/Vector3.h"
 
@@ -62,6 +63,7 @@ void Window::Update() {
     }
 
     scene->Update(delta_time);
+    DIContainer::GetInstance().Get<PhysicsEngine>()->Update();
 
     glfwSwapBuffers(window);
     glfwPollEvents();

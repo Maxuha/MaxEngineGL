@@ -13,9 +13,11 @@ public:
 
     Vector4();
 
-    Vector4(const float x, const float y, const float z, const float w) : x(x), y(y), z(z), w(w) {};
+    Vector4(const float x, const float y, const float z, const float w) : x(x), y(y), z(z), w(w) {}
 
-    Vector4(const Vector3 v, const float w) : x(v.x), y(v.y), z(v.z), w(w) {};
+    Vector4(const Vector3 v, const float w) : x(v.x), y(v.y), z(v.z), w(w) {}
+
+    static float DotProduct(const Vector4 &v1, const Vector4 &v2);
 };
 
 

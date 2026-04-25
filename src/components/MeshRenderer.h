@@ -12,6 +12,9 @@ class Camera;
 
 class MeshRenderer : public Component {
 public:
+    explicit MeshRenderer(GameObject* gameObject) : Component(gameObject), mesh(nullptr) {
+    }
+
     ~MeshRenderer() = default;
 
     Mesh* mesh;

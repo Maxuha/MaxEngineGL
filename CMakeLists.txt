@@ -50,8 +50,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/graphics/Material.h
         src/graphics/DefaultMaterial.cpp
         src/graphics/DefaultMaterial.h
-        src/math/converter/TypesConverterToGlad.cpp
-        src/math/converter/TypesConverterToGlad.h
         src/graphics/RenderContext.cpp
         src/graphics/RenderContext.h
         src/math/Color.cpp
@@ -60,8 +58,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/FileReader.h
         src/IO/ObjImporter.cpp
         src/IO/ObjImporter.h
-        src/game/components/InputController.cpp
-        src/game/components/InputController.h
         src/IO/ModelImporter.h
         src/math/AABB.cpp
         src/math/AABB.h
@@ -88,7 +84,7 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/InputController.h
         src/FPSCamera.cpp
         src/FPSCamera.h
-        src/DIContainer.h
+        src/di/DIContainer.h
         src/IO/AssetManager.cpp
         src/IO/AssetManager.h
         src/IO/MeshAssetManager.cpp
@@ -99,6 +95,13 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/math/Vector4.h
         src/math/Matrix3x3.cpp
         src/math/Matrix3x3.h
+        src/components/physics/collision/BoxCollider.cpp
+        src/components/physics/collision/BoxCollider.h
+        src/physics/PhysicsEngine.cpp
+        src/physics/PhysicsEngine.h
+        src/di/DIContainer.cpp
+        src/components/physics/collision/Collider.cpp
+        src/components/physics/collision/Collider.h
 )
 
 target_include_directories(MaxEngine PRIVATE

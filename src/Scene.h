@@ -30,13 +30,13 @@ public:
 
     std::vector<GameObject*> gameObjects = {};
 
-    void Init();
+    void Init() const;
 
     void Update(double delta_time);
 
-    void AddLight(Light *light);
+    void Add(Light *light);
 
-    void AddGameObject(GameObject *gameObject);
+    void Add(GameObject *gameObject);
 
 private:
     Camera *camera = nullptr;

@@ -12,7 +12,6 @@ Cube* Cube::BuildCube() {
     auto* obj = new Cube();
     auto* renderer = obj->AddComponent<MeshRenderer>();
     renderer->mesh = mesh;
-    renderer->gameObject = obj;
     return obj;
 }
 

@@ -4,12 +4,10 @@
 
 #include "MeshRenderer.h"
 #include "../gameObject/Camera.h"
-#include "Transform.h"
-#include "../graphics/RenderContext.h"
 #include "../graphics/DefaultMaterial.h"
 
 void MeshRenderer::Draw(const RenderContext &context) const {
-    material->Enable(context, gameObject);
+    material->Enable(context, GetGameObject());
     mesh->Bind();
 
     glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, nullptr);

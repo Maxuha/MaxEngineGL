@@ -12,7 +12,7 @@ void Material::Enable(const RenderContext &context, GameObject* gameObject) {
 
     shader->SetUniform("view", context.viewMatrix);
     shader->SetUniform("projection", context.projectionMatrix);
-    shader->SetUniform("model", gameObject->GetComponent<Transform>()->GetModelMatrix());
+    shader->SetUniform("model", gameObject->GetComponent<Transform>()->GetWorldMatrix());
 
     shader->SetUniform("lightDirection", context.lightDirection);
     shader->SetUniform("lightColor", context.lightColor);

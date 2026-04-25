@@ -11,6 +11,15 @@
 
 class AABB {
 public:
+    AABB() {
+        min = Vector3(0, 0, 0);
+        max = Vector3(1, 1, 1);
+    }
+
+    Vector3 min{}, max{};
+
+    bool Intersect(const AABB& AABB) const;
+    static Vector3 CalculateOverlap(const AABB &a, const AABB &b);
     static Vector3 GetCenter(std::span<const Vertex> vertices);
 };
 

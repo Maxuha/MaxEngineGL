@@ -13,19 +13,21 @@ void FPSCamera::Start() {
 void FPSCamera::Update(float delta_time) {
     Camera::Update(delta_time);
 
+    auto* cameraTransform = GetComponent<Transform>();
+
     auto direction = Vector3::Zero();
 
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_W)) {
-        direction += Vector3::Forward();
+        direction += cameraTransform->Forward();
     }
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_S)) {
-        direction -= Vector3::Forward();
+        direction -= cameraTransform->Forward();
     }
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_A)) {
-        direction -= Vector3::Right();
+        direction -= cameraTransform->Right();
     }
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_D)) {
-        direction += Vector3::Right();
+        direction += cameraTransform->Right();
     }
 
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_LEFT_SHIFT)) {
@@ -34,12 +36,10 @@ void FPSCamera::Update(float delta_time) {
         cameraSpeed = minCameraSpeed;
     }
 
-    auto* cameraTransform = GetComponent<Transform>();
-
     if (InputController::GetInstance().GetKeyDown(GLFW_KEY_W) ||
         InputController::GetInstance().GetKeyDown(GLFW_KEY_S) ||
         InputController::GetInstance().GetKeyDown(GLFW_KEY_A) ||
-        InputController::GetInstance().GetKeyDown(GLFW_KEY_A)) {
+        InputController::GetInstance().GetKeyDown(GLFW_KEY_D)) {
             cameraTransform->Translate(direction * cameraSpeed * delta_time);
         }
 
