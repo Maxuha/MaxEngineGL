@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include "../IO/FileReader.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "../math/Color.h"
 
 void Shader::Init(const char *vertexShaderPath, const char *fragmentShaderPath) {
     const std::string vSource = FileReader::ReadFileString(vertexShaderPath);
@@ -64,6 +65,16 @@ void Shader::SetUniform(const std::string& var, Vector3 vec) const {
     };
 
     glUniform3fv(varId, 1, glm::value_ptr(vec.Convert<glm::vec3>()));
+}
+
+void Shader::SetUniform(const std::string& var, const int val) const {
+    const GLint varId = glGetUniformLocation(Id, var.c_str());
+
+    if (varId == -1) {
+        throw std::runtime_error("Invalid variable " + var);
+    };
+
+    glUniform1i(varId, val);
 }
 
 void Shader::SetUniform(const std::string& var, const float val) const {

@@ -1,8 +1,6 @@
-#include <iostream>
 
 #include "src/di/DIContainer.h"
 #include "src/FPSCamera.h"
-#include "src/physics/PhysicsEngine.h"
 #include "src/Scene.h"
 #include "src/Window.h"
 #include "src/gameObject/Camera.h"
@@ -10,45 +8,50 @@
 #include "src/graphics/DefaultMaterial.h"
 #include "src/components/MeshRenderer.h"
 #include "src/components/physics/collision/BoxCollider.h"
-#include "src/math/Matrix3x3.h"
+#include "src/gameObject/light/AmbientLight.h"
+#include "src/gameObject/light/DirectionalLight.h"
+#include "src/gameObject/light/PointLight.h"
+#include "src/gameObject/light/SpotLight.h"
+#include "src/math/Color.h"
 
 class MeshRenderer;
 class Camera;
 class BoxCollider;
 
-
 int main() {
     DIContainer* container = &DIContainer::GetInstance();
 
-    constexpr int width = 1280;
-    constexpr int height = 720;
+    constexpr int width = 1920;
+    constexpr int height = 1080;
 
     auto* window = new Window(width, height);
     window->Open();
 
-    auto* camera = new FPSCamera();
-    camera->fov = 45;
-    camera->near = 0.01;
-    camera->far = 100;
-    camera->aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    auto* camera = new FPSCamera(45, 0.01, 100, static_cast<float>(width) / static_cast<float>(height));
 
-    auto* light = new DirectionalLight();
-    light->direction = Vector3(1.0f, -1.0f, -1.0f);
-    light->intensity = 1.5f;
-    light->color = Color(1.0f, 1.0f, 1.0f);
+    auto* ambientLight = new AmbientLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
 
-    auto* litShader = container->Get<AssetManager>()->Import<Shader>("basic_lit");
-    auto* texture = container->Get<AssetManager>()->Import<Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
+    auto* sun = new DirectionalLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+    sun->GetComponent<Transform>()->position = Vector3(0, 5, 0);
+    sun->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
 
-    auto* defaultMaterial = new DefaultMaterial(litShader);
-    defaultMaterial->color = Color(1.0f, 1.0f, 1.0f);
-    defaultMaterial->texture = texture;
+    auto* lamp = new PointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 5.0f, 10.0f);
+    lamp->GetComponent<Transform>()->position = Vector3(0, 4, 9);
+    lamp->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+
+    auto* flashLight = new SpotLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 10.0f, std::cos(glm::radians(12.5f)), std::cos(glm::radians(17.5f)));
+
+    auto* litShader = container->Get<AssetManager>()->Import<Shader>("phong/phong");
+
+    auto* diffuseTexture = container->Get<AssetManager>()->Import<Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
+    auto* specularTexture = container->Get<AssetManager>()->Import<Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
+
+    auto* defaultMaterial = new DefaultMaterial(litShader, diffuseTexture, specularTexture, Color(1.0f, 1.0f, 1.0f, 1.0f));
 
     // Building a glove
     Mesh* mesh = container->Get<AssetManager>()->Import<Mesh>(R"(assets/glove.obj)");
 
     const auto glove = new GameObject();
-    glove->name = "glove";
 
     auto *gloveMeshRenderer = glove->AddComponent<MeshRenderer>();
     gloveMeshRenderer->mesh = mesh;
@@ -56,6 +59,11 @@ int main() {
 
     auto *gloveTransform = glove->GetComponent<Transform>();
     gloveTransform->pivot = mesh->center;
+
+    diffuseTexture = container->Get<AssetManager>()->Import<Texture>(R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
+    specularTexture = container->Get<AssetManager>()->Import<Texture>(R"(assets/models/glove/texture/wood_with_steel_specular.png)");
+
+    defaultMaterial = new DefaultMaterial(litShader, diffuseTexture, specularTexture, Color(1.0f, 1.0f, 1.0f, 1.0f));
 
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = defaultMaterial;
@@ -69,7 +77,10 @@ int main() {
     cube3->GetComponent<MeshRenderer>()->material = defaultMaterial;
 
     auto* scene = new Scene(camera);
-    scene->Add(light);
+    scene->Add(lamp);
+    //scene->Add(sun);
+    scene->Add(flashLight);
+    scene->Add(ambientLight);
     scene->Add(cube1);
     scene->Add(cube2);
     scene->Add(cube3);
@@ -78,7 +89,7 @@ int main() {
     cube1->GetComponent<Transform>()->Translate(cube1->GetComponent<Transform>()->Forward() * -20);
     cube2->GetComponent<Transform>()->Translate(cube2->GetComponent<Transform>()->Forward() * 4);
     cube3->GetComponent<Transform>()->Translate(cube3->GetComponent<Transform>()->Forward() * 6);
-    glove->GetComponent<Transform>()->Translate(glove->GetComponent<Transform>()->Forward() * 20);
+    // glove->GetComponent<Transform>()->Translate(glove->GetComponent<Transform>()->Forward() * 20);
 
     // cube2->GetComponent<Transform>()->SetParent(cube1->GetComponent<Transform>());
     // cube3->GetComponent<Transform>()->SetParent(cube2->GetComponent<Transform>());

@@ -6,7 +6,11 @@
 #include "../components/Transform.h"
 
 GameObject::GameObject() {
-    AddComponent<Transform>();
+    transform = AddComponent<Transform>();
+}
+
+Transform* GameObject::GetTransform() const {
+    return transform;
 }
 
 void GameObject::Start() {

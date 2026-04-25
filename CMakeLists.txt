@@ -102,6 +102,14 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/di/DIContainer.cpp
         src/components/physics/collision/Collider.cpp
         src/components/physics/collision/Collider.h
+        src/gameObject/light/PointLight.cpp
+        src/gameObject/light/PointLight.h
+        src/gameObject/light/SpotLight.cpp
+        src/gameObject/light/SpotLight.h
+        src/gameObject/light/AmbientLight.cpp
+        src/gameObject/light/AmbientLight.h
+        src/gameObject/light/LocationalLight.cpp
+        src/gameObject/light/LocationalLight.h
 )
 
 target_include_directories(MaxEngine PRIVATE

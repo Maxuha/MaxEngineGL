@@ -27,6 +27,7 @@ public:
 
     void SetUniform(const std::string& var, Matrix4x4 mat) const;
     void SetUniform(const std::string& var, Vector3 vec) const;
+    void SetUniform(const std::string& var, int val) const;
     void SetUniform(const std::string& var, float val) const;
     void SetUniform(const std::string& var, Color color) const;
 

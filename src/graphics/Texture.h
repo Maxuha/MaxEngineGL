@@ -14,6 +14,12 @@ public:
     void Bind();
     void Unbind();
 
+    void Activate(unsigned int i);
+
+    int GetId() const {
+        return Id;
+    };
+
 private:
     unsigned int Id{};
 

@@ -4,10 +4,11 @@
 
 #include "MeshRenderer.h"
 #include "../gameObject/Camera.h"
+#include "../gameObject/light/Light.h"
 #include "../graphics/DefaultMaterial.h"
 
-void MeshRenderer::Draw(const RenderContext &context) const {
-    material->Enable(context, GetGameObject());
+void MeshRenderer::Draw(std::vector<Light*>& lights, Camera& camera) const {
+    material->Enable(lights, camera, *GetGameObject());
     mesh->Bind();
 
     glDrawElements(GL_TRIANGLES, mesh->GetIndexCount(), GL_UNSIGNED_INT, nullptr);

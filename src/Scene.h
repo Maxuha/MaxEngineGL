@@ -6,9 +6,7 @@
 #define MAXENGINE_SCENE_H
 #include <string>
 #include "gameObject/Camera.h"
-#include "gameObject/light/DirectionalLight.h"
 #include "gameObject/light/Light.h"
-#include "graphics/RenderContext.h"
 
 class Window;
 
@@ -26,9 +24,6 @@ public:
 
     std::string name;
 
-    std::vector<Light*> lights = {};
-
-    std::vector<GameObject*> gameObjects = {};
 
     void Init() const;
 
@@ -39,9 +34,11 @@ public:
     void Add(GameObject *gameObject);
 
 private:
-    Camera *camera = nullptr;
-    RenderContext render_context;
+    Camera *camera;
 
+    std::vector<Light *> lights;
+
+    std::vector<GameObject *> gameObjects;
 };
 
 

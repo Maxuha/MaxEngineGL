@@ -20,21 +20,15 @@ void Scene::Update(const double delta_time) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       gameObjects[0]->GetComponent<Transform>()->Translate(gameObjects[0]->GetComponent<Transform>()->Forward() * 2.0f * delta_time);
-      gameObjects[3]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
+    //  gameObjects[3]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
      // gameObjects[1]->GetComponent<Transform>()->RotateYaw(-50.0f * delta_time);
      // gameObjects[2]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
-
-    render_context.viewMatrix = camera->ViewMatrix();
-    render_context.projectionMatrix = camera->ProjectionMatrix();
-    render_context.lightDirection = dynamic_cast<DirectionalLight*>(lights[0])->direction;
-    render_context.lightColor = dynamic_cast<DirectionalLight*>(lights[0])->color;
-    render_context.lightIntensity = dynamic_cast<DirectionalLight*>(lights[0])->intensity;
 
     camera->Update(delta_time);
 
     for (GameObject *obj: gameObjects) {
         obj->Update(delta_time);
-        obj->GetComponent<MeshRenderer>()->Draw(render_context);
+        obj->GetComponent<MeshRenderer>()->Draw(lights, *camera);
     }
 }
 

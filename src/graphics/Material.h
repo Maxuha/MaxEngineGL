@@ -5,19 +5,19 @@
 #ifndef MAXENGINE_MATERIAL_H
 #define MAXENGINE_MATERIAL_H
 #include "Shader.h"
+#include "../gameObject/Camera.h"
+#include "../gameObject/light/Light.h"
 
 class GameObject;
 struct RenderContext;
 
 class Material {
 public:
+    explicit Material(Shader* shader);
+
     virtual ~Material() = default;
 
-    explicit Material(Shader* shader) {
-        this->shader = shader;
-    };
-
-    virtual void Enable(const RenderContext &context, GameObject* gameObject);
+    virtual void Enable(std::vector<Light*>& lights, Camera& camera, GameObject& gameObject);
     virtual void Disable();
 
 private:

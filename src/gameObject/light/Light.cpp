@@ -3,3 +3,6 @@
 //
 
 #include "Light.h"
+
+Light::Light(const Color color, const float intensity) : intensity(intensity), color(color) {
+}

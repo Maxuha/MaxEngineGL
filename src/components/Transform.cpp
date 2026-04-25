@@ -4,17 +4,17 @@
 
 Vector3 Transform::Forward() const {
     const Matrix4x4 rotMat = Matrix4x4::Rotate(rotation);
-    return Vector3(rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2]);
+    return {rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2]};
 }
 
 Vector3 Transform::Up() const {
     const Matrix4x4 rotMat = Matrix4x4::Rotate(rotation);
-    return Vector3(rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2]);
+    return {rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2]};
 }
 
 Vector3 Transform::Right() const {
     const Matrix4x4 rotMat = Matrix4x4::Rotate(rotation);
-    return Vector3(rotMat.m[0][0], rotMat.m[0][1], rotMat.m[0][2]);
+    return {rotMat.m[0][0], rotMat.m[0][1], rotMat.m[0][2]};
 }
 
 Matrix4x4 Transform::GetLocalMatrix() const {
@@ -31,6 +31,36 @@ Matrix4x4 Transform::GetWorldMatrix() const {
 
     return model;
 }
+
+Matrix4x4 Transform::LookAt() const {
+    auto viewMatrix = GetWorldMatrix();
+
+    // Invert z for OpenGL
+    viewMatrix.m[2][0] = -viewMatrix.m[2][0];
+    viewMatrix.m[2][1] = -viewMatrix.m[2][1];
+    viewMatrix.m[2][2] = -viewMatrix.m[2][2];
+    viewMatrix.m[2][3] = -viewMatrix.m[2][3];
+
+    viewMatrix = viewMatrix.Inverse();
+
+    return viewMatrix;
+}
+
+Matrix4x4 Transform::Perspective(const float fov, const float aspectRatio, const float near, const float far) const {
+    auto projectionMatrix = Matrix4x4(0);
+
+    const float fovRad = glm::radians(fov);
+    const float tanHalfFov = std::tan(fovRad / 2);
+
+    projectionMatrix.m[0][0] = 1 / tanHalfFov / aspectRatio;
+    projectionMatrix.m[1][1] = 1 / tanHalfFov;
+    projectionMatrix.m[2][2] = -far / (far - near) ;
+    projectionMatrix.m[3][2] = -(near * far) / (far - near);
+    projectionMatrix.m[2][3] = -1;
+
+    return projectionMatrix;
+}
+
 
 void Transform::SetParent(Transform *parent) {
 

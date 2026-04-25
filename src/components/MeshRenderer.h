@@ -21,7 +21,7 @@ public:
 
     Material* material = nullptr;
 
-    void Draw(const RenderContext &context) const;
+    void Draw(std::vector<Light*>& lights, Camera& camera) const;
 };
 
 

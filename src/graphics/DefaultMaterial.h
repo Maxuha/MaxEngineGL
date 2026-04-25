@@ -10,17 +10,22 @@
 
 class GameObject;
 
-class DefaultMaterial: public Material {
-
+class DefaultMaterial : public Material {
 public:
-    explicit DefaultMaterial(Shader* shader);
+    explicit DefaultMaterial(Shader *shader, Texture *diffuse, Texture *specular, Color color);
 
-    Color color{};
-    Texture* texture;
+    void Enable(std::vector<Light *>& lights, Camera &camera, GameObject &gameObject) override;
 
-    void Enable(const RenderContext &context, GameObject* gameObject) override;
     void Disable() override;
 
+private:
+    Color color;;
+    Texture *diffuseTexture;
+    Texture *specularTexture;
+
+    int diffuseLocation = 0;
+    int specularLocation = 1;
+    float shininess = 64.0f;
 };
 
 

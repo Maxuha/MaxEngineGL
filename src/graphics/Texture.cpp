@@ -8,7 +8,7 @@
 Texture::Texture(const unsigned char *data, const int width, const int height) {
     glGenTextures(1, &Id);
 
-    Bind();
+    glBindTexture(GL_TEXTURE_2D, Id);
 
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -19,6 +19,7 @@ Texture::Texture(const unsigned char *data, const int width, const int height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 Texture::~Texture() {
@@ -33,4 +34,8 @@ void Texture::Bind() {
 
 void Texture::Unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Texture::Activate(const unsigned int i) {
+    glActiveTexture(GL_TEXTURE0 + i);
 }
