@@ -6,6 +6,9 @@
 
 #include "InputController.h"
 
+FPSCamera::FPSCamera(float fov, float near, float far, float aspectRatio) : Camera(fov, near, far, aspectRatio){
+}
+
 void FPSCamera::Start() {
     Camera::Start();
 }

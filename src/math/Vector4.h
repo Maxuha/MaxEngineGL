@@ -18,6 +18,8 @@ public:
     Vector4(const Vector3 v, const float w) : x(v.x), y(v.y), z(v.z), w(w) {}
 
     static float DotProduct(const Vector4 &v1, const Vector4 &v2);
+
+    Vector4 operator*(const float value) const;
 };
 
 

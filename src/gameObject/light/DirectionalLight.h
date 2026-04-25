@@ -5,20 +5,13 @@
 #ifndef MAXENGINE_DIRECTIONALLIGHT_H
 #define MAXENGINE_DIRECTIONALLIGHT_H
 #include "Light.h"
-#include "../../components/Transform.h"
-#include "../../math/Color.h"
-#include "../../math/Vector3.h"
 
 
 class DirectionalLight : public Light {
-    public:
-    DirectionalLight() {
-        AddComponent<Transform>();
-    }
+public:
+    DirectionalLight(Color color, float intensity);
 
-    float intensity = 0;;
-    Vector3 direction = {};
-    Color color = {} ;
+    void Enable(Shader &shader, int i) override;
 };
 
 

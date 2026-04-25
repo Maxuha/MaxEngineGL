@@ -12,7 +12,9 @@ struct RenderContext {
     Matrix4x4 viewMatrix{0};
     Matrix4x4 projectionMatrix{0};
 
-    Color lightColor{};
+    Vector3 viewPosition{};
+
+    Color lightColor;
     Vector3 lightDirection{};
     float lightIntensity{};
 };

@@ -8,16 +8,15 @@
 #include <string>
 #include <typeindex>
 #include "../components/Component.h"
+#include "../components/Transform.h"
 
 class GameObject {
 public:
-    virtual ~GameObject() = default;
-
     GameObject();
 
-    std::string name;
+    virtual ~GameObject() = default;
 
-    std::multimap<std::type_index, Component*> components;
+    Transform* GetTransform() const;
 
     virtual void Start();
 
@@ -49,6 +48,13 @@ public:
         if (component == components.end()) return nullptr;
         return static_cast<T*>(component->second);
     }
+
+private:
+    std::string name;
+
+    std::multimap<std::type_index, Component*> components;
+
+    Transform* transform;
 };
 
 

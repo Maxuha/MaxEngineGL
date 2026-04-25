@@ -7,9 +7,17 @@
 
 #include <glm/glm.hpp>
 
+class Vector4;
+
 class Vector3 {
 public:
-    float x, y, z;
+    Vector3();
+
+    Vector3(float x, float y, float z);
+
+    Vector3(Vector4 vec);
+
+    float x{}, y{}, z{};
 
     static Vector3 Zero();
 

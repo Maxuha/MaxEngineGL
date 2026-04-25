@@ -5,6 +5,23 @@
 #include "Vector3.h"
 #include <cmath>
 
+#include "Vector4.h"
+
+Vector3::Vector3() {
+    x = 0.0f;
+    y = 0.0f;
+    z = 0.0f;
+}
+
+Vector3::Vector3(const float x, const float y, const float z) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+}
+
+Vector3::Vector3(const Vector4 vec) : Vector3(vec.x, vec.y, vec.z) {
+}
+
 Vector3 Vector3::Zero() {
     return Vector3(0.0f, 0.0f, 0.0f);
 }
