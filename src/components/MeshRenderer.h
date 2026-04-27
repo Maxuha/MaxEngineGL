@@ -12,14 +12,14 @@ class Camera;
 
 class MeshRenderer : public Component {
 public:
-    explicit MeshRenderer(GameObject* gameObject) : Component(gameObject), mesh(nullptr) {
+    explicit MeshRenderer(GameObject* gameObject) : Component(gameObject) {
     }
 
     ~MeshRenderer() = default;
 
     Mesh* mesh;
 
-    Material* material = nullptr;
+    Material* material;
 
     void Draw(std::vector<Light*>& lights, Camera& camera) const;
 };

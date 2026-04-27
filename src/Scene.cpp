@@ -28,7 +28,27 @@ void Scene::Update(const double delta_time) {
 
     for (GameObject *obj: gameObjects) {
         obj->Update(delta_time);
-        obj->GetComponent<MeshRenderer>()->Draw(lights, *camera);
+        const auto* meshRenderer = obj->GetComponent<MeshRenderer>();
+
+        std::vector<MeshRenderer*> renderers;
+
+        GetMeshRenderer(obj->GetTransform(), renderers);
+
+       // renderers.push_back(->GetGameObject()->GetComponent<MeshRenderer>());
+
+        for (const auto& renderer: renderers) {
+            if (renderer == nullptr) continue;
+            renderer->Draw(lights, *camera);
+        }
+
+        // if (meshRenderer != nullptr) {
+        //     meshRenderer->Draw(lights, *camera);
+        // }
+
+        // for (const Transform* child: obj->GetTransform()->children) {
+        //     const auto* childRenderer = child->GetGameObject()->GetComponent<MeshRenderer>();
+        //     childRenderer->Draw(lights, *camera);
+        // }
     }
 }
 
@@ -38,4 +58,14 @@ void Scene::Add(Light *light) {
 
 void Scene::Add(GameObject *gameObject) {
     gameObjects.push_back(gameObject);
+}
+
+Transform* Scene::GetMeshRenderer(Transform *transform, std::vector<MeshRenderer*>& meshRenderers) {
+    meshRenderers.push_back(transform->GetGameObject()->GetComponent<MeshRenderer>());
+
+    for (const auto& pair: transform->children) {
+        meshRenderers.push_back(pair->GetGameObject()->GetComponent<MeshRenderer>());
+        GetMeshRenderer(pair, meshRenderers);
+    }
+    return transform;
 }

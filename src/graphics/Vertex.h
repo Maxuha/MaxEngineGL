@@ -7,12 +7,19 @@
 #include "../math/Vector2.h"
 #include "../math/Vector3.h"
 
+#define MAX_BONE_INFLUENCE 4
 
-class Vertex {
-    public:
+struct Vertex {
     Vector3 position;
     Vector3 normal;
-    Vector2 uv;
+    Vector2 texCoords{};
+    Vector3 tangent;
+    Vector3 bitangent;
+
+    //bone indexes which will influence this vertex
+    int m_BoneIDs[MAX_BONE_INFLUENCE];
+    //weights from each bone
+    float m_Weights[MAX_BONE_INFLUENCE];
 };
 
 

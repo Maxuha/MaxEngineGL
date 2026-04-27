@@ -9,12 +9,14 @@ DIContainer& DIContainer::GetInstance() {
 DIContainer::DIContainer()
 {
     objImporter     = std::make_unique<ObjImporter>();
+    assimpImporter     = std::make_unique<AssimpImporter>();
     textureImporter = std::make_unique<TextureImporter>();
     shaderImporter  = std::make_unique<ShaderImporter>();
 
     meshAssetManager = std::make_unique<MeshAssetManager>(
         std::unordered_map<std::string, ModelImporter*>{
-            { ".obj", objImporter.get() }
+            { ".obj", objImporter.get() },
+            { ".fbx", assimpImporter.get() }
         });
 
     assetManager = std::make_unique<AssetManager>(

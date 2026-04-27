@@ -24,7 +24,7 @@ public:
     }
 
     template<typename T>
-    T *Import(const std::string &path);
+    T* Import(const std::string &path);
 
 private:
     MeshAssetManager *meshAssetManager;
@@ -33,8 +33,8 @@ private:
 };
 
 template<typename T>
-T *AssetManager::Import(const std::string &path) {
-    if constexpr (std::is_same_v<T, Mesh>) {
+T* AssetManager::Import(const std::string &path) {
+    if constexpr (std::is_same_v<T, Model>) {
         return meshAssetManager->Import(path);
     } else if constexpr (std::is_same_v<T, Texture>) {
         return textureImporter->Import(path);

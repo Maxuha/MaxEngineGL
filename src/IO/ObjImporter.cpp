@@ -15,7 +15,7 @@
 #include "../math/Vector2.h"
 #include "model/IndexSet.h"
 
-Mesh* ObjImporter::Import(const char* fileName) {
+Model* ObjImporter::Import(const char* fileName) {
     Mesh* mesh ;
 
     std::vector<Vector3> vPos{};
@@ -92,17 +92,17 @@ Mesh* ObjImporter::Import(const char* fileName) {
                 Vertex vertex1;
                 vertex1.position = vPos[v_idx[0]-1];
                 vertex1.normal = vNormals[vn_idx[0]-1];
-                vertex1.uv = Vector2(vTexcoords[vt_idx[0]-1].x, 1 - vTexcoords[vt_idx[0]-1].y);
+                vertex1.texCoords = Vector2(vTexcoords[vt_idx[0]-1].x, 1 - vTexcoords[vt_idx[0]-1].y);
 
                 Vertex vertex2;
                 vertex2.position = vPos[v_idx[1]-1];
                 vertex2.normal = vNormals[vn_idx[1]-1];
-                vertex2.uv = Vector2(vTexcoords[vt_idx[1]-1].x, 1 - vTexcoords[vt_idx[1]-1].y);
+                vertex2.texCoords = Vector2(vTexcoords[vt_idx[1]-1].x, 1 - vTexcoords[vt_idx[1]-1].y);
 
                 Vertex vertex3;
                 vertex3.position = vPos[v_idx[2]-1];
                 vertex3.normal = vNormals[vn_idx[2]-1];
-                vertex3.uv = Vector2(vTexcoords[vt_idx[2]-1].x, 1 - vTexcoords[vt_idx[2]-1].y);
+                vertex3.texCoords = Vector2(vTexcoords[vt_idx[2]-1].x, 1 - vTexcoords[vt_idx[2]-1].y);
 
                 IndexSet index_set1 { v_idx[0]-1, vn_idx[0]-1, vt_idx[0]-1 };
                 IndexSet index_set2 { v_idx[1]-1, vn_idx[1]-1, vt_idx[1]-1 };
@@ -144,5 +144,13 @@ Mesh* ObjImporter::Import(const char* fileName) {
         std::cerr << "Failed open file" << std::endl;
     }
 
-    return mesh;
+    std::vector<Mesh*> meshes = {  };
+
+    meshes.push_back(mesh);
+
+    auto* model = new Model;
+    MeshEntry entry = MeshEntry();
+    entry.mesh = mesh;
+    model->meshes = {entry};
+    return model;
 }

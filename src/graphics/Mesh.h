@@ -10,6 +10,8 @@
 #include "buffers/VertexArray.h"
 #include "buffers/VertexBuffer.h"
 
+class Texture;
+
 class Mesh {
 public:
     explicit Mesh(std::span<Vertex> vertices, std::span<const unsigned int> indices);
@@ -22,6 +24,7 @@ public:
 
     unsigned int Size;
     Vector3 center{};
+    Vector3 position{};
 
     VertexArray* vertexArray;
     VertexBuffer* vertexBuffer;

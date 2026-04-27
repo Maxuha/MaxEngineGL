@@ -8,7 +8,7 @@
 
 class ObjImporter : public ModelImporter {
 public:
-    Mesh* Import(const char* fileName) override;
+    Model* Import(const char* fileName) override;
 };
 
 #endif //MAXENGINE_OBJIMPRORTER_H

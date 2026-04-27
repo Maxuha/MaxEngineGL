@@ -18,7 +18,7 @@ public:
     void Update(float delta_time) override;
 
 private:
-    float cameraSpeed = 0, minCameraSpeed = 2, maxCameraSpeed = 4;
+    float cameraSpeed = 0, minCameraSpeed = 2, maxCameraSpeed = 10;
     Vector3 directionRot = Vector3::Zero();
 };
 

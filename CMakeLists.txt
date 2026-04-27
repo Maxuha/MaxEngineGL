@@ -13,6 +13,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glfw)
 
+FetchContent_Declare(
+        assimp
+        GIT_REPOSITORY https://github.com/assimp/assimp.git
+        GIT_TAG v6.0.4
+)
+
+FetchContent_MakeAvailable(assimp)
+
 add_executable(MaxEngine main.cpp src/glad.c
         src/math/Vector3.cpp
         src/math/Vector3.h
@@ -110,6 +118,10 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/gameObject/light/AmbientLight.h
         src/gameObject/light/LocationalLight.cpp
         src/gameObject/light/LocationalLight.h
+        src/IO/AssimpImporter.cpp
+        src/IO/AssimpImporter.h
+        src/graphics/Model.cpp
+        src/graphics/Model.h
 )
 
 target_include_directories(MaxEngine PRIVATE
@@ -119,9 +131,20 @@ target_include_directories(MaxEngine PRIVATE
 target_link_libraries(MaxEngine PRIVATE
         glfw
         opengl32
+        assimp
 )
+
+if(MINGW)
+    target_link_options(MaxEngine PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_definitions(-DROOT="${CMAKE_SOURCE_DIR}")
 add_definitions(-DASSETS_ROOT="${CMAKE_SOURCE_DIR}/assets")
 
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
+
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
