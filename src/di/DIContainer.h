@@ -16,6 +16,8 @@
 #include <memory>
 #include <typeindex>
 
+#include "../IO/AssimpImporter.h"
+
 
 class DIContainer
 {
@@ -48,6 +50,7 @@ private:
     std::unordered_map<std::type_index, std::any> services;
 
     std::unique_ptr<ObjImporter>      objImporter;
+    std::unique_ptr<AssimpImporter>   assimpImporter;
     std::unique_ptr<TextureImporter>  textureImporter;
     std::unique_ptr<ShaderImporter>   shaderImporter;
     std::unique_ptr<MeshAssetManager> meshAssetManager;

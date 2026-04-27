@@ -26,7 +26,7 @@ Matrix4x4 Transform::GetWorldMatrix() const {
     auto model = GetLocalMatrix();
 
     if (parent != nullptr) {
-        model = model * parent->GetWorldMatrix();
+        model = parent->GetWorldMatrix() * model;
     }
 
     return model;
@@ -61,15 +61,14 @@ Matrix4x4 Transform::Perspective(const float fov, const float aspectRatio, const
     return projectionMatrix;
 }
 
-
 void Transform::SetParent(Transform *parent) {
 
-    auto localMatrix = Matrix4x4(0);
+    auto localMatrix = GetLocalMatrix();
 
     if (parent == nullptr) {
-        localMatrix = GetLocalMatrix() * this->parent->GetWorldMatrix();
+       // localMatrix = GetWorldMatrix() * this->parent->GetWorldMatrix();
     } else {
-        localMatrix = GetLocalMatrix() * parent->GetWorldMatrix().Inverse();
+        localMatrix = parent->GetWorldMatrix().Inverse() * GetWorldMatrix();
     }
 
     position.x = localMatrix.m[3][0];
@@ -77,6 +76,18 @@ void Transform::SetParent(Transform *parent) {
     position.z = localMatrix.m[3][2];
 
     this->parent = parent;
+}
+
+void Transform::AddChild(Transform *child) {
+    children.push_back(child);
+}
+
+void Transform::RemoveChild(Transform *child) {
+    std::erase(children, child);
+}
+
+Transform* Transform::GetChild(const int index) const {
+    return children[index];
 }
 
 void Transform::Translate(const Vector3 dir) {

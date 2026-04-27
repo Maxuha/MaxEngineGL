@@ -5,10 +5,12 @@
 #ifndef MAXENGINE_TEXTURE_H
 #define MAXENGINE_TEXTURE_H
 
+#include "glad/glad.h"
+
 
 class Texture {
 public:
-    Texture(const unsigned char *data, int width, int height);
+    Texture(const unsigned char *data, int width, int height, const GLenum format);
     ~Texture();
 
     void Bind();

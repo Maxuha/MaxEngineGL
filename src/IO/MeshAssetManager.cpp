@@ -5,7 +5,7 @@
 #include "MeshAssetManager.h"
 #include "ModelImporter.h"
 
-Mesh * MeshAssetManager::Import(std::string path) {
+Model* MeshAssetManager::Import(std::string path) {
     return importers[GetExtension(path)]->Import(path.c_str());
 }
 

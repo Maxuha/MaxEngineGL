@@ -18,6 +18,7 @@ class Transform : public Component {
     Vector3 scale = Vector3::One();
 
     Transform* parent = nullptr;
+    std::vector<Transform*> children;
 
     Vector3 Forward() const;
     Vector3 Up() const;
@@ -31,6 +32,9 @@ class Transform : public Component {
     Vector3 pivot = { 0.5f, 0.5f, 0.5f };
 
     void SetParent(Transform* parent);
+    void AddChild(Transform* child);
+    void RemoveChild(Transform* child);
+    Transform* GetChild(int index) const;
 
     void Translate(Vector3 dir);
 

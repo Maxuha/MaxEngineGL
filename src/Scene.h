@@ -5,6 +5,8 @@
 #ifndef MAXENGINE_SCENE_H
 #define MAXENGINE_SCENE_H
 #include <string>
+
+#include "components/MeshRenderer.h"
 #include "gameObject/Camera.h"
 #include "gameObject/light/Light.h"
 
@@ -39,6 +41,8 @@ private:
     std::vector<Light *> lights;
 
     std::vector<GameObject *> gameObjects;
+
+    Transform* GetMeshRenderer(Transform* transform, std::vector<MeshRenderer*>& meshRenderers);
 };
 
 
