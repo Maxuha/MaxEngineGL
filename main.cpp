@@ -33,7 +33,7 @@ int main() {
     auto *ambientLight = new AmbientLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
 
     auto *sun = new DirectionalLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
-    sun->GetComponent<Transform>()->position = Vector3(0, 5, 0);
+    sun->GetComponent<Transform>()->position = Vector3(0, 6, 3);
     sun->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
 
     auto *lamp = new PointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 5.0f, 10.0f);
@@ -43,7 +43,8 @@ int main() {
     auto *flashLight = new SpotLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 10.0f, std::cos(glm::radians(12.5f)),
                                      std::cos(glm::radians(17.5f)));
 
-    auto *litShader = container->Get<AssetManager>()->Import<Shader>("phong/phong");
+     auto *litShader = container->Get<AssetManager>()->Import<Shader>("phong/phong");
+   // auto *litShader = container->Get<AssetManager>()->Import<Shader>("basic_lit/basic_unlit");
 
     // auto *diffuseTexture = container->Get<AssetManager>()->Import<
     //     Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
@@ -85,7 +86,7 @@ int main() {
         glove->GetTransform()->AddChild(gloveTransform);
     }
 
-    glove->GetTransform()->position = Vector3(0, 0, 10);
+    glove->GetTransform()->position = Vector3(0, 0, 9);
     glove->GetTransform()->rotation = Vector3(0, 180, 0);
     glove->GetTransform()->scale = Vector3(0.005f, 0.005f, 0.005f);
 
@@ -114,14 +115,21 @@ int main() {
     const auto cube3 = Cube::BuildCube();
     cube3->GetComponent<MeshRenderer>()->material = defaultMaterial;
 
+    const auto cube4 = Cube::BuildCube();
+    cube4->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    cube4->GetTransform()->position = Vector3(0, -4, 0);
+    cube4->GetTransform()->scale = Vector3(20, .1, 20);
+
     auto *scene = new Scene(camera);
-    scene->Add(lamp);
-    scene->Add(sun);
     scene->Add(flashLight);
+    // scene->Add(lamp);
+    scene->Add(sun);
+    // scene->Add(flashLight);
     scene->Add(ambientLight);
     scene->Add(cube1);
     scene->Add(cube2);
     scene->Add(cube3);
+    scene->Add(cube4);
     scene->Add(glove);
 
     // for (GameObject* glove: gloves) {

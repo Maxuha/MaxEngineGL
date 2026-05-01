@@ -28,6 +28,7 @@ class Transform : public Component {
     Matrix4x4 GetWorldMatrix() const;
     Matrix4x4 LookAt() const;
     Matrix4x4 Perspective(float fov, float aspectRatio, float near, float far) const;
+    Matrix4x4 Othographic(float left, float right, float bottom, float top, float near, float far) const;
 
     Vector3 pivot = { 0.5f, 0.5f, 0.5f };
 

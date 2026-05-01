@@ -30,6 +30,7 @@ public:
     void SetUniform(const std::string& var, int val) const;
     void SetUniform(const std::string& var, float val) const;
     void SetUniform(const std::string& var, Color color) const;
+    void SetUniform(const std::string& var, glm::mat4 color) const;
 
 
 private:

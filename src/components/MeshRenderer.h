@@ -22,6 +22,7 @@ public:
     Material* material;
 
     void Draw(std::vector<Light*>& lights, Camera& camera) const;
+    void Draw2(std::vector<Light*>& lights, Camera& camera) const;
 };
 
 

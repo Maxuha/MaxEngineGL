@@ -61,6 +61,18 @@ Matrix4x4 Transform::Perspective(const float fov, const float aspectRatio, const
     return projectionMatrix;
 }
 
+Matrix4x4 Transform::Othographic(float left, float right, float bottom, float top, float near, float far) const {
+    auto projectionMatrix = Matrix4x4(0);
+    projectionMatrix.m[0][0] = 2 / (right - left);
+    projectionMatrix.m[1][1] = 2 / (top - bottom);
+    projectionMatrix.m[2][2] = -2 / (far - near);
+    projectionMatrix.m[3][0] = -(right + left) / (right - left);
+    projectionMatrix.m[3][1] = -(top + bottom) / (top - bottom);
+    projectionMatrix.m[3][2] = -(far + near) / (far - near);
+    projectionMatrix.m[3][3] = 1;
+    return projectionMatrix;
+}
+
 void Transform::SetParent(Transform *parent) {
 
     auto localMatrix = GetLocalMatrix();
@@ -101,7 +113,8 @@ void Transform::RotateYaw(const float angle) {
 void Transform::RotatePitch(const float angle) {
     // Pitch angles (-90; 90)
     rotation.x += angle;
-    rotation.x = std::clamp(rotation.x, -90.0f, 90.0f);
+    // move to camera logic
+    //rotation.x = std::clamp(rotation.x, -90.0f, 90.0f);
 }
 
 void Transform::RotateRoll(const float angle) {

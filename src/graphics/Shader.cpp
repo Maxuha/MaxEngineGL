@@ -51,7 +51,7 @@ void Shader::SetUniform(const std::string& var, Matrix4x4 mat) const {
     const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
-        throw std::runtime_error("Invalid variable " + var);
+       // throw std::runtime_error("Invalid variable " + var);
     }
 
     glUniformMatrix4fv(varId, 1, false, glm::value_ptr(mat.Convert<glm::mat4>()));
@@ -61,7 +61,7 @@ void Shader::SetUniform(const std::string& var, Vector3 vec) const {
     const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
-        throw std::runtime_error("Invalid variable " + var);
+       // throw std::runtime_error("Invalid variable " + var);
     };
 
     glUniform3fv(varId, 1, glm::value_ptr(vec.Convert<glm::vec3>()));
@@ -71,7 +71,7 @@ void Shader::SetUniform(const std::string& var, const int val) const {
     const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
-        throw std::runtime_error("Invalid variable " + var);
+        //throw std::runtime_error("Invalid variable " + var);
     };
 
     glUniform1i(varId, val);
@@ -81,7 +81,7 @@ void Shader::SetUniform(const std::string& var, const float val) const {
     const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
-        throw std::runtime_error("Invalid variable " + var);
+      //  throw std::runtime_error("Invalid variable " + var);
     };
 
     glUniform1f(varId, val);
@@ -91,8 +91,18 @@ void Shader::SetUniform(const std::string &var, Color color) const {
     const GLint varId = glGetUniformLocation(Id, var.c_str());
 
     if (varId == -1) {
-        throw std::runtime_error("Invalid variable " + var);
+      //  throw std::runtime_error("Invalid variable " + var);
     };
 
     glUniform3f(varId, color.r, color.g, color.b);
+}
+
+void Shader::SetUniform(const std::string &var, glm::mat4 color) const {
+    const GLint varId = glGetUniformLocation(Id, var.c_str());
+
+    if (varId == -1) {
+        // throw std::runtime_error("Invalid variable " + var);
+    }
+
+    glUniformMatrix4fv(varId, 1, false, glm::value_ptr(color));
 }

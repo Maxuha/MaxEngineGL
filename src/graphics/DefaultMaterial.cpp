@@ -15,9 +15,10 @@ DefaultMaterial::DefaultMaterial(Shader *shader, Texture *diffuse, Texture *spec
 void DefaultMaterial::Enable(std::vector<Light *> &lights, Camera &camera, GameObject &gameObject) {
     Material::Enable(lights, camera, gameObject);
 
-    shader->SetUniform("material.diffuse", diffuseLocation);
-    shader->SetUniform("material.specular", specularLocation);
-    shader->SetUniform("material.shininess", shininess);
+     shader->SetUniform("material.diffuse", diffuseLocation);
+     shader->SetUniform("material.specular", specularLocation);
+     shader->SetUniform("material.shininess", shininess);
+     shader->SetUniform("depthMap", 2);
 
     diffuseTexture->Activate(diffuseLocation);
     diffuseTexture->Bind();
@@ -27,4 +28,12 @@ void DefaultMaterial::Enable(std::vector<Light *> &lights, Camera &camera, GameO
 
 void DefaultMaterial::Disable() {
     Material::Disable();
+}
+
+void DefaultMaterial::SetTexture(int index) {
+    shader->SetUniform("depthMap", index);
+}
+
+void DefaultMaterial::SetFloat(const std::string& name, const Matrix4x4 value) {
+    shader->SetUniform(name, value);
 }

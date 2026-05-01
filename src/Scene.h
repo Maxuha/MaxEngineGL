@@ -26,8 +26,7 @@ public:
 
     std::string name;
 
-
-    void Init() const;
+    void Init();
 
     void Update(double delta_time);
 
@@ -43,6 +42,14 @@ private:
     std::vector<GameObject *> gameObjects;
 
     Transform* GetMeshRenderer(Transform* transform, std::vector<MeshRenderer*>& meshRenderers);
+
+    Shader* depthShader;
+    Shader* debugDepthQuad;
+
+    unsigned int depthMapFBO;
+    unsigned int depthMap;
+
+    unsigned int planeVAO;
 };
 
 

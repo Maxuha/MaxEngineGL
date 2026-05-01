@@ -18,6 +18,9 @@ public:
 
     void Disable() override;
 
+    void SetTexture(int index);
+    void SetFloat(const std::string& name, Matrix4x4 value);
+
 private:
     Color color;;
     Texture *diffuseTexture;
