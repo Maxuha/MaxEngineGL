@@ -78,7 +78,7 @@ void Transform::SetParent(Transform *parent) {
     auto localMatrix = GetLocalMatrix();
 
     if (parent == nullptr) {
-       // localMatrix = GetWorldMatrix() * this->parent->GetWorldMatrix();
+        localMatrix = GetWorldMatrix();
     } else {
         localMatrix = parent->GetWorldMatrix().Inverse() * GetWorldMatrix();
     }

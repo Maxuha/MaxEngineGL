@@ -36,7 +36,7 @@ template<typename T>
 T* AssetManager::Import(const std::string &path) {
     if constexpr (std::is_same_v<T, Model>) {
         return meshAssetManager->Import(path);
-    } else if constexpr (std::is_same_v<T, Texture>) {
+    } else if constexpr (std::is_same_v<T, TextureAsset>) {
         return textureImporter->Import(path);
     } else if constexpr (std::is_same_v<T, Shader>) {
         return shaderImporter->Import(path);

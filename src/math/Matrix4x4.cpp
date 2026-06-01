@@ -9,7 +9,7 @@
 #include "Matrix3x3.h"
 #include "Vector4.h"
 
-Matrix4x4::Matrix4x4(const float value) {
+Matrix4x4::Matrix4x4() {
     m[0][0] = 0;
     m[1][0] = 0;
     m[2][0] = 0;
@@ -26,7 +26,9 @@ Matrix4x4::Matrix4x4(const float value) {
     m[1][3] = 0;
     m[2][3] = 0;
     m[3][3] = 0;
+}
 
+Matrix4x4::Matrix4x4(const float value) : Matrix4x4() {
     if (value == 1) {
         //identity
         Identity();

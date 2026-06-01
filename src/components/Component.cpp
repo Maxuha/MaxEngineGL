@@ -4,8 +4,15 @@
 
 #include "Component.h"
 
-Component::Component(GameObject *gameObject) {
-    this->gameObject = gameObject;
+Component::Component() {
+}
+
+Component::Component(GameObject* gameObject) {
+     this->gameObject = gameObject;
+}
+
+void Component::Attach(GameObject &_gameObject) {
+    this->gameObject = &_gameObject;
 }
 
 GameObject * Component::GetGameObject() const {

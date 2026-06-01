@@ -7,8 +7,8 @@
 #include <string>
 
 #include "components/MeshRenderer.h"
+#include "components/light/Light.h"
 #include "gameObject/Camera.h"
-#include "gameObject/light/Light.h"
 
 class Window;
 
@@ -26,13 +26,26 @@ public:
 
     std::string name;
 
-    void Init();
+    void Init() const;
 
     void Update(double delta_time);
 
-    void Add(Light *light);
-
     void Add(GameObject *gameObject);
+
+    template<typename T>
+    requires std::derived_from<T, Component>
+    std::vector<T*> GetComponents() {
+        std::vector<T*> components;
+        for (GameObject* gameObject : gameObjects) {
+            auto component = gameObject->GetComponent<T>();
+            if (component != nullptr) {
+                components.push_back(component);
+            }
+            auto componentsInChildren = gameObject->GetComponentsInChildren<T>();
+            components.insert(components.end(), componentsInChildren.begin(), componentsInChildren.end());
+        }
+        return components;
+    }
 
 private:
     Camera *camera;
@@ -41,9 +54,7 @@ private:
 
     std::vector<GameObject *> gameObjects;
 
-    Transform* GetMeshRenderer(Transform* transform, std::vector<MeshRenderer*>& meshRenderers);
-
-    Shader* depthShader;
+    Shader* depthShader = nullptr;
     Shader* debugDepthQuad;
 
     unsigned int depthMapFBO;

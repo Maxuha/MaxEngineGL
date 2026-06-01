@@ -5,25 +5,49 @@
 #ifndef MAXENGINE_TEXTURE_H
 #define MAXENGINE_TEXTURE_H
 
+#include <string>
+#include <tuple>
+
+#include "ITexture.h"
+#include "../utils/Hash.h"
 #include "glad/glad.h"
 
+struct TextureId {
+    uint32_t Id;
 
-class Texture {
+    bool operator==(const TextureId &other) const {
+        return Id == other.Id;
+    }
+
+    bool operator<(const TextureId &other) const {
+        return std::tie(Id) < std::tie(other.Id);
+    }
+};
+
+template<>
+struct std::hash<TextureId> {
+    size_t operator()(const TextureId &s) const noexcept {
+        return Hash::Generate(std::to_string(s.Id));
+    }
+};
+
+class Texture : public ITexture{
 public:
-    Texture(const unsigned char *data, int width, int height, const GLenum format);
-    ~Texture();
+    Texture(TextureId textureId, const unsigned char *data, int width, int height, GLenum format);
+    ~Texture() override;
 
-    void Bind();
-    void Unbind();
+    void Bind() override;
+    void Unbind() override;
 
-    void Activate(unsigned int i);
+    void Activate(unsigned int i) override;
 
-    int GetId() const {
-        return Id;
+    TextureId GetId() const {
+        return textureId;
     };
 
 private:
     unsigned int Id{};
+    TextureId textureId;
 
 };
 

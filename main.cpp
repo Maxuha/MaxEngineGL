@@ -1,3 +1,4 @@
+#include "stb_image.h"
 #include "cmake-build-debug/_deps/assimp-src/code/AssetLib/Blender/BlenderDNA.h"
 #include "src/di/DIContainer.h"
 #include "src/graphics/Model.h"
@@ -6,66 +7,50 @@
 #include "src/Window.h"
 #include "src/gameObject/Camera.h"
 #include "src/gameObject/primitives/Cube.h"
-#include "src/graphics/DefaultMaterial.h"
 #include "src/components/MeshRenderer.h"
+#include "src/components/light/LightFactory.h"
 #include "src/components/physics/collision/BoxCollider.h"
-#include "src/gameObject/light/AmbientLight.h"
-#include "src/gameObject/light/DirectionalLight.h"
-#include "src/gameObject/light/PointLight.h"
-#include "src/gameObject/light/SpotLight.h"
-#include "src/math/Color.h"
+#include "src/components/light/PointLight.h"
+#include "src/components/light/SpotLight.h"
 
 class MeshRenderer;
 class Camera;
 class BoxCollider;
 
 int main() {
-    DIContainer *container = &DIContainer::GetInstance();
-
     constexpr int width = 1920;
     constexpr int height = 1080;
 
-    auto *window = new Window(width, height);
-    window->Open();
+    DIContainer *container = &DIContainer::GetInstance();
 
     auto *camera = new FPSCamera(45, 0.01, 10000, static_cast<float>(width) / static_cast<float>(height));
+    camera->GetTransform()->position = Vector3(10, 0, 10);
 
-    auto *ambientLight = new AmbientLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 0.1f);
+    auto *litShader = container->Get<AssetManager>()->Import<Shader>("phong/phong");
+    litShader->AddProperty("material.mat.shininess", ShaderProperty(0, sizeof(float)));
 
-    auto *sun = new DirectionalLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
-    sun->GetComponent<Transform>()->position = Vector3(0, 6, 3);
-    sun->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+    const auto* diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
+    const auto* specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/Survival_BackPack_2/1001_metallic.jpg)");
 
-    auto *lamp = new PointLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 5.0f, 10.0f);
-    lamp->GetComponent<Transform>()->position = Vector3(0, 4, 9);
-    lamp->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+    Rendering::IGLTexture* diffuseTexture = new Rendering::GLTexture(diffuseTextureAsset->Width, diffuseTextureAsset->Height, diffuseTextureAsset->Wrap, diffuseTextureAsset->Data);
+    Rendering::IGLTexture* specularTexture = new Rendering::GLTexture(specularTextureAsset->Width, specularTextureAsset->Height, diffuseTextureAsset->Wrap, specularTextureAsset->Data);
 
-    auto *flashLight = new SpotLight(Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f, 10.0f, std::cos(glm::radians(12.5f)),
-                                     std::cos(glm::radians(17.5f)));
-
-     auto *litShader = container->Get<AssetManager>()->Import<Shader>("phong/phong");
-   // auto *litShader = container->Get<AssetManager>()->Import<Shader>("basic_lit/basic_unlit");
-
-    // auto *diffuseTexture = container->Get<AssetManager>()->Import<
-    //     Texture>(R"(assets/models/glove/texture/diffuse.jpg)");
-    // auto *specularTexture = container->Get<AssetManager>()->Import<Texture>(
-    //     R"(assets/models/glove/texture/diffuse.jpg)");
     //
-    auto *diffuseTexture = container->Get<AssetManager>()->Import<
-        Texture>(R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
-    auto *specularTexture = container->Get<AssetManager>()->Import<Texture>(
-        R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
+    stbi_image_free(diffuseTextureAsset->Data);
+    stbi_image_free(specularTextureAsset->Data);
+    delete diffuseTextureAsset;
+    delete specularTextureAsset;
+    //
 
-    auto *defaultMaterial = new DefaultMaterial(litShader, diffuseTexture, specularTexture,
-                                                Color(1.0f, 1.0f, 1.0f, 1.0f));
+    auto *defaultMaterial = new Material(litShader);
+
+    defaultMaterial->SetTexture("diffuse", *diffuseTexture);
+    defaultMaterial->SetTexture("specular", *specularTexture);
 
     // Building a glove
     const auto *gloveModel = container->Get<AssetManager>()->Import<Model>(
         R"(assets/models/Survival_BackPack_2/Survival_BackPack_2.fbx)");
 
-    //const auto* gloveModel = container->Get<AssetManager>()->Import<Model>(R"(assets/glove.obj)");
-
-    std::vector<GameObject *> gloves = {};
 
     const auto glove = new GameObject();
 
@@ -74,7 +59,6 @@ int main() {
         auto *gloveMeshRenderer = gloveTemp->AddComponent<MeshRenderer>();
         gloveMeshRenderer->mesh = entry.mesh;
         gloveMeshRenderer->material = defaultMaterial;
-        gloves.push_back(gloveTemp);
 
         auto *gloveTransform = gloveTemp->GetTransform();
 
@@ -86,72 +70,126 @@ int main() {
         glove->GetTransform()->AddChild(gloveTransform);
     }
 
-    glove->GetTransform()->position = Vector3(0, 0, 9);
+    glove->GetTransform()->position = Vector3(0, 0, 12);
     glove->GetTransform()->rotation = Vector3(0, 180, 0);
     glove->GetTransform()->scale = Vector3(0.005f, 0.005f, 0.005f);
 
-    // auto *gloveMeshRenderer = glove->AddComponent<MeshRenderer>();
-    // gloveMeshRenderer->meshes = gloveModel->meshes;
-    // gloveMeshRenderer->material = defaultMaterial;
 
-    // auto *gloveTransform = glove->GetComponent<Transform>();
-    // gloveTransform->pivot = gloveModel->meshes.at(0)->center;
+    //house
 
-    diffuseTexture = container->Get<AssetManager>()->Import<Texture>(
-        R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
-    specularTexture = container->Get<AssetManager>()->Import<Texture>(
-        R"(assets/models/glove/texture/wood_with_steel_specular.png)");
+    const auto *houseModel = container->Get<AssetManager>()->Import<Model>(
+      R"(assets/models/autumn-house/source/House_scene_01.fbx)");
 
-    defaultMaterial = new DefaultMaterial(litShader, diffuseTexture, specularTexture, Color(1.0f, 1.0f, 1.0f, 1.0f));
+
+    const auto house = new GameObject();
+
+    diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/House_texture_01_00.png)");
+    specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/House_texture_02_00.png)");
+
+    diffuseTexture = new Rendering::GLTexture(diffuseTextureAsset->Width, diffuseTextureAsset->Height, diffuseTextureAsset->Wrap, diffuseTextureAsset->Data);
+    specularTexture = new Rendering::GLTexture(specularTextureAsset->Width, specularTextureAsset->Height, specularTextureAsset->Wrap, specularTextureAsset->Data);
+
+    defaultMaterial = new Material(litShader);
+
+    defaultMaterial->SetTexture("diffuse", *diffuseTexture);
+    defaultMaterial->SetTexture("specular", *specularTexture);
+    defaultMaterial->SetProperty("material.mat.shininess", 32.0f);
+
+    for (auto &entry: houseModel->meshes) {
+        const auto houseTemp = new GameObject();
+        auto *houseMeshRenderer = houseTemp->AddComponent<MeshRenderer>();
+        houseMeshRenderer->mesh = entry.mesh;
+        houseMeshRenderer->material = defaultMaterial;
+
+        auto *houseTransform = houseTemp->GetTransform();
+
+        houseTransform->position = entry.position;
+        houseTransform->rotation = entry.rotation;
+        houseTransform->scale = entry.scale;
+
+        houseTransform->SetParent(house->GetTransform());
+        house->GetTransform()->AddChild(houseTransform);
+    }
+
+    house->GetTransform()->position = Vector3(0, -2, 80);
+    house->GetTransform()->rotation = Vector3(0, 180, 0);
+    house->GetTransform()->scale = Vector3(1.0f, 1.0f, 1.0f);
+
+    // end house
+
+    //
+    stbi_image_free(diffuseTextureAsset->Data);
+    stbi_image_free(specularTextureAsset->Data);
+    delete diffuseTextureAsset;
+    delete specularTextureAsset;
+    //
+
+    diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
+    specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/glove/texture/wood_with_steel_specular.png)");
+
+    diffuseTexture = new Rendering::GLTexture(diffuseTextureAsset->Width, diffuseTextureAsset->Height, diffuseTextureAsset->Wrap, diffuseTextureAsset->Data);
+    specularTexture = new Rendering::GLTexture(specularTextureAsset->Width, specularTextureAsset->Height, diffuseTextureAsset->Wrap, specularTextureAsset->Data);
+
+    defaultMaterial = new Material(litShader);
+
+    defaultMaterial->SetTexture("diffuse", *diffuseTexture);
+    defaultMaterial->SetTexture("specular", *specularTexture);
+    defaultMaterial->SetProperty("material.mat.shininess", 32.0f);
 
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = defaultMaterial;
     cube1->AddComponent<BoxCollider>();
+    cube1->GetTransform()->position = Vector3(10, 0, 0);
 
     const auto cube2 = Cube::BuildCube();
-    cube2->AddComponent<BoxCollider>();
+    //cube2->AddComponent<BoxCollider>();
     cube2->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    cube2->GetTransform()->position = Vector3(10, 0, -10);
 
     const auto cube3 = Cube::BuildCube();
     cube3->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    cube3->GetTransform()->position = Vector3(10, 0, 4);
 
     const auto cube4 = Cube::BuildCube();
     cube4->GetComponent<MeshRenderer>()->material = defaultMaterial;
-    cube4->GetTransform()->position = Vector3(0, -4, 0);
-    cube4->GetTransform()->scale = Vector3(20, .1, 20);
+    cube4->GetTransform()->position = Vector3(10, 0, 8);
+
+    const auto cube5 = Cube::BuildCube();
+    cube5->GetComponent<MeshRenderer>()->material = defaultMaterial;
+    cube5->GetTransform()->position = Vector3(0, -3, 0);
+    cube5->GetTransform()->scale = Vector3(100, 0.1f, 100);
+
+    const auto lightFactory = new LightFactory();
+    GameObject *ambientLight = lightFactory->SpawnAmbientLight();
+    ambientLight->GetComponent<Light>()->intensity = 0.25f;
+    GameObject *sun = lightFactory->SpawnDirectionalLight();
+    sun->GetComponent<Transform>()->position = Vector3(-6, 30, 0);
+    sun->GetComponent<Transform>()->rotation = Vector3(45, 0, 0);
+    sun->GetComponent<Light>()->intensity = 2.0f;
+    GameObject *pointLight = lightFactory->SpawnPointLight();
+    pointLight->GetComponent<Transform>()->position = Vector3(0, 0.0f, 2);
+    pointLight->GetComponent<PointLight>()->intensity = 1.0f;
+    pointLight->GetComponent<PointLight>()->SetRange(3.0f);
+    GameObject *flashLight = lightFactory->SpawnSpotLight();
+    flashLight->GetComponent<Transform>()->position = Vector3(0, 2.0f, 0);
+    flashLight->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+    flashLight->GetComponent<SpotLight>()->intensity = 1.0f;
 
     auto *scene = new Scene(camera);
-    scene->Add(flashLight);
-    // scene->Add(lamp);
-    scene->Add(sun);
-    // scene->Add(flashLight);
     scene->Add(ambientLight);
+    scene->Add(sun);
+    scene->Add(flashLight);
+    scene->Add(pointLight);
     scene->Add(cube1);
     scene->Add(cube2);
     scene->Add(cube3);
     scene->Add(cube4);
+    scene->Add(cube5);
     scene->Add(glove);
+    scene->Add(house);
 
-    // for (GameObject* glove: gloves) {
-    //     scene->Add(glove);
-    // }
-
-    // glove->GetTransform()->Translate(glove->GetTransform()->Forward() * 500);
-    cube1->GetComponent<Transform>()->Translate(cube1->GetComponent<Transform>()->Forward() * -20);
-    cube2->GetComponent<Transform>()->Translate(cube2->GetComponent<Transform>()->Forward() * 4);
-    cube3->GetComponent<Transform>()->Translate(cube3->GetComponent<Transform>()->Forward() * 6);
-    // glove->GetComponent<Transform>()->Translate(glove->GetComponent<Transform>()->Forward() * 20);
-
-    // cube2->GetComponent<Transform>()->SetParent(cube1->GetComponent<Transform>());
-    // cube3->GetComponent<Transform>()->SetParent(cube2->GetComponent<Transform>());
-    // cube2->GetComponent<Transform>()->SetParent(nullptr);
-    // cube3->GetComponent<Transform>()->SetParent(nullptr);
-
-    window->AttachScene(scene);
-
-    while (!window->IsClosed()) {
-        window->Update();
-    }
+    container->Get<IWindow>()->AddView(*scene);
+    container->Get<IWindow>()->Update();
 
     return 0;
 }

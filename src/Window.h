@@ -5,10 +5,12 @@
 #ifndef MAXENGINE_WINDOW_H
 #define MAXENGINE_WINDOW_H
 
+#include "IWindow.h"
 #include "Scene.h"
 #include "GLFW/glfw3.h"
+#include "renderer/domain/IWindowContext.h"
 
-class Window {
+class Window : public IWindow, public Rendering::IWindowContext {
 public:
     Window(const int width, const int height) {
         this->width = width;
@@ -16,15 +18,19 @@ public:
         aspectRatio = static_cast<float>(width) / static_cast<float>(height);
     }
 
-    void AttachScene(Scene* scene);
+    void Open() override;
 
-    void Open();
+    void Update() override;
 
-    void Update();
+    void Close() const override;
 
-    void Close() const;
+    bool IsOpen() const override;
 
-    int IsClosed() const;
+    void AddView(Scene& scene) override;
+
+    void * GetNativeHandle() override;
+
+
 
 private:
     GLFWwindow *window{};
@@ -35,6 +41,8 @@ private:
 
     double last_time = glfwGetTime();
     double delta_time = 0;
+
+    void DoUpdate();
 };
 
 

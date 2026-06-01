@@ -5,35 +5,54 @@
 #ifndef MAXENGINE_MESH_H
 #define MAXENGINE_MESH_H
 #include <span>
-#include "Vertex.h"
-#include "buffers/IndexBuffer.h"
-#include "buffers/VertexArray.h"
-#include "buffers/VertexBuffer.h"
+#include <string>
+#include <../src/utils/Hash.cpp>
+#include "../math/Vertex.h"
+#include "../renderer/domain/struct/Buffer.h"
 
-class Texture;
+struct MeshId {
+    uint64_t Id;
+
+    bool operator==(const MeshId &other) const {
+        return Id == other.Id;
+    }
+
+    bool operator<(const MeshId &other) const {
+        return std::tie(Id) < std::tie(other.Id);
+    }
+};
+
+template<>
+struct std::hash<MeshId> {
+    size_t operator()(const MeshId &s) const noexcept {
+        return Hash::Generate(std::to_string(s.Id));
+    }
+};
+
 
 class Mesh {
 public:
-    explicit Mesh(std::span<Vertex> vertices, std::span<const unsigned int> indices);
+    explicit Mesh(MeshId id, const std::span<const Vertex>& vertices, const std::span<const uint32_t>& indices);
 
-    ~Mesh() {
-        delete vertexArray;
-        delete vertexBuffer;
-        delete indexBuffer;
-    }
+    ~Mesh() = default;
 
-    unsigned int Size;
+    size_t Size;
     Vector3 center{};
     Vector3 position{};
 
-    VertexArray* vertexArray;
-    VertexBuffer* vertexBuffer;
-    IndexBuffer* indexBuffer;
+    size_t GetIndexCount() const;
+    MeshId GetId() const;
+    const std::span<const Vertex>& GetVertices() const;
+    const std::span<const uint32_t>& GetIndices() const;
 
-    void Bind() const;
-    void Unbind() const;
+    BufferId vertexBuffer{};
+    BufferId indexBuffer{};
 
-    unsigned int GetIndexCount() const;
+private:
+    MeshId id{};
+    std::span<const Vertex> vertices;
+    std::span<const uint32_t> indices;
+
 };
 
 

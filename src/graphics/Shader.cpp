@@ -5,7 +5,6 @@
 #include "Shader.h"
 
 #include <fstream>
-#include <ostream>
 #include <glm/glm.hpp>
 #include "../IO/FileReader.h"
 #include "glm/gtc/type_ptr.hpp"
@@ -15,28 +14,44 @@ void Shader::Init(const char *vertexShaderPath, const char *fragmentShaderPath) 
     const std::string vSource = FileReader::ReadFileString(vertexShaderPath);
     const std::string fSource = FileReader::ReadFileString(fragmentShaderPath);
 
-    const char* vCode = vSource.c_str();
-    const char* fCode = fSource.c_str();
+    const std::string& vCodeCopy = vSource;
+    const std::string& fSourceCopy = fSource;
 
-    // Vertex shader
-    const GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vCode, nullptr);
-    glCompileShader(vertexShader);
+    vCode = vCodeCopy.c_str();
+    fCode = fSourceCopy.c_str();
 
-    // Fragment shader
-    const GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fCode, nullptr);
-    glCompileShader(fragmentShader);
 
-    // Create program and attach our shaders
-    Id = glCreateProgram();
-    glAttachShader(Id, vertexShader);
-    glAttachShader(Id, fragmentShader);
-    glLinkProgram(Id);
+}
 
-    // Delete shaders
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+Shader::Shader(const char *vCode, const char *fCode) {
+
+    this->vCode = vCode;
+    this->fCode = fCode;
+
+    // // Vertex shader
+    // const GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    // glShaderSource(vertexShader, 1, &vCode, nullptr);
+    // glCompileShader(vertexShader);
+    //
+    // // Fragment shader
+    // const GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    // glShaderSource(fragmentShader, 1, &fCode, nullptr);
+    // glCompileShader(fragmentShader);
+    //
+    // // Create program and attach our shaders
+    // Id = glCreateProgram();
+    // glAttachShader(Id, vertexShader);
+    // glAttachShader(Id, fragmentShader);
+    // glLinkProgram(Id);
+    //
+    // // Delete shaders
+    // glDeleteShader(vertexShader);
+    // glDeleteShader(fragmentShader);
+    //
+    // //bind textures
+    // SetUniform("diffuse", 0);
+    // SetUniform("specular", 1);
+    // SetUniform("depth", 2);
 }
 
 void Shader::Enable() const {
@@ -105,4 +120,23 @@ void Shader::SetUniform(const std::string &var, glm::mat4 color) const {
     }
 
     glUniformMatrix4fv(varId, 1, false, glm::value_ptr(color));
+}
+
+void Shader::SetUniform(const std::string &var, Texture& texture) const {
+    texture.Bind();
+    if (var == "diffuse") {
+        texture.Activate(0);
+    } else if (var == "specular") {
+        texture.Activate(1);
+    } else if (var == "depth") {
+        texture.Activate(2);
+    }
+}
+
+void Shader::AddProperty(const std::string &name, const ShaderProperty property) {
+    properties[name] = property;
+}
+
+ShaderProperty Shader::GetProperty(const std::string &name) const {
+    return properties.at(name);
 }

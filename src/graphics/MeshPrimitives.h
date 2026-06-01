@@ -4,6 +4,8 @@
 
 #ifndef MAXENGINE_MESHPRIMITIVES_H
 #define MAXENGINE_MESHPRIMITIVES_H
+#include <memory>
+
 #include "Mesh.h"
 
 class Vector3;

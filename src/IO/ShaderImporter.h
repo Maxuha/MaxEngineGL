@@ -11,7 +11,7 @@ class Shader;
 
 class ShaderImporter {
     public:
-    Shader* Import(std::string shaderName);
+    Shader* Import(const std::string &shaderName);
 
 };
 

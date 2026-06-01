@@ -23,10 +23,9 @@ private:
     std::vector<Texture> textures_loaded;
     std::vector<MeshEntry> meshes;
     std::string directory;
-    bool gammaCorrection;
 
     void ProcessNode(aiNode* node, const aiScene* scene, aiMatrix4x4 parentTransform);
-    Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
+    Mesh* ProcessMesh(const aiMesh* mesh, const aiScene* scene);
 };
 
 

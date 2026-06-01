@@ -7,6 +7,8 @@
 
 #include "AssimpImporter.h"
 #include <iostream>
+
+#include "../di/DIContainer.h"
 #include "../graphics/Texture.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
@@ -49,7 +51,8 @@ void AssimpImporter::ProcessNode(aiNode *node, const aiScene *scene, aiMatrix4x4
         glm::vec3 euler = glm::degrees(glm::eulerAngles(q));
 
         MeshEntry entry;
-        entry.mesh = ProcessMesh(mesh, scene);
+        const std::shared_ptr<Mesh> sharedMesh(ProcessMesh(mesh, scene));
+        entry.mesh = sharedMesh;
         entry.position = Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
         entry.rotation = Vector3(euler.x, euler.y, euler.z);
         entry.scale    = Vector3(aiScale.x, aiScale.y, aiScale.z);
@@ -61,7 +64,7 @@ void AssimpImporter::ProcessNode(aiNode *node, const aiScene *scene, aiMatrix4x4
     }
 }
 
-Mesh* AssimpImporter::ProcessMesh(aiMesh *mesh, const aiScene *scene) {
+Mesh* AssimpImporter::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
     // data to fill
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -86,7 +89,7 @@ Mesh* AssimpImporter::ProcessMesh(aiMesh *mesh, const aiScene *scene) {
         // texture coordinates
         if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
         {
-            Vector2 vec;
+            Vector2 vec{};
             // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
             // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
             vec.x = mesh->mTextureCoords[0][i].x;
@@ -107,16 +110,17 @@ Mesh* AssimpImporter::ProcessMesh(aiMesh *mesh, const aiScene *scene) {
 
         vertices.push_back(vertex);
     }
-    // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+    // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-        aiFace face = mesh->mFaces[i];
+        const aiFace face = mesh->mFaces[i];
         // retrieve all indices of the face and store them in the indices vector
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
 
-    // return a mesh object created from the extracted mesh data
-    return new Mesh(vertices, indices);
+    const auto id = MeshId { Hash::Generate(mesh->mName.data) };
+
+    return DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(vertices, indices);
 }
 
 

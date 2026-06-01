@@ -21,7 +21,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(assimp)
 
-add_executable(MaxEngine main.cpp src/glad.c
+add_executable(MaxEngine main.cpp include/glad.c
         src/math/Vector3.cpp
         src/math/Vector3.h
         src/math/Matrix4x4.cpp
@@ -42,12 +42,11 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/components/MeshRenderer.h
         src/gameObject/primitives/Cube.cpp
         src/gameObject/primitives/Cube.h
-        src/gameObject/light/Light.cpp
-        src/gameObject/light/Light.h
-        src/gameObject/light/DirectionalLight.cpp
-        src/gameObject/light/DirectionalLight.h
-        src/graphics/Vertex.cpp
-        src/graphics/Vertex.h
+        src/components/light/Light.cpp
+        src/components/light/Light.h
+        src/components/light/DirectionalLight.cpp
+        src/components/light/DirectionalLight.h
+        src/math/Vertex.h
         src/Scene.cpp
         src/Scene.h
         src/Window.cpp
@@ -56,10 +55,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/graphics/Shader.h
         src/graphics/Material.cpp
         src/graphics/Material.h
-        src/graphics/DefaultMaterial.cpp
-        src/graphics/DefaultMaterial.h
-        src/graphics/RenderContext.cpp
-        src/graphics/RenderContext.h
         src/math/Color.cpp
         src/math/Color.h
         src/IO/FileReader.cpp
@@ -69,12 +64,6 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/IO/ModelImporter.h
         src/math/AABB.cpp
         src/math/AABB.h
-        src/graphics/buffers/VertexArray.cpp
-        src/graphics/buffers/VertexArray.h
-        src/graphics/buffers/VertexBuffer.cpp
-        src/graphics/buffers/VertexBuffer.h
-        src/graphics/buffers/IndexBuffer.cpp
-        src/graphics/buffers/IndexBuffer.h
         src/IO/model/VertexSet.h
         src/IO/model/IndexSet.h
         src/Engine.cpp
@@ -84,7 +73,7 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/graphics/Texture.cpp
         src/graphics/Texture.h
         include/stb_image.h
-        src/math/Vector2.cpp
+        include/stb_image_write.h
         src/math/Vector2.h
         src/Demo.cpp
         src/Demo.h
@@ -110,18 +99,82 @@ add_executable(MaxEngine main.cpp src/glad.c
         src/di/DIContainer.cpp
         src/components/physics/collision/Collider.cpp
         src/components/physics/collision/Collider.h
-        src/gameObject/light/PointLight.cpp
-        src/gameObject/light/PointLight.h
-        src/gameObject/light/SpotLight.cpp
-        src/gameObject/light/SpotLight.h
-        src/gameObject/light/AmbientLight.cpp
-        src/gameObject/light/AmbientLight.h
-        src/gameObject/light/LocationalLight.cpp
-        src/gameObject/light/LocationalLight.h
+        src/components/light/PointLight.cpp
+        src/components/light/PointLight.h
+        src/components/light/SpotLight.cpp
+        src/components/light/SpotLight.h
+        src/components/light/AmbientLight.cpp
+        src/components/light/AmbientLight.h
+        src/components/light/LocationalLight.cpp
+        src/components/light/LocationalLight.h
         src/IO/AssimpImporter.cpp
         src/IO/AssimpImporter.h
         src/graphics/Model.cpp
         src/graphics/Model.h
+        src/renderer/Renderer.cpp
+        src/renderer/Renderer.h
+        src/renderer/IRenderer.h
+        src/renderer/DrawCall.h
+        src/renderer/RenderQueue.cpp
+        src/renderer/RenderQueue.h
+        src/renderer/IRenderDevice.h
+        src/renderer/gl/GLRenderDevice.cpp
+        src/renderer/gl/GLRenderDevice.h
+        src/utils/Hash.cpp
+        src/utils/Hash.h
+        src/renderer/CameraData.h
+        src/renderer/AmbientLightData.h
+        src/IScene.h
+        src/components/light/LightFactory.cpp
+        src/components/light/LightFactory.h
+        src/renderer/LightRenderer.cpp
+        src/renderer/LightRenderer.h
+        src/renderer/ILightRenderer.h
+        src/renderer/domain/buffer/BufferUsage.h
+        src/renderer/domain/buffer/BufferDesc.h
+        src/renderer/domain/buffer/BufferSlot.h
+        src/renderer/domain/buffer/frame/FrameBuffer.cpp
+        src/renderer/domain/buffer/frame/FrameBuffer.h
+        src/renderer/domain/GLTexture.cpp
+        src/renderer/domain/GLTexture.h
+        src/renderer/pass/IRenderPass.h
+        src/renderer/pass/ShadowRenderPass.cpp
+        src/renderer/pass/ShadowRenderPass.h
+        src/renderer/pass/MainRenderPass.cpp
+        src/renderer/pass/MainRenderPass.h
+        src/graphics/IShader.h
+        src/graphics/ITexture.h
+        src/renderer/domain/struct/Mesh.h
+        src/renderer/domain/struct/BufferId.h
+        src/renderer/domain/struct/MeshHandle.h
+        src/renderer/domain/struct/MeshCreateDesc.h
+        src/renderer/domain/struct/VertexLayout.h
+        src/renderer/domain/struct/PipelineStateDesc.h
+        src/renderer/domain/struct/Pipeline.h
+        src/renderer/domain/struct/PipelineHandle.h
+        src/renderer/domain/struct/ResourceSet.h
+        src/renderer/gl/model/TextureData.h
+        src/renderer/domain/IPipeline.h
+        src/renderer/domain/ICommandBuffer.h
+        src/renderer/domain/GLCommandBuffer.cpp
+        src/renderer/domain/GLCommandBuffer.h
+        src/renderer/domain/GLPipeline.cpp
+        src/renderer/domain/GLPipeline.h
+        src/renderer/manager/IPipelineManager.h
+        src/renderer/manager/PipelineManager.cpp
+        src/renderer/manager/PipelineManager.h
+        src/renderer/domain/IResourceSet.h
+        src/renderer/domain/GLResourceSet.cpp
+        src/renderer/domain/GLResourceSet.h
+        src/renderer/domain/IGLTexture.h
+        src/renderer/domain/struct/IBuffer.h
+        src/renderer/domain/struct/Buffer.cpp
+        src/renderer/domain/struct/Buffer.h
+        src/renderer/gl/desc/TextureCreateRequest.h
+        src/IO/model/TextureAsset.h
+        src/IWindow.h
+        src/renderer/domain/struct/RenderConfig.h
+        src/renderer/domain/IWindowContext.h
 )
 
 target_include_directories(MaxEngine PRIVATE

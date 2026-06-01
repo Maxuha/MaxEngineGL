@@ -11,7 +11,7 @@
 
 class Transform : public Component {
     public:
-    explicit Transform(GameObject* gameObject) : Component(gameObject) {}
+    explicit Transform() = default;
 
     Vector3 position = Vector3::Zero();
     Vector3 rotation = Vector3::Zero();

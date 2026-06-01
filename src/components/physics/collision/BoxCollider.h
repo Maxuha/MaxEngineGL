@@ -10,7 +10,7 @@
 
 class BoxCollider : public Collider {
 public:
-    explicit BoxCollider(GameObject* gameObject) : Collider(gameObject) {}
+    explicit BoxCollider() : Collider() {}
     ~BoxCollider() = default;
 
     Vector3 size = Vector3(1, 1, 1);

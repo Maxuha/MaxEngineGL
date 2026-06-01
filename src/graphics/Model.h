@@ -4,13 +4,14 @@
 
 #ifndef MAXENGINE_MODEL_H
 #define MAXENGINE_MODEL_H
+#include <memory>
 #include <vector>
 
 #include "Mesh.h"
 #include "../math/Vector3.h"
 
 struct MeshEntry {
-    Mesh* mesh;
+    std::shared_ptr<Mesh> mesh;
     Vector3 position;
     Vector3 rotation; // euler angles in degrees
     Vector3 scale;

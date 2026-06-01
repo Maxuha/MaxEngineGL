@@ -5,7 +5,6 @@
 #ifndef MAXENGINE_MESHASSETMANAGER_H
 #define MAXENGINE_MESHASSETMANAGER_H
 #include <string>
-#include "../graphics/Mesh.h"
 #include "../graphics/Model.h"
 
 
@@ -15,7 +14,7 @@ class MeshAssetManager {
 public:
     explicit MeshAssetManager(std::unordered_map<std::string, ModelImporter*> modelImporters) : importers(std::move(modelImporters)) {}
 
-    Model* Import(std::string path);
+    Model* Import(const std::string &path);
 
 private:
     std::unordered_map<std::string, ModelImporter*> importers;

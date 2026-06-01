@@ -5,6 +5,6 @@
 #include "Collider.h"
 #include "../../../di/DIContainer.h"
 
-Collider::Collider(GameObject *gameObject): Component(gameObject) {
+Collider::Collider(): Component() {
     DIContainer::GetInstance().Get<PhysicsEngine>()->Register(this);
 }

@@ -6,36 +6,70 @@
 #define MAXENGINE_SHADER_H
 
 #include <string>
-#include "../math/Color.h"
-#include "../math/Matrix4x4.h"
+
+#include "IShader.h"
+#include "Material.h"
 #include "../math/Vector3.h"
+#include "../renderer/domain/IPipeline.h"
+#include "../renderer/domain/struct/PipelineHandle.h"
 #include "glad/glad.h"
 
+using ShaderReflectionLayout = std::unordered_map<std::string, ShaderProperty>;
 
-class Shader {
+class Shader : public IShader {
 public:
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath) {
-        Init(vertexShaderPath, fragmentShaderPath);
-    }
+    // Shader(const char *vertexShaderPath, const char *fragmentShaderPath) {
+    //     Init(vertexShaderPath, fragmentShaderPath);
+    // }
 
-    ~Shader() {
+    Shader(const char *vCode, const char *fCode);
+
+    ~Shader() override {
         glDeleteProgram(Id);
     }
 
-    void Enable() const;
-    void Disable() const;
+    ShaderId GetId() const override {
+        return id;
+    }
 
-    void SetUniform(const std::string& var, Matrix4x4 mat) const;
-    void SetUniform(const std::string& var, Vector3 vec) const;
-    void SetUniform(const std::string& var, int val) const;
-    void SetUniform(const std::string& var, float val) const;
-    void SetUniform(const std::string& var, Color color) const;
-    void SetUniform(const std::string& var, glm::mat4 color) const;
+    void Enable() const override;
 
+    void Disable() const override;
+
+    void SetUniform(const std::string &var, Matrix4x4 mat) const override;
+
+    void SetUniform(const std::string &var, Vector3 vec) const override;
+
+    void SetUniform(const std::string &var, int val) const override;
+
+    void SetUniform(const std::string &var, float val) const override;
+
+    void SetUniform(const std::string &var, Color color) const override;
+
+    void SetUniform(const std::string &var, glm::mat4 color) const;
+
+    void SetUniform(const std::string &var, Texture& texture) const override;
+
+    void Init(const char *vertexShaderPath, const char *fragmentShaderPath);
+
+    void AddProperty(const std::string &name, ShaderProperty property) override;
+
+    ShaderProperty GetProperty(const std::string &name) const override;
+
+    Rendering::PipelineHandle pso{};
+    //Rendering::IPipeline* pipeline;
+
+    Rendering::IPipeline* pipeline;
+    Rendering::PipelineHandle pipelineHandle;
 
 private:
-    void Init(const char *vertexShaderPath, const char *fragmentShaderPath);
+    ShaderId id{};
     GLuint Id = 0;
+
+    const char *vCode{};
+    const char *fCode{};
+
+    std::unordered_map<std::string, ShaderProperty> properties;
 };
 
 

@@ -7,7 +7,7 @@
 #include <span>
 
 #include "Vector3.h"
-#include "../graphics/Vertex.h"
+#include "../math/Vertex.h"
 
 class AABB {
 public:

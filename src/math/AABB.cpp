@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <span>
-#include "../graphics/Vertex.h"
+#include "Vertex.h"
 
 bool AABB::Intersect(const AABB &AABB) const {
     return min.x <= AABB.max.x && max.x >= AABB.min.x &&
