@@ -9,7 +9,7 @@
 
 class Collider : public Component {
 public:
-    explicit Collider(GameObject* gameObject);
+    explicit Collider();
 };
 
 

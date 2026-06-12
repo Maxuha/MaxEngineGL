@@ -46,7 +46,7 @@ Matrix4x4 Transform::LookAt() const {
     return viewMatrix;
 }
 
-Matrix4x4 Transform::Perspective(const float fov, const float aspectRatio, const float near, const float far) const {
+Matrix4x4 Transform::Perspective(const float fov, const float aspectRatio, const float zNear, const float zFar) const {
     auto projectionMatrix = Matrix4x4(0);
 
     const float fovRad = glm::radians(fov);
@@ -54,21 +54,21 @@ Matrix4x4 Transform::Perspective(const float fov, const float aspectRatio, const
 
     projectionMatrix.m[0][0] = 1 / tanHalfFov / aspectRatio;
     projectionMatrix.m[1][1] = 1 / tanHalfFov;
-    projectionMatrix.m[2][2] = -far / (far - near) ;
-    projectionMatrix.m[3][2] = -(near * far) / (far - near);
+    projectionMatrix.m[2][2] = -zFar / (zFar - zNear) ;
+    projectionMatrix.m[3][2] = -(zNear * zFar) / (zFar - zNear);
     projectionMatrix.m[2][3] = -1;
 
     return projectionMatrix;
 }
 
-Matrix4x4 Transform::Othographic(float left, float right, float bottom, float top, float near, float far) const {
+Matrix4x4 Transform::Othographic(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar) const {
     auto projectionMatrix = Matrix4x4(0);
     projectionMatrix.m[0][0] = 2 / (right - left);
     projectionMatrix.m[1][1] = 2 / (top - bottom);
-    projectionMatrix.m[2][2] = -2 / (far - near);
+    projectionMatrix.m[2][2] = -2 / (zFar - zNear);
     projectionMatrix.m[3][0] = -(right + left) / (right - left);
     projectionMatrix.m[3][1] = -(top + bottom) / (top - bottom);
-    projectionMatrix.m[3][2] = -(far + near) / (far - near);
+    projectionMatrix.m[3][2] = -(zFar + zNear) / (zFar - zNear);
     projectionMatrix.m[3][3] = 1;
     return projectionMatrix;
 }
@@ -78,7 +78,7 @@ void Transform::SetParent(Transform *parent) {
     auto localMatrix = GetLocalMatrix();
 
     if (parent == nullptr) {
-       // localMatrix = GetWorldMatrix() * this->parent->GetWorldMatrix();
+        localMatrix = GetWorldMatrix();
     } else {
         localMatrix = parent->GetWorldMatrix().Inverse() * GetWorldMatrix();
     }

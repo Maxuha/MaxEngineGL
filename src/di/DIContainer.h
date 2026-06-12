@@ -6,17 +6,21 @@
 #define MAXENGINE_DICONTAINER_H
 
 #include <any>
+#include <memory>
+#include <typeindex>
 
+#include "../IWindow.h"
 #include "../physics/PhysicsEngine.h"
 #include "../IO/AssetManager.h"
 #include "../IO/MeshAssetManager.h"
 #include "../IO/ObjImporter.h"
 #include "../IO/TextureImporter.h"
-#include "../IO/ShaderImporter.h"
-#include <memory>
-#include <typeindex>
+#include "../IO/shader/ShaderImporter.h"
+// #include "../IO/AssimpImporter.h"
+#include "../renderer/Renderer.h"
+#include "../renderer/IRenderer.h"
 
-#include "../IO/AssimpImporter.h"
+class AssimpImporter;
 
 
 class DIContainer
@@ -49,15 +53,16 @@ private:
 
     std::unordered_map<std::type_index, std::any> services;
 
-    std::unique_ptr<ObjImporter>      objImporter;
-    std::unique_ptr<AssimpImporter>   assimpImporter;
-    std::unique_ptr<TextureImporter>  textureImporter;
-    std::unique_ptr<ShaderImporter>   shaderImporter;
-    std::unique_ptr<MeshAssetManager> meshAssetManager;
-    std::unique_ptr<AssetManager>     assetManager;
-    std::unique_ptr<PhysicsEngine>    physicsEngine;
+    std::unique_ptr<ObjImporter>                 objImporter;
+    std::unique_ptr<AssimpImporter>              assimpImporter;
+    std::unique_ptr<TextureImporter>             textureImporter;
+    std::unique_ptr<ShaderImporter>              shaderImporter;
+    std::unique_ptr<MeshAssetManager>            meshAssetManager;
+    std::unique_ptr<AssetManager>                assetManager;
+    std::unique_ptr<PhysicsEngine>               physicsEngine;
+    std::unique_ptr<Rendering::IRenderer>        renderer;
+    std::unique_ptr<IWindow>                     window;
 };
-
 
 
 #endif // MAXENGINE_DICONTAINER_H

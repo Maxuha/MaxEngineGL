@@ -5,10 +5,10 @@
 #include "Cube.h"
 #include "../../components/MeshRenderer.h"
 #include "../../components/Transform.h"
-#include "../../graphics/MeshPrimitives.h"
+#include "../../renderer/domain/MeshPrimitives.h"
 
 Cube* Cube::BuildCube() {
-    Mesh* mesh = MeshPrimitives::CreateBox();
+    const auto mesh = std::shared_ptr<Mesh>(MeshPrimitives::CreateBox());
     auto* obj = new Cube();
     auto* renderer = obj->AddComponent<MeshRenderer>();
     renderer->mesh = mesh;

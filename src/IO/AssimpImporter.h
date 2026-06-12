@@ -5,28 +5,44 @@
 #ifndef MAXENGINE_ASSIMPIMPORTER_H
 #define MAXENGINE_ASSIMPIMPORTER_H
 #include "ModelImporter.h"
-#include "../graphics/Texture.h"
-#include "assimp/mesh.h"
-#include "assimp/scene.h"
-#include "assimp/matrix4x4.h"
+#include "../renderer/domain/Material.h"
 
-
-namespace Assimp::OpenGEX {
-    struct Texture;
-}
+// Forward declare Assimp types to avoid pulling in heavy headers
+struct aiNode;
+struct aiScene;
+struct aiMesh;
+struct aiMaterial;
+namespace Assimp { class Importer; }
 
 class AssimpImporter : public ModelImporter {
 public:
+    AssimpImporter();
+    ~AssimpImporter() override;
+
     Model* Import(const char* fileName) override;
 
 private:
-    std::vector<Texture> textures_loaded;
+    std::unique_ptr<Assimp::Importer> importer;
+
+    enum class ValueType { Float, Vector4 };
+
+    struct AssimpKey {
+        const char* name;
+        unsigned int type;
+        unsigned int index;
+        ValueType valueType;
+    };
+
+    std::vector<Rendering::IGLTexture*> textures_loaded;
     std::vector<MeshEntry> meshes;
     std::string directory;
-    bool gammaCorrection;
 
-    void ProcessNode(aiNode* node, const aiScene* scene, aiMatrix4x4 parentTransform);
-    Mesh* ProcessMesh(aiMesh* mesh, const aiScene* scene);
+    std::unordered_map<ShaderProperty, AssimpKey> materialProperties;
+
+    void ProcessNode(const aiNode* node, const aiScene* scene, GameObject* parent, Model* model);
+    Mesh* ProcessMesh(const aiMesh* mesh, const aiScene* scene);
+    void ProcessMaterial(const aiMaterial* mat, Model* model);
+    Material *ProcessMaterialTexture(const aiMaterial* mat);
 };
 
 

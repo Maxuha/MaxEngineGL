@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -h \"^#include\" /c/Users/zykov/CLionProjects/MaxEngine/src/**/*.h)"
+    ]
+  }
+}

@@ -6,12 +6,13 @@
 #define MAXENGINE_TEXTUREINPORTER_H
 
 #include <string>
-#include "../graphics/Texture.h"
+#include "../renderer/domain/IGLTexture.h"
+#include "model/TextureAsset.h"
 
 
 class TextureImporter {
 public:
-    Texture* Import(const std::string& fileName);
+    TextureAsset* Import(const std::string& fileName);
 };
 
 

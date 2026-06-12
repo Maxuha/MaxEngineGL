@@ -10,8 +10,13 @@ class GameObject;
 
 class Component {
 public:
+    virtual ~Component() = default;
+
+    Component();
+
     explicit Component(GameObject* gameObject);
 
+    void Attach(GameObject& _gameObject);
     GameObject* GetGameObject() const;
 
     virtual void Start();

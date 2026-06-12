@@ -4,59 +4,110 @@
 
 #ifndef MAXENGINE_GAMEOBJECT_H
 #define MAXENGINE_GAMEOBJECT_H
-#include <map>
+
 #include <string>
-#include <typeindex>
-#include "../components/Component.h"
+#include <vector>
+#include <memory>
+#include <concepts>
+#include <algorithm>
 #include "../components/Transform.h"
+
+class Component;
+class Transform;
 
 class GameObject {
 public:
-    GameObject();
+    explicit GameObject(const std::string &name = "GameObject");
+    virtual ~GameObject();
 
-    virtual ~GameObject() = default;
+    GameObject(const GameObject&) = delete;
+    GameObject& operator=(const GameObject&) = delete;
 
-    Transform* GetTransform() const;
+    GameObject(GameObject&&) noexcept = default;
+    GameObject& operator=(GameObject&&) noexcept = default;
+
+    [[nodiscard]] Transform* GetTransform() { return transform; }
+    [[nodiscard]] const Transform* GetTransform() const { return transform; }
+
+    [[nodiscard]] const std::string& GetName() const { return name; }
+    void SetName(std::string newName) { name = std::move(newName); }
 
     virtual void Start();
+    virtual void Update(float deltaTime);
 
-    virtual void Update(float delta_time);
 
-    template<typename T>
-    requires std::derived_from<T, Component>
-    T* AddComponent(){
-        auto component = new T(this);
-        components.insert(std::make_pair(std::type_index(typeid(T)), component));
-        return component;
+    template<typename T, typename... Args>
+        requires std::derived_from<T, Component>
+    T* AddComponent(Args&&... args) {
+        auto component = std::make_unique<T>(std::forward<Args>(args)...);
+        T* rawPtr = component.get();
+
+        rawPtr->Attach(*this);
+
+        _components.push_back(std::move(component));
+        return rawPtr;
     }
 
     template<typename T>
-    requires std::derived_from<T, Component>
+        requires std::derived_from<T, Component>
     void RemoveComponent() {
-        auto typeId = std::type_index(typeid(T));
-        auto component = components.find(typeId);
-        if (component == components.end()) return;
-        delete component->second;
-        components.erase(typeId);
+        auto it = std::remove_if(_components.begin(), _components.end(), [](const auto& comp) {
+            return dynamic_cast<T*>(comp.get()) != nullptr;
+        });
+        _components.erase(it, _components.end());
     }
 
     template<typename T>
-    requires std::derived_from<T, Component>
-    T* GetComponent() {
-        auto typeId = std::type_index(typeid(T));
-        auto component = components.find(typeId);
-        if (component == components.end()) return nullptr;
-        return static_cast<T*>(component->second);
+        requires std::derived_from<T, Component>
+    [[nodiscard]] T* GetComponent() {
+        for (const auto& comp : _components) {
+            if (auto* target = dynamic_cast<T*>(comp.get())) {
+                return target;
+            }
+        }
+        return nullptr;
+    }
+
+    template<typename T>
+        requires std::derived_from<T, Component>
+    [[nodiscard]] const T* GetComponent() const {
+        for (const auto& comp : _components) {
+            if (const auto* target = dynamic_cast<const T*>(comp.get())) {
+                return target;
+            }
+        }
+        return nullptr;
+    }
+
+    template<typename T>
+        requires std::derived_from<T, Component>
+    [[nodiscard]] std::vector<T*> GetComponentsInChildren() {
+        std::vector<T*> foundComponents;
+        GetComponentsInChildrenInternal<T>(foundComponents);
+        return foundComponents;
     }
 
 private:
+    template<typename T>
+    void GetComponentsInChildrenInternal(std::vector<T*>& outComponents) {
+        if (auto* currentComponent = GetComponent<T>()) {
+            outComponents.push_back(currentComponent);
+        }
+
+        for (const auto* child : transform->children) {
+            if (!child) continue;
+
+            if (GameObject* childGO = child->GetGameObject()) {
+                childGO->GetComponentsInChildrenInternal<T>(outComponents);
+            }
+        }
+    }
+
     std::string name;
 
-    std::multimap<std::type_index, Component*> components;
+    std::vector<std::unique_ptr<Component>> _components;
 
-    Transform* transform;
+    Transform* transform = nullptr;
 };
-
-
 
 #endif //MAXENGINE_GAMEOBJECT_H

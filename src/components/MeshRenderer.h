@@ -4,25 +4,23 @@
 
 #ifndef MAXENGINE_MESHRENDERER_H
 #define MAXENGINE_MESHRENDERER_H
-#include "Component.h"
-#include "../graphics/Mesh.h"
-#include "../graphics/DefaultMaterial.h"
+#include <memory>
 
+#include "Component.h"
+#include "../renderer/domain/Mesh.h"
+
+class Material;
 class Camera;
 
 class MeshRenderer : public Component {
 public:
-    explicit MeshRenderer(GameObject* gameObject) : Component(gameObject) {
-    }
+    explicit MeshRenderer() = default;
 
-    ~MeshRenderer() = default;
+    ~MeshRenderer() override = default;
 
-    Mesh* mesh;
+    std::shared_ptr<Mesh> mesh;
 
-    Material* material;
-
-    void Draw(std::vector<Light*>& lights, Camera& camera) const;
-    void Draw2(std::vector<Light*>& lights, Camera& camera) const;
+    Material* material{};
 };
 
 

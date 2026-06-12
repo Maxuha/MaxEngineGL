@@ -16,8 +16,8 @@ public:
 
 private:
     float fov;
-    float near;
-    float far;
+    float zNear;
+    float zFar;
     float aspectRatio;
 
     Matrix4x4 projection = Matrix4x4(1);

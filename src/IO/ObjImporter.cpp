@@ -10,13 +10,14 @@
 #include <string>
 #include <strstream>
 #include <vector>
-#include "../graphics/Vertex.h"
-#include "../math/Vector3.h"
+#include "../math/Vertex.h"
 #include "../math/Vector2.h"
 #include "model/IndexSet.h"
 
 Model* ObjImporter::Import(const char* fileName) {
-    Mesh* mesh ;
+    std::vector<Mesh> meshes = {  };
+
+    auto* model = new Model;
 
     std::vector<Vector3> vPos{};
     std::vector<Vector3> vNormals{};
@@ -134,23 +135,18 @@ Model* ObjImporter::Import(const char* fileName) {
             }
         }
 
-        std::cout << "vertex_size: " << vertxs.size() << std::endl;
-        std::cout << "indices: " << indices.size() << std::endl;
+        auto id = MeshId { Hash::Generate(fileName) };
 
-        mesh = new Mesh(vertxs, indices);
+        auto entry = MeshEntry {
+            .mesh = std::make_shared<Mesh>(Mesh(vertxs, indices))
+        };
+
+        model->meshes.push_back(entry);
 
         file.close();
     } else {
         std::cerr << "Failed open file" << std::endl;
     }
 
-    std::vector<Mesh*> meshes = {  };
-
-    meshes.push_back(mesh);
-
-    auto* model = new Model;
-    MeshEntry entry = MeshEntry();
-    entry.mesh = mesh;
-    model->meshes = {entry};
     return model;
 }
