@@ -11,6 +11,7 @@ enum class BufferUsage {
     Vertex,
     Index,
     Uniform,
+    Staging
 };
 
 } // namespace Rendering

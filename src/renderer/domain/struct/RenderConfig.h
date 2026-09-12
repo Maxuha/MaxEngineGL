@@ -12,6 +12,11 @@ namespace Rendering {
         DX12
     };
 
+    enum class FrameBuffering {
+        Double,
+        Triple
+    };
+
     inline std::ostream& operator<<(std::ostream& os, const RenderAPI api) {
         switch (api) {
             case RenderAPI::OpenGL:   os << "OpenGL";   break;
@@ -24,8 +29,10 @@ namespace Rendering {
     class RenderConfig {
     public:
         RenderAPI api = RenderAPI::OpenGL;
+        FrameBuffering frameBuffering = FrameBuffering::Double;
         Shader* litShader;
         Shader* shadowShader;
+        ImageFormat depthFormat = ImageFormat::D32_Sfloat_S8_Uint;
     };
 } // Rendering
 

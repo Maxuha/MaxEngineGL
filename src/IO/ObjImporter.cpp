@@ -137,11 +137,11 @@ Model* ObjImporter::Import(const char* fileName) {
 
         auto id = MeshId { Hash::Generate(fileName) };
 
-        auto entry = MeshEntry {
-            .mesh = std::make_shared<Mesh>(Mesh(vertxs, indices))
-        };
+        // auto entry = MeshEntry {
+        //     .mesh = std::make_shared<Mesh>(Mesh(vertxs, indices))
+        // };
 
-        model->meshes.push_back(entry);
+        //model->meshes.push_back(entry);
 
         file.close();
     } else {

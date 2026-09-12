@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 26)
 
 include(FetchContent)
 
+#Vulkan
+
+set(Vulkan_ROOT "C:/VulkanSDK/1.4.350.0")
+
+find_package(Vulkan REQUIRED)
+
 #glfw
 
 FetchContent_Declare(
@@ -115,8 +121,8 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/math/Vertex.h
         src/Scene.cpp
         src/Scene.h
-        src/Window.cpp
-        src/Window.h
+        src/GLFWWindowImpl.cpp
+        src/GLFWWindowImpl.h
         src/renderer/domain/Shader.cpp
         src/renderer/domain/IShader.h
         src/renderer/domain/Material.cpp
@@ -180,8 +186,8 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/IRenderer.h
         src/renderer/DrawCall.h
         src/renderer/IRenderDevice.h
-        src/renderer/gl/GLRenderDevice.cpp
-        src/renderer/gl/GLRenderDevice.h
+        src/renderer/gl/OGLRenderDevice.cpp
+        src/renderer/gl/OGLRenderDevice.h
         src/utils/Hash.cpp
         src/utils/Hash.h
         src/renderer/CameraData.h
@@ -195,31 +201,19 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/domain/buffer/BufferUsage.h
         src/renderer/domain/buffer/BufferDesc.h
         src/renderer/domain/buffer/BufferSlot.h
-        src/renderer/domain/GLTexture.cpp
-        src/renderer/domain/GLTexture.h
+        src/renderer/domain/Texture.cpp
+        src/renderer/domain/Texture.h
         src/renderer/domain/IShader.h
-        src/renderer/domain/struct/BufferHandle.h
         src/renderer/domain/struct/MeshHandle.h
         src/renderer/domain/struct/MeshCreateDesc.h
         src/renderer/domain/struct/VertexLayout.h
         src/renderer/domain/struct/PipelineStateDesc.h
         src/renderer/domain/struct/Pipeline.h
-        src/renderer/domain/struct/PipelineHandle.h
         src/renderer/domain/struct/ResourceSet.h
         src/renderer/gl/model/TextureData.h
-        src/renderer/domain/IPipeline.h
-        src/renderer/domain/ICommandBuffer.h
-        src/renderer/gl/GLCommandBuffer.cpp
-        src/renderer/gl/GLCommandBuffer.h
-        src/renderer/domain/GLPipeline.cpp
-        src/renderer/domain/GLPipeline.h
-        src/renderer/domain/IResourceSet.h
-        src/renderer/domain/GLResourceSet.cpp
-        src/renderer/domain/GLResourceSet.h
+        src/renderer/gl/CommandBuffer.cpp
+        src/renderer/gl/CommandBuffer.h
         src/renderer/domain/IGLTexture.h
-        src/renderer/domain/struct/IBuffer.h
-        src/renderer/domain/struct/Buffer.cpp
-        src/renderer/domain/struct/Buffer.h
         src/renderer/gl/desc/TextureCreateRequest.h
         src/IO/model/TextureAsset.h
         src/IWindow.h
@@ -230,22 +224,126 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/IO/shader/SpirvImporter.h
         src/IO/shader/ShaderCompiler.cpp
         src/IO/shader/ShaderCompiler.h
-        src/renderer/gl/model/PipelineData.h
         src/renderer/domain/struct/MaterialData.h
         src/IO/material/IMaterialImporter.h
         src/IO/material/MaterialImporter.cpp
         src/IO/material/MaterialImporter.h
-        src/renderer/RendererContext.h
-        src/renderer/gl/model/PipelineLayout.h
+        src/renderer/RenderContext.h
+        src/renderer/gl/model/OGLPipelineLayout.h
         src/renderer/gl/managers/BufferManager.cpp
         src/renderer/gl/managers/BufferManager.h
         src/renderer/gl/managers/BufferData.h
         src/renderer/gl/managers/BufferManager.cpp
+        src/IGraphicsContext.h
+        src/IGLFWGraphicsContext.h
+        src/OpenGLGLFWGraphicsContext.cpp
+        src/OpenGLGLFWGraphicsContext.h
+        src/VulkanGLFWGraphicsContext.cpp
+        src/VulkanGLFWGraphicsContext.h
+        src/renderer/IGraphicsContext.h
+        src/renderer/gl/OGLGraphicsContext.cpp
+        src/renderer/gl/OGLGraphicsContext.h
+        src/renderer/vulkan/VulkanRenderDevice.cpp
+        src/renderer/vulkan/VulkanRenderDevice.h
+        src/renderer/vulkan/VulkanRenderDevice.cpp
+        src/renderer/vulkan/VulkanRenderDevice.cpp
+        src/renderer/vulkan/VulkanLogicalDevice.cpp
+        src/renderer/vulkan/VulkanLogicalDevice.h
+        src/renderer/vulkan/VulkanQueueFamily.cpp
+        src/renderer/vulkan/VulkanQueueFamily.h
+        src/renderer/vulkan/VulkanPhysicalDevice.cpp
+        src/renderer/vulkan/VulkanPhysicalDevice.h
+        src/renderer/vulkan/VulkanInstance.cpp
+        src/renderer/vulkan/VulkanInstance.h
+        src/renderer/vulkan/VulkanSurface.cpp
+        src/renderer/vulkan/VulkanSurface.h
+        src/renderer/vulkan/VulkanSwapChain.cpp
+        src/renderer/vulkan/VulkanSwapChain.h
+        src/renderer/vulkan/VulkanRenderPassManager.cpp
+        src/renderer/vulkan/VulkanRenderPassManager.h
+        src/renderer/vulkan/pipeline/VulkanPipelineManager.cpp
+        src/renderer/vulkan/pipeline/VulkanPipelineManager.h
+        src/renderer/vulkan/shaders/VulkanShaderManager.cpp
+        src/renderer/vulkan/shaders/VulkanShaderManager.h
+        src/renderer/managers/IShaderManager.h
+        src/renderer/vulkan/framebuffer/IVulkanFramebufferManager.h
+        src/renderer/vulkan/framebuffer/VulkanFrameBufferManager.cpp
+        src/renderer/vulkan/framebuffer/VulkanFrameBufferManager.h
+        src/renderer/vulkan/commandbuffer/IVulkanCommandBufferManager.h
+        src/renderer/vulkan/commandbuffer/VulkanCommandBufferManager.cpp
+        src/renderer/vulkan/commandbuffer/VulkanCommandBufferManager.h
+        src/renderer/vulkan/pipeline/IVulkanPipelineManager.h
+        src/renderer/vulkan/texture/VulkanTextureManager.cpp
+        src/renderer/vulkan/texture/VulkanTextureManager.h
+        src/renderer/vulkan/texture/IVulkanTextureManager.h
+        src/math/Rect.h
+        src/renderer/ILogicalDevice.h
+        src/renderer/ISwapchain.h
+        src/renderer/ISemaphore.h
+        src/renderer/vulkan/VulkanSemaphore.cpp
+        src/renderer/vulkan/VulkanSemaphore.h
+        src/renderer/IFence.h
+        src/renderer/vulkan/VulkanFence.cpp
+        src/renderer/vulkan/VulkanFence.h
+        src/renderer/IFrameManager.h
+        src/renderer/vulkan/VulkanFrameManager.cpp
+        src/renderer/vulkan/VulkanFrameManager.h
+        src/renderer/IFrameBufferManager.h
+        src/renderer/ICommandBufferManager.h
+        src/renderer/IRenderPass.h
+        src/renderer/RasterizedRenderPass.cpp
+        src/renderer/RasterizedRenderPass.h
+        src/renderer/IRenderPassManager.h
+        src/renderer/IInstance.h
+        src/renderer/ISurface.h
+        src/renderer/IPhysicalDevice.h
+        src/renderer/gl/OGLInstance.cpp
+        src/renderer/gl/OGLInstance.h
+        src/renderer/ITextureManager.h
+        src/renderer/gl/OGLTextureManager.cpp
+        src/renderer/gl/OGLTextureManager.h
+        src/renderer/gl/OGLRenderPassManager.cpp
+        src/renderer/gl/OGLRenderPassManager.h
+        src/renderer/gl/OGLFrameBufferManager.cpp
+        src/renderer/gl/OGLFrameBufferManager.h
+        src/renderer/gl/OGLShaderManager.cpp
+        src/renderer/gl/OGLShaderManager.h
+        src/renderer/ICommandPoolManager.cpp
+        src/renderer/ICommandPoolManager.h
+        src/renderer/gl/OGLCommandPoolManager.cpp
+        src/renderer/gl/OGLCommandPoolManager.h
+        src/renderer/IPipelineManager.h
+        src/renderer/gl/OGLPipelineManager.cpp
+        src/renderer/gl/OGLPipelineManager.h
+        src/renderer/gl/OGLFrameManager.cpp
+        src/renderer/gl/OGLFrameManager.h
+        src/renderer/domain/IBufferManager.h
+        src/renderer/vulkan/vertexbuffer/VulkanBufferManager.cpp
+        src/renderer/vulkan/vertexbuffer/VulkanBufferManager.h
+        src/renderer/gl/OGLVertexBufferManager.cpp
+        src/renderer/gl/OGLVertexBufferManager.h
+        src/renderer/vulkan/VulkanDescriptorSetManager.cpp
+        src/renderer/vulkan/VulkanDescriptorSetManager.h
+        src/renderer/domain/CameraRender.cpp
+        src/renderer/domain/CameraRender.h
+        src/components/Behaviour.cpp
+        src/components/Behaviour.h
+        src/game/RotationComponent.cpp
+        src/game/RotationComponent.h
+        src/renderer/IResourceSetManager.h
+        src/renderer/gl/OGLDescriptorSetManager.cpp
+        src/renderer/gl/OGLDescriptorSetManager.h
+        src/IInputContext.h
+        src/IKeyListener.h
+        src/renderer/domain/LightRenderData.h
+        src/renderer/vulkan/vertexbuffer/VulkanStagingBufferPool.cpp
+        src/renderer/vulkan/vertexbuffer/VulkanStagingBufferPool.h
 )
 
 target_include_directories(MaxEngine PRIVATE
-        ${CMAKE_SOURCE_DIR}/include
-)
+        ${CMAKE_SOURCE_DIR}/include)
+
+target_include_directories(MaxEngine PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_precompile_headers(MaxEngine PRIVATE
         "$<$<COMPILE_LANGUAGE:CXX>:<vector>>"
@@ -258,7 +356,6 @@ target_precompile_headers(MaxEngine PRIVATE
         "$<$<COMPILE_LANGUAGE:CXX>:<glm/gtc/matrix_transform.hpp>>"
         "$<$<COMPILE_LANGUAGE:CXX>:<glm/gtc/type_ptr.hpp>>"
         "$<$<COMPILE_LANGUAGE:CXX>:<glad/glad.h>>"
-        "$<$<COMPILE_LANGUAGE:CXX>:<GLFW/glfw3.h>>"
 )
 
 set_target_properties(MaxEngine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
@@ -270,11 +367,14 @@ target_link_libraries(MaxEngine PRIVATE
         assimp
         spirv-cross-core
         spirv-cross-glsl
+        Vulkan::Vulkan
 )
 
 if(MINGW)
     target_link_options(MaxEngine PRIVATE -Wl,--allow-multiple-definition)
 endif()
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_VULKAN)
 
 add_definitions(-DROOT="${CMAKE_SOURCE_DIR}")
 add_definitions(-DASSETS_ROOT="${CMAKE_SOURCE_DIR}/assets")

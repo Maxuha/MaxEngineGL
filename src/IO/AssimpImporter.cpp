@@ -77,6 +77,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
     mainTransform->scale = Vector3(aiScale.x, aiScale.y, aiScale.z);
     auto *parentTransform = parent ? parent->GetTransform() : nullptr;
     mainTransform->SetParent(parentTransform);
+
     if (parentTransform) {
         parentTransform->AddChild(mainTransform);
     }
@@ -91,6 +92,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
         entry.rotation = Vector3(euler.x, euler.y, euler.z);
         entry.scale = Vector3(aiScale.x, aiScale.y, aiScale.z);
         entry.materialIndex = mesh->mMaterialIndex;
+
         model->meshes.push_back(entry);
 
         auto* child = new GameObject(mesh->mName.C_Str());
@@ -113,7 +115,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
 Mesh *AssimpImporter::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
     // data to fill
     std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<uint16_t> indices;
 
     // walk through each of the mesh's vertices
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -164,17 +166,22 @@ Mesh *AssimpImporter::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
             indices.push_back(face.mIndices[j]);
     }
 
-    const auto id = MeshId{Hash::Generate(mesh->mName.data)};
-
-    return DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(vertices, indices);
+     return DIContainer::GetInstance().Get<IRenderer>()->CreateMesh(vertices, indices);
 }
 
 void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
-    const auto standardShader = DIContainer::GetInstance().Get<Rendering::IRenderer>()->GetLitShader();
+    //const auto standardShader = DIContainer::GetInstance().Get<IRenderer>()->GetLitShader();
 
-    Material material(standardShader, mat->GetName().C_Str());
+    const std::vector<char> vSPV = FileReader::ReadFileBytes(
+     std::string(ASSETS_ROOT) + "/shaders/phong/" + "phong-v" + ".spv");
+    const std::vector<char> fSPV = FileReader::ReadFileBytes(
+        std::string(ASSETS_ROOT) + "/shaders/phong/" + "phong-f" + ".spv");
 
-    for (const auto key: standardShader->GetProperties() | std::views::keys) {
+    const auto mainShader = new Shader(vSPV, fSPV);
+
+    Material material(mainShader, mat->GetName().C_Str());
+
+    for (const auto key: mainShader->GetProperties() | std::views::keys) {
         auto [name, type, index, vType] = materialProperties[key];
         switch (vType) {
             case ValueType::Float: {

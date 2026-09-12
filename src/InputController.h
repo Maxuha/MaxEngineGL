@@ -4,25 +4,35 @@
 
 #ifndef MAXENGINE_INPUTCONTROLLER_H
 #define MAXENGINE_INPUTCONTROLLER_H
+#include "IInputContext.h"
 #include "GLFW/glfw3.h"
 
+class IKeyListener;
 
 class InputController {
 public:
-    static InputController& GetInstance();
+    InputController(IInputContext* context);
 
-    void Init(GLFWwindow *window);
+    void AddKeyListener(IKeyListener* listener);
 
-    bool GetKeyDown(int key) const;
+    void RemoveKeyListener(IKeyListener* listener);
 
-    void GetCursorPos(double *x, double *y) const;
+    bool GetKeyDown(int keycode) const;
+
+    Vector2 GetCursorPos() const;
+
+    void Update();
+
+    void KeyPressed(int key, int scancode, int action, int mods) const;
 
 private:
     explicit InputController() = default;
 
-    GLFWwindow *window;
+    IInputContext* context;
 
     static InputController* Instance;
+
+    std::vector<IKeyListener*> keyListeners;
 };
 
 

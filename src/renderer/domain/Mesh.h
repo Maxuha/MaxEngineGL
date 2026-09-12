@@ -8,7 +8,8 @@
 #include <string>
 #include <../src/utils/Hash.cpp>
 #include "../../math/Vertex.h"
-#include "struct/Buffer.h"
+#include "../src/renderer/domain/IBufferManager.h"
+#include "../src/renderer/IResourceSetManager.h"
 
 struct MeshId {
     uint64_t Id;
@@ -32,7 +33,7 @@ struct std::hash<MeshId> {
 
 class Mesh {
 public:
-    explicit Mesh(const std::span<const Vertex>& vertices, const std::span<const uint32_t>& indices);
+    explicit Mesh(const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices);
 
     ~Mesh() = default;
 
@@ -42,16 +43,18 @@ public:
 
     size_t GetIndexCount() const;
     MeshId GetId() const;
-    const std::span<const Vertex>& GetVertices() const;
-    const std::span<const uint32_t>& GetIndices() const;
+    std::vector<Vertex>& GetVertices();
+    std::vector<uint16_t>& GetIndices();
 
-    BufferHandle vertexBuffer{};
-    BufferHandle indexBuffer{};
+    Rendering::BufferHandle vertexBuffer{};
+    Rendering::BufferHandle indexBuffer{};
+    Rendering::BufferHandle modelBuffer{};
+    Rendering::ResourceSetHandle modelResourceSet{};
 
 private:
     MeshId id{};
-    std::span<const Vertex> vertices;
-    std::span<const uint32_t> indices;
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
 
 };
 

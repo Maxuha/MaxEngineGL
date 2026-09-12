@@ -8,11 +8,15 @@
 
 #include "BufferData.h"
 
+struct BufferHandle;
+struct TextureData;
+struct BufferDesc;
+
 namespace Rendering {
     class BufferManager {
     public:
-        void CreateBuffer(const BufferDesc &desc, const void *data = nullptr);
-        BufferHandle CreateFrameBuffer(const TextureData& textureData);
+        // void CreateBuffer(const BufferDesc &desc, const void *data = nullptr);
+        // BufferHandle CreateFrameBuffer(const TextureData& textureData);
 
     private:
         std::vector<BufferData> buffers;

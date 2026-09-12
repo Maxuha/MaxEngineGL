@@ -4,7 +4,6 @@
 
 #include "ShaderImporter.h"
 #include "../FileReader.h"
-#include "../../di/DIContainer.h"
 #include "../../renderer/domain/Shader.h"
 
 ShaderImporter::~ShaderImporter() {
@@ -53,12 +52,12 @@ Shader* ShaderImporter::Import(const std::string &shaderName) {
     // descriptor_set_layout_binding.stageFlags = 0;
 
     Rendering::PipelineStateDesc pipeline;
-    pipeline.vertexLayout = vertex_layout;
-    pipeline.depthStencilState.depthTestEnable = true;
-    pipeline.depthStencilState.depthWriteEnable = true;
-    pipeline.rasterizerState.cullEnable = true;
-    pipeline.rasterizerState.cullMode = Rendering::CullMode::Front;
-    pipeline.rasterizerState.fillMode = Rendering::FillMode::Solid;
+    pipeline.VertexLayout = vertex_layout;
+    pipeline.DepthStencilState.depthTestEnable = true;
+    pipeline.DepthStencilState.depthWriteEnable = true;
+    pipeline.RasterizerState.cullEnable = true;
+    pipeline.RasterizerState.cullMode = Rendering::CullMode::Front;
+    pipeline.RasterizerState.fillMode = Rendering::FillMode::Solid;
 
 
 

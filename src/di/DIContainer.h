@@ -17,9 +17,11 @@
 #include "../IO/TextureImporter.h"
 #include "../IO/shader/ShaderImporter.h"
 // #include "../IO/AssimpImporter.h"
+#include "../renderer/IGraphicsContext.h"
 #include "../renderer/Renderer.h"
 #include "../renderer/IRenderer.h"
 
+class InputController;
 class AssimpImporter;
 
 
@@ -62,6 +64,8 @@ private:
     std::unique_ptr<PhysicsEngine>               physicsEngine;
     std::unique_ptr<Rendering::IRenderer>        renderer;
     std::unique_ptr<IWindow>                     window;
+    std::unique_ptr<Rendering::IGraphicsContext> graphicsContext;
+    std::unique_ptr<InputController>             inputController;
 };
 
 

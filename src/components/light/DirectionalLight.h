@@ -10,6 +10,8 @@
 class DirectionalLight : public Light {
 public:
     DirectionalLight();
+
+    void Update(float delta_time) override;
 };
 
 

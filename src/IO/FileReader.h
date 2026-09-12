@@ -9,6 +9,7 @@
 class FileReader {
 public:
     static std::string ReadFileString(const char* path);
+    static std::vector<char> ReadFileBytes(const std::string& path);
 };
 
 #endif //MAXENGINE_FILELOADER_H

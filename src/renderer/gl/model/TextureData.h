@@ -5,16 +5,14 @@
 #ifndef MAXENGINE_TEXTUREDESC_H
 #define MAXENGINE_TEXTUREDESC_H
 #include <cstdint>
+#include "../../ITextureManager.h"
 
 
 namespace Rendering {
-    struct TextureHandle {
-        uint32_t Id = 0;
-    };
-
     enum class TextureFormat {
-        RGBA,
         RGB,
+        RGBA,
+        SRGBA,
         D32_FLOAT,
         DEPTH
     };
@@ -31,7 +29,7 @@ namespace Rendering {
         uint32_t width = 0;
         uint32_t height = 0;
         uint32_t mipLevels = 1;
-        TextureFormat format = TextureFormat::RGBA;
+        TextureFormat format = TextureFormat::SRGBA;
         TextureWrap wrap = TextureWrap::Repeat;
         bool isRenderTarget = false;
     };

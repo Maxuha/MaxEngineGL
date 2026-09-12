@@ -90,18 +90,59 @@ void Scene::Init() const {
 }
 
 void Scene::Update(const double delta_time) {
-    camera->Update(delta_time);
-
-    gameObjects[5]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
-    gameObjects[10]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
+    // camera->Update(delta_time);
+    //
+    // gameObjects[5]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
+    // gameObjects[10]->GetComponent<Transform>()->RotateYaw(30.0f * delta_time);
     //gameObjects[10]->GetComponent<Transform>()->GetChild(0)->GetChild(0)->GetChild(0)->RotateYaw(-30.0f * delta_time);
 
-    DIContainer::GetInstance().Get<IRenderer>()->BeginFrame(*camera);
-    DIContainer::GetInstance().Get<IRenderer>()->Submit(*this);
-    DIContainer::GetInstance().Get<IRenderer>()->Render();
-    DIContainer::GetInstance().Get<IRenderer>()->EndFrame();
+    // for (const auto game_object : gameObjects) {
+    //     game_object->GetTransform()->RotateRoll(delta_time * 360);
+    // //    game_object->GetTransform()->RotatePitch(delta_time * 50);
+    // }
+
+    // DIContainer::GetInstance().Get<IRenderer>()->BeginFrame(*camera);
+    // DIContainer::GetInstance().Get<IRenderer>()->Render(*this);
+
+    // DIContainer::GetInstance().Get<IRenderer>()->Submit(*this);
+    // for (auto game_object : gameObjects) {
+    //     // DrawCall draw_call;
+    //     // draw_call.
+    // }
+
+
+    // DIContainer::GetInstance().Get<IRenderer>()->EndFrame();
 }
 
 void Scene::Add(GameObject *gameObject) {
     gameObjects.push_back(gameObject);
+}
+
+std::vector<MeshRenderer *> Scene::GetRenderableMeshes() {
+    std::vector<MeshRenderer *> renderable_meshes;
+    renderable_meshes.reserve(gameObjects.size());
+    for (auto game_object : gameObjects) {
+        if (auto mesh_renderer = game_object->GetComponent<MeshRenderer>()) {
+            renderable_meshes.push_back(mesh_renderer);
+        }
+    }
+    return renderable_meshes;
+}
+
+std::vector<DrawCall> Scene::GetDrawCalls() {
+    const std::vector<MeshRenderer *> renderers = GetComponents<MeshRenderer>();
+    std::vector<DrawCall> drawCalls;
+    drawCalls.reserve(renderers.size());
+    for (const auto renderer : renderers) {
+        if (renderer != nullptr && renderer->mesh != nullptr && renderer->material != nullptr) {
+            drawCalls.push_back(DrawCall { ._mesh = renderer->mesh.get(), .material = renderer->material , .transform = renderer->GetGameObject()->GetTransform()});
+        }
+    }
+
+    return drawCalls;
+}
+
+std::vector<Light *> Scene::GetLights() {
+    const std::vector<Light *> lights = GetComponents<Light>();
+    return lights;
 }
