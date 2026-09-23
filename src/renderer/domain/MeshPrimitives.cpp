@@ -46,7 +46,7 @@ Mesh* MeshPrimitives::CreateBox() {
         {{1, -1, -1}, {0, -1, 0}, {1, 0}} // 23
     };
 
-    uint32_t indices[36] = {
+    uint16_t indices[36] = {
         0, 1, 2, 0, 2, 3, // Front
         4, 5, 6, 4, 6, 7, // Right
         8, 9, 10, 8, 10, 11, // Back
@@ -55,8 +55,8 @@ Mesh* MeshPrimitives::CreateBox() {
         20, 21, 22, 20, 22, 23 // Bottom
     };
 
-    //auto id = MeshId { Hash::Generate((vertices->position).) };
-    const auto id = MeshId{Hash::Generate("Mesh")};
+    const std::vector ver(vertices, vertices + std::size(vertices));
+    const std::vector ind(indices, indices + std::size(indices));
 
-    return DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(vertices, indices);
+    return DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(ver, ind);
 }

@@ -5,12 +5,9 @@
 #ifndef MAXENGINE_MATERIAL_H
 #define MAXENGINE_MATERIAL_H
 #include <any>
-#include <variant>
-
 #include "Shader.h"
-#include "../../gameObject/Camera.h"
 #include "IGLTexture.h"
-#include "struct/BufferHandle.h"
+#include "Texture.h"
 
 
 namespace Rendering {
@@ -21,33 +18,23 @@ class GameObject;
 
 struct MaterialHandle {
     uint32_t Id;
-
-    bool operator==(const MaterialHandle &other) const {
-        return Id == other.Id;
-    }
-
-    bool operator<(const MaterialHandle &other) const {
-        return std::tie(Id) < std::tie(other.Id);
-    }
 };
-
-template<>
-struct std::hash<MaterialHandle> {
-    size_t operator()(const MaterialHandle &s) const noexcept {
-        return Hash::Generate(std::to_string(s.Id));
-    }
-};
-
 
 class Material {
 public:
-    explicit Material(IShader *shader, std::string name = "New Material");
+    explicit Material(MaterialHandle handle);
+
+    explicit Material(const Shader *shader, const std::string &name = "New Material");
 
     virtual ~Material() = default;
 
     MaterialHandle GetId() const;
 
     IShader *GetShader() const;
+
+    bool IsDirty() const;
+
+    void ClearDirty();
 
     template<typename T>
     void SetProperty(const std::string &slot, T value) {
@@ -59,9 +46,9 @@ public:
         auto it = propertiesMeta.find(slot);
         if (it != propertiesMeta.end()) {
             const ShaderMetaProperty& meta = it->second;
-
             memcpy(cpuBuffer.data() + meta.offset, &value, meta.size);
-            Apply(slot);
+            isDirty = true;
+            dirtyFrames = 3;
         }
     }
 
@@ -75,9 +62,8 @@ public:
         auto it = commonPropertiesMeta.find(slot);
         if (it != commonPropertiesMeta.end()) {
             const ShaderMetaProperty& meta = it->second;
-
             memcpy(cpuBuffer.data() + meta.offset, &value, meta.size);
-            Apply(slot);
+            //Apply(slot);
         }
     }
 
@@ -89,13 +75,21 @@ public:
         textures[slot] = &texture;
     }
 
+    void SetTexture(const uint32_t slot, Rendering::Texture &texture);
+
     Rendering::IGLTexture* GetTexture(const std::string &slot) const {
         return textures.at(slot);
     }
 
-    std::vector<uint8_t> GetBufferData() const {
+    const std::vector<uint8_t>& GetBufferData() const  {
         return cpuBuffer;
     }
+
+    MaterialHandle GetMaterialHandle() const;
+
+    std::string GetName() const;
+
+    uint32_t dirtyFrames;
 
 private:
     MaterialHandle id{};
@@ -106,6 +100,10 @@ private:
     std::unordered_map<ShaderProperty, ShaderMetaProperty> commonPropertiesMeta;
     std::vector<uint8_t> cpuBuffer;
     std::string name;
+
+    bool isDirty = false;
+
+
 
     void Apply(const std::string& slot);
 

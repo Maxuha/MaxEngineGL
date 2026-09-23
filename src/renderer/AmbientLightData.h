@@ -38,6 +38,21 @@ namespace Rendering {
         DirectionalLightData directionalLight;
         PointLightData pointLights[8];
         SpotLightData spotLights[8];
+
+        // int currentPointLight = 0;
+        // int currentSpotLight = 0;
+        //
+        // void addAmbientLight(const AmbientLightData& light) {
+        //     ambientLight = light;
+        // }
+        //
+        // void addDirectionalLight(const DirectionalLightData& light) {
+        //     directionalLight = light;
+        // }
+        //
+        // void addPointLight(const PointLightData& light) {
+        //
+        // }
     };
 } // namespace Rendering
 

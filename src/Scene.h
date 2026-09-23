@@ -9,13 +9,13 @@
 #include "components/MeshRenderer.h"
 #include "components/light/Light.h"
 #include "gameObject/Camera.h"
-
-class Window;
+#include "renderer/DrawCall.h"
 
 class Scene {
 public:
     explicit Scene(Camera *camera) {
         this->camera = camera;
+        gameObjects = {};
     }
 
     ~Scene() {
@@ -31,6 +31,12 @@ public:
     void Update(double delta_time);
 
     void Add(GameObject *gameObject);
+
+    std::vector<MeshRenderer *> GetRenderableMeshes();
+
+    std::vector<Rendering::DrawCall> GetDrawCalls();
+
+    std::vector<Light *> GetLights();
 
     template<typename T>
         requires std::derived_from<T, Component>

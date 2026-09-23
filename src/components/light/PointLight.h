@@ -9,6 +9,8 @@
 
 class PointLight : public Light {
 public:
+    PointLight();
+
     float GetRange() const;
 
     void SetRange(float range);

@@ -6,52 +6,88 @@
 #define MAXENGINE_RENDERER_H
 #include "IRenderDevice.h"
 #include "IRenderer.h"
-#include "LightRenderer.h"
-#include "domain/GLTexture.h"
-#include "domain/IWindowContext.h"
+#include "IRenderPass.h"
+#include "../IWindow.h"
+#include "domain/CameraRender.h"
+#include "domain/LightRenderData.h"
+#include "domain/Texture.h"
 #include "domain/struct/MaterialData.h"
 #include "domain/struct/RenderConfig.h"
-#include "gl/GLRenderDevice.h"
+#include "gl/OGLRenderDevice.h"
+#include "vulkan/pipeline/VulkanPipelineManager.h"
 
 
 namespace Rendering {
+    class IFence;
+    struct FrameBufferHandle;
+
+    struct RenderPass {
+        std::array<AttachmentDescription, 2> colorAttachments = {};
+        uint32_t attachmentCount = 0;
+
+        Rect viewport = Rect{0, 0, 2160, 1440};
+        Color clearColor = Color{0.5f, 0.5f, 0.5f, 1.0f};
+    };
+
+    struct GraphicsShader {
+        PipelineHandle pipeline;
+        ResourceSetLayoutHandle resourceSetLayout;
+    };
+
     class Renderer : public IRenderer {
     public:
-        explicit Renderer(const RenderConfig& renderConfig, IWindowContext &context);
+        explicit Renderer(const RenderConfig& renderConfig, IWindow& window);
 
         ~Renderer() override;
 
+        /// Start Factory
+
+        CameraRender* CreateCamera(float fov, float zNear, float zFar, float aspectRatio) override;
+
         TextureHandle CreateTexture(void *data, TextureCreateRequest& textureCreateDesc) override;
 
-        MaterialHandle CreateMaterial(IShader& shader,  const PipelineStateDesc &pipelineStateDesc) override;
+        MaterialHandle CreateMaterial(ShaderHandle shaderHandle, const MaterialDesc &materialDesc) override;
 
-        void MaterialSetTexture(MaterialHandle materialHandle, const std::string &slot, TextureHandle textureId) override;
+        ShaderHandle CreateShader(const ShaderDesc& shaderDesc) override;
 
-        void UpdateMaterialData(MaterialHandle handle, size_t offset, size_t size, void* data) override;
+        Mesh *CreateMesh(const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices) override;
 
-        void UpdateTextureFilterMode(TextureHandle& textureId, TextureWrap textureWrap) override;
+        LightHandle CreateLight(LightType type) override;
 
-        void UpdateBufferData(BufferHandle bufferId, size_t offset, size_t size, void *data) override;
+        /// End Factory
 
-        Mesh *CreateMesh(std::span<const Vertex> vertices, std::span<const uint32_t> indices) override;
+        /// Update data
+
+        void BindTextureToMaterial(const MaterialHandle material, uint32_t slot, const TextureHandle texture) const;
+
+        void BindTextureToMaterial(const Material& material, uint32_t slot, const Texture& texture) override;
+
+        void BindBufferToMaterial(MaterialHandle materialHandle, uint32_t slot, BufferHandle bufferId) override;
+
+        /// End Update data
+
+        /// Render
 
         void BeginFrame(Camera &camera) override;
 
-        void Submit(Scene &scene) override;
-
-        void Render() override;
+        void Render(Scene &scene) override;
 
         void EndFrame() override;
 
-        Shader* GetLitShader() const override;
+        /// End Render
+
+        /// Config
+
+        void SetDepthShader( Shader& shader);
 
     private:
+
         Camera *activeCamera{};
         Shader* litShader;
+        Shader* depthShader;
 
         IRenderDevice *renderDevice;
-        ICommandBuffer *commandBuffer;
-        ILightRenderer *lightRenderer{};
+        CommandBuffer *commandBuffer;
         MeshManager *meshManager{};
 
         PipelineHandle shadowPipeline{};
@@ -61,7 +97,34 @@ namespace Rendering {
         BufferHandle cameraBufferId{};
         BufferHandle depthBuffer{};
 
+        std::vector<IRenderPass*> renderPasses;
+        std::vector<RenderPass> renderPassesDesc;
+
+        std::vector<CameraRenderData> cameras;
         std::vector<MaterialData> materials;
+        std::vector<TextureData> textures;
+        std::vector<GraphicsShader> shaders;
+
+        VertexLayout vertexLayout;
+        Rect viewport;
+
+        LightRenderData lightRenderData;
+        ShadowRenderData shadowRenderData;
+
+        LightItemData ambientLight;
+        LightItemData directionalLight;
+        std::vector<LightItemData> pointLights;
+        std::vector<LightItemData> spotLights;
+
+        std::vector<LightItemData> lights;
+        uint32_t lastPointLightIndex = 0;
+        uint32_t lastSpotLightIndex = 0;
+
+        ImageFormat depthFormat;
+
+        ResourceSetLayoutHandle cameraAndLightSetLayout{};
+        ResourceSetLayoutHandle modelSetLayout{};
+        PipelineLayoutHandle mainPipelineLayout{};
     };
 } // namespace Rendering
 

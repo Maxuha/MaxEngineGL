@@ -4,6 +4,11 @@
 
 #include "PointLight.h"
 
+PointLight::PointLight() {
+    lightType = Rendering::LightType::Point;
+    handle = DIContainer::GetInstance().Get<IRenderer>()->CreateLight(lightType);
+}
+
 float PointLight::GetRange() const {
     return range;
 }

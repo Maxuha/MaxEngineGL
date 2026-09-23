@@ -4,12 +4,12 @@
 
 #ifndef MAXENGINE_FPSCAMERA_H
 #define MAXENGINE_FPSCAMERA_H
+#include "IKeyListener.h"
 #include "gameObject/Camera.h"
 
-
-class FPSCamera : public Camera {
+class FPSCamera : public Camera, public IKeyListener {
 public:
-    FPSCamera(float fov, float near, float far, float aspectRatio);
+    FPSCamera(float fov, float zNear, float zFar, float aspectRatio);
 
     ~FPSCamera() override;
 
@@ -17,9 +17,13 @@ public:
 
     void Update(float delta_time) override;
 
+    void OnKeyPressed(int key, int scancode, int action, int mods) override;
+
 private:
     float cameraSpeed = 0, minCameraSpeed = 2, maxCameraSpeed = 10;
     Vector3 directionRot = Vector3::Zero();
+
+    float deltaTime = 0;
 };
 
 

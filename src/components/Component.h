@@ -17,6 +17,7 @@ public:
     explicit Component(GameObject* gameObject);
 
     void Attach(GameObject& _gameObject);
+
     GameObject* GetGameObject() const;
 
     virtual void Start();

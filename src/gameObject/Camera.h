@@ -7,14 +7,20 @@
 
 #include "GameObject.h"
 #include "../components/Transform.h"
+#include "../renderer/domain/CameraRender.h"
+
 
 class Camera : public GameObject {
 public:
-    Camera(float fov, float near, float far, float aspectRatio);
+    Camera(float fov, float zNear, float zFar, float aspectRatio);
 
     Matrix4x4 GetProjection() const;
 
+    Rendering::CameraHandle GetHandle() const;
+
 private:
+    Rendering::CameraHandle  handle;
+
     float fov;
     float zNear;
     float zFar;

@@ -16,8 +16,6 @@ class IShaderImporter {
 public:
     virtual ~IShaderImporter() = default;
 
-    virtual Shader* Import(const Vert &vert, const Frag &frag) = 0;
-
     virtual Shader* Import(const std::string &shaderName) = 0;
 };
 

@@ -14,11 +14,16 @@
 
 namespace Rendering {
     struct DrawCall {
+        // Matrix4x4 model;
+        // Mesh mesh;
+        // Material material;
+
         glm::uint64_t key{};
         MeshId meshId;
         MaterialHandle materialId;
         Matrix4x4 model;
         std::shared_ptr<Mesh> mesh;
+        Mesh* _mesh;
         Material *material;
         Transform *transform;
         IShader *shader;

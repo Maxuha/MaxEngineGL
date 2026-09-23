@@ -6,9 +6,10 @@
 
 #include "../../math/AABB.h"
 
-Mesh::Mesh(const std::span<const Vertex> &vertices, const std::span<const uint32_t>& indices) : Size(indices.size()), vertices(vertices), indices(indices) {
+Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<uint16_t>& indices) : Size(indices.size()), vertices(vertices), indices(indices) {
     this->vertices = vertices;
     this->indices = indices;
+
 }
 
 size_t Mesh::GetIndexCount() const {
@@ -19,10 +20,10 @@ MeshId Mesh::GetId() const {
     return id;
 }
 
-const std::span<const Vertex>& Mesh::GetVertices() const {
+std::vector<Vertex>& Mesh::GetVertices() {
     return vertices;
 }
 
-const std::span<const uint32_t>& Mesh::GetIndices() const {
+std::vector<uint16_t>& Mesh::GetIndices() {
     return indices;
 }

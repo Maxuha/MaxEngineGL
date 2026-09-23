@@ -5,12 +5,10 @@
 #ifndef MAXENGINE_VERTEXLAYOUT_H
 #define MAXENGINE_VERTEXLAYOUT_H
 #include <vector>
-
 #include "spirv_cross.hpp"
 
 
 namespace Rendering {
-    enum class ResourceType;
 
     enum class VertexFormat {
         Float,
@@ -42,13 +40,6 @@ namespace Rendering {
     struct VertexLayout {
         std::vector<VertexBinding> bindings;
         std::vector<VertexAttribute> attributes;
-    };
-
-    struct DescriptorSetLayoutBinding {
-        ResourceType type;
-        uint32_t binding;
-        uint32_t descriptorCount;
-        uint32_t stageFlags;
     };
 }
 

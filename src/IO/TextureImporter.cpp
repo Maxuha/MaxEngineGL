@@ -16,7 +16,7 @@ TextureAsset* TextureImporter::Import(const std::string& fileName) {
     Rendering::TextureData desc;
     desc.width = static_cast<uint32_t>(width);
     desc.height = static_cast<uint32_t>(height);
-    desc.format = Rendering::TextureFormat::RGBA;
+    desc.format = Rendering::TextureFormat::SRGBA;
     desc.mipLevels = 0;
 
   //  auto textureData = DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateTexture(data, width, height);

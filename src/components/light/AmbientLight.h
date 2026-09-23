@@ -10,6 +10,8 @@
 class AmbientLight : public Light {
 public:
     AmbientLight();
+
+    void Update(float delta_time) override;
 };
 
 

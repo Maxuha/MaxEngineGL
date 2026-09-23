@@ -7,6 +7,7 @@
 #include <string>
 
 #include "IShaderImporter.h"
+#include "../../../cmake-build-debug/_deps/spirv_reflect-src/spirv_reflect.h"
 
 
 class Shader;
@@ -14,9 +15,17 @@ class Shader;
 class ShaderImporter : public IShaderImporter {
 public:
     ~ShaderImporter() override;
+
     Shader *Import(const std::string &shaderName) override;
 
-    Shader * Import(const Vert &vert, const Frag &frag) override;
+private:
+    void reflectShader(ShaderDesc& desc);
+
+    void reflectStage(const std::vector<char> &code, Rendering::ShaderStageFlags stage,
+                             std::unordered_map<uint32_t, std::unordered_map<uint32_t, Rendering::ResourceBindingDesc>>& aggregatedSets);
+
+    Rendering::ResourceType MapDescriptorType(SpvReflectDescriptorType type);
+
 };
 
 

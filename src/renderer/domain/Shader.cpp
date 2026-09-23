@@ -4,22 +4,9 @@
 
 #include "Shader.h"
 
-#include <fstream>
-#include "GLPipeline.h"
 
-
-Shader::Shader(const char *vCode, const char *fCode) {
-    Rendering::ShaderInput vShader = {};
-    vShader.Source = vCode;
-    vShader.Type = Rendering::ShaderType::Vertex;
-
-    this->vShader = vShader;
-
-    Rendering::ShaderInput fShader = {};
-    fShader.Source = fCode;
-    fShader.Type = Rendering::ShaderType::Fragment;
-
-    this->fShader = fShader;
+Shader::Shader(const std::vector<char> &vCode, const std::vector<char> &fCode, const ShaderDesc &desc) {
+    handle = DIContainer::GetInstance().Get<IRenderer>()->CreateShader(desc);
 }
 
 Shader::~Shader() = default;
@@ -32,10 +19,18 @@ ShaderMetaProperty Shader::GetProperty(const ShaderProperty property) const {
     return properties.at(property);
 }
 
-std::vector<Rendering::ShaderInput> Shader::GetShader() {
-    return std::vector { vShader, fShader };
-}
-
 std::unordered_map<ShaderProperty, ShaderMetaProperty>& Shader::GetProperties() {
     return properties;
+}
+
+ShaderHandle Shader::GetVHandle() const {
+    return vHandle;
+}
+
+ShaderHandle Shader::GetFHandle() const {
+    return fHandle;
+}
+
+Rendering::ShaderHandle Shader::GetHandle() const {
+    return handle;
 }

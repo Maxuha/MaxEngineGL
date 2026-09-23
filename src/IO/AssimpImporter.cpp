@@ -77,6 +77,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
     mainTransform->scale = Vector3(aiScale.x, aiScale.y, aiScale.z);
     auto *parentTransform = parent ? parent->GetTransform() : nullptr;
     mainTransform->SetParent(parentTransform);
+
     if (parentTransform) {
         parentTransform->AddChild(mainTransform);
     }
@@ -91,6 +92,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
         entry.rotation = Vector3(euler.x, euler.y, euler.z);
         entry.scale = Vector3(aiScale.x, aiScale.y, aiScale.z);
         entry.materialIndex = mesh->mMaterialIndex;
+
         model->meshes.push_back(entry);
 
         auto* child = new GameObject(mesh->mName.C_Str());
@@ -113,7 +115,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
 Mesh *AssimpImporter::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
     // data to fill
     std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<uint16_t> indices;
 
     // walk through each of the mesh's vertices
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -164,17 +166,91 @@ Mesh *AssimpImporter::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
             indices.push_back(face.mIndices[j]);
     }
 
-    const auto id = MeshId{Hash::Generate(mesh->mName.data)};
-
-    return DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(vertices, indices);
+     return DIContainer::GetInstance().Get<IRenderer>()->CreateMesh(vertices, indices);
 }
 
 void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
-    const auto standardShader = DIContainer::GetInstance().Get<Rendering::IRenderer>()->GetLitShader();
+    //const auto standardShader = DIContainer::GetInstance().Get<IRenderer>()->GetLitShader();
 
-    Material material(standardShader, mat->GetName().C_Str());
+    const std::vector<char> vSPV = FileReader::ReadFileBytes(
+     std::string(ASSETS_ROOT) + "/shaders/phong/" + "phong-v" + ".spv");
+    const std::vector<char> fSPV = FileReader::ReadFileBytes(
+        std::string(ASSETS_ROOT) + "/shaders/phong/" + "phong-f" + ".spv");
 
-    for (const auto key: standardShader->GetProperties() | std::views::keys) {
+    Rendering::ResourceSetLayoutDesc layout_0;
+    layout_0.set_index = 0;
+
+    Rendering::ResourceBindingDesc binding_0;
+    binding_0.binding_slot = 0;
+    binding_0.type = Rendering::ResourceType::UniformBuffer;
+    binding_0.stage_flags = Rendering::ShaderStageFlags::Vertex;
+    binding_0.count = 1;
+
+    Rendering::ResourceBindingDesc binding_3;
+    binding_3.binding_slot = 1;
+    binding_3.type = Rendering::ResourceType::UniformBuffer;
+    binding_3.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_3.count = 1;
+
+    layout_0.bindings.push_back(binding_0);
+    layout_0.bindings.push_back(binding_3);
+
+    Rendering::ResourceSetLayoutDesc layout_1;
+    layout_1.set_index = 1;
+
+    Rendering::ResourceBindingDesc binding_1;
+    binding_1.binding_slot = 2;
+    binding_1.type = Rendering::ResourceType::UniformBuffer;
+    binding_1.stage_flags = Rendering::ShaderStageFlags::Vertex;
+    binding_1.count = 1;
+
+    layout_1.bindings.push_back(binding_1);
+
+    Rendering::ResourceSetLayoutDesc layout_2;
+    layout_2.set_index = 2;
+
+    Rendering::ResourceBindingDesc binding_2;
+    binding_2.binding_slot = 4;
+    binding_2.type = Rendering::ResourceType::SampledImage;
+    binding_2.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_2.count = 1;
+
+    layout_2.bindings.push_back(binding_2);
+
+    Rendering::ResourceBindingDesc binding_4;
+    binding_4.binding_slot = 5;
+    binding_4.type = Rendering::ResourceType::SampledImage;
+    binding_4.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_4.count = 1;
+
+    Rendering::ResourceBindingDesc binding_6;
+    binding_6.binding_slot = 6;
+    binding_6.type = Rendering::ResourceType::SampledImage;
+    binding_6.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_6.count = 1;
+
+    layout_2.bindings.push_back(binding_6);
+
+    Rendering::ResourceBindingDesc binding_5;
+    binding_5.binding_slot = 3;
+    binding_5.type = Rendering::ResourceType::UniformBuffer;
+    binding_5.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_5.count = 1;
+
+    layout_2.bindings.push_back(binding_5);
+
+    ShaderDesc desc;
+    desc.vertexCode = vSPV;
+    desc.fragmentCode = fSPV;
+    desc.resourceSetLayouts.push_back(layout_0);
+    desc.resourceSetLayouts.push_back(layout_1);
+    desc.resourceSetLayouts.push_back(layout_2);
+
+    const auto mainShader = new Shader(vSPV, fSPV, desc);
+
+    Material material(mainShader, mat->GetName().C_Str());
+
+    for (const auto key: mainShader->GetProperties() | std::views::keys) {
         auto [name, type, index, vType] = materialProperties[key];
         switch (vType) {
             case ValueType::Float: {

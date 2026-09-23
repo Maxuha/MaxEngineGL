@@ -3,82 +3,141 @@
 //
 
 #include "ShaderImporter.h"
+
+#include <ranges>
+
 #include "../FileReader.h"
-#include "../../di/DIContainer.h"
+#include "../../../cmake-build-debug/_deps/spirv_reflect-src/spirv_reflect.h"
 #include "../../renderer/domain/Shader.h"
 
 ShaderImporter::~ShaderImporter() {
 }
 
 Shader* ShaderImporter::Import(const std::string &shaderName) {
-    const std::string vSource = FileReader::ReadFileString((std::string(ASSETS_ROOT) + "/shaders/" + shaderName + ".vert").c_str());
-    const std::string fSource = FileReader::ReadFileString((std::string(ASSETS_ROOT) + "/shaders/" + shaderName + ".frag").c_str());
+    const std::vector<char> vSPV = FileReader::ReadFileBytes(
+     std::string(ASSETS_ROOT) + "/shaders/" + shaderName + "-v" + ".spv");
+    const std::vector<char> fSPV = FileReader::ReadFileBytes(
+        std::string(ASSETS_ROOT) + "/shaders/" + shaderName + "-f" + ".spv");
 
-    const char* vCode = vSource.c_str();
-    const char* fCode = fSource.c_str();
+    ShaderDesc desc2;
+    desc2.vertexCode = vSPV;
+    desc2.fragmentCode = fSPV;
 
-    Rendering::VertexAttribute position_attribute;
-    position_attribute.format = Rendering::VertexFormat::Float3;
-    position_attribute.location = 0;
-    position_attribute.offset = 0;
-    position_attribute.bufferIndex = 0;
+    reflectShader(desc2);
 
-    Rendering::VertexAttribute normal_attribute;
-    normal_attribute.format = Rendering::VertexFormat::Float3;
-    normal_attribute.location = 1;
-    normal_attribute.offset = offsetof(Vertex, normal);
-    normal_attribute.bufferIndex = 0;
-
-    Rendering::VertexAttribute texCoords_attribute;
-    texCoords_attribute.format = Rendering::VertexFormat::Float2;
-    texCoords_attribute.location = 2;
-    texCoords_attribute.offset = offsetof(Vertex, texCoords);
-    texCoords_attribute.bufferIndex = 0;
-
-    Rendering::VertexBinding buffer_binding;
-    buffer_binding.bufferIndex = 0;
-    buffer_binding.stride = sizeof(Vertex);
-    buffer_binding.stepRate = Rendering::VertexStepRate::PerVertex;
-
-    Rendering::VertexLayout vertex_layout;
-    vertex_layout.attributes.push_back(position_attribute);
-    vertex_layout.attributes.push_back(normal_attribute);
-    vertex_layout.attributes.push_back(texCoords_attribute);
-    vertex_layout.bindings.push_back(buffer_binding);
-    //
-    // Rendering::DescriptorSetLayoutBinding descriptor_set_layout_binding;
-    // descriptor_set_layout_binding.binding = 0;
-    // descriptor_set_layout_binding.type = Rendering::ResourceType::UniformBuffer;
-    // descriptor_set_layout_binding.descriptorCount = 1;
-    // descriptor_set_layout_binding.stageFlags = 0;
-
-    Rendering::PipelineStateDesc pipeline;
-    pipeline.vertexLayout = vertex_layout;
-    pipeline.depthStencilState.depthTestEnable = true;
-    pipeline.depthStencilState.depthWriteEnable = true;
-    pipeline.rasterizerState.cullEnable = true;
-    pipeline.rasterizerState.cullMode = Rendering::CullMode::Front;
-    pipeline.rasterizerState.fillMode = Rendering::FillMode::Solid;
-
-
-
-    // Rendering::ShaderInput vertex;
-    // vertex.Type = Rendering::ShaderType::Vertex;
-    // vertex.Source = vCode;
-    //
-    // Rendering::ShaderInput fragment;
-    // fragment.Type = Rendering::ShaderType::Fragment;
-    // fragment.Source = fCode;
-    //
-    // const std::vector shaders = { vertex, fragment };
-    //
-    // DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreatePipeline(shaders, pipeline);
-
-    const auto shader = new Shader(vCode, fCode);
+    const auto shader = new Shader(vSPV, fSPV, desc2);
 
     return shader;
 }
 
-Shader * ShaderImporter::Import(const Vert &vert, const Frag &frag) {
-    return nullptr;
+void ShaderImporter::reflectShader(ShaderDesc& desc) {
+    const std::vector<char>& vCode = desc.vertexCode;
+    const std::vector<char>& fCode = desc.fragmentCode;
+
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, Rendering::ResourceBindingDesc>> aggregatedSets;
+
+    if (!vCode.empty()) {
+        reflectStage(vCode, Rendering::ShaderStageFlags::Vertex, aggregatedSets);
+    }
+
+    if (!fCode.empty()) {
+        reflectStage(fCode, Rendering::ShaderStageFlags::Fragment, aggregatedSets);
+    }
+
+    // 3. ????????? ?????????????? ?????? ? ????????? ????????? ShaderDesc
+    uint32_t maxSetIndex = 0;
+    for (const auto &setIndex: aggregatedSets | std::views::keys) {
+        maxSetIndex = std::max(maxSetIndex, setIndex);
+    }
+
+    // ???????? ?????? ??? ??? ????, ?????? ?? ?????????????,
+    // ????? ?????? ? ??????? ?????? ?????????????? set_index ? ???????!
+    desc.resourceSetLayouts.resize(maxSetIndex + 1);
+
+    for (auto& [setIndex, bindingsMap] : aggregatedSets) {
+        Rendering::ResourceSetLayoutDesc& layout = desc.resourceSetLayouts[setIndex]; // ????????? ?????
+        layout.set_index = setIndex;
+        for (auto &bindingDesc: bindingsMap | std::views::values) {
+            layout.bindings.push_back(bindingDesc);
+        }
+
+        // ????????? ???????? ?????? ????
+        std::ranges::sort(layout.bindings, [](const Rendering::ResourceBindingDesc& a, const Rendering::ResourceBindingDesc& b) {
+            return a.binding_slot < b.binding_slot;
+        });
+    }
+
+    // for (auto& [setIndex, bindingsMap] : aggregatedSets) {
+    //     Rendering::ResourceSetLayoutDesc layout;
+    //     layout.set_index = setIndex;
+    //
+    //     for (auto& [bindingSlot, bindingDesc] : bindingsMap) {
+    //         layout.bindings.push_back(bindingDesc);
+    //     }
+    //
+    //     std::ranges::sort(layout.bindings, [](const Rendering::ResourceBindingDesc& a, const Rendering::ResourceBindingDesc& b) {
+    //         return a.binding_slot < b.binding_slot;
+    //     });
+    //
+    //     desc.resourceSetLayouts.push_back(layout);
+    // }
+    //
+    // std::ranges::sort(desc.resourceSetLayouts, [](const Rendering::ResourceSetLayoutDesc& a, const Rendering::ResourceSetLayoutDesc& b) {
+    //     return a.set_index < b.set_index;
+    // });
+
+    // return desc;
+}
+
+void ShaderImporter::reflectStage(const std::vector<char> &code, const Rendering::ShaderStageFlags stage,
+                                  std::unordered_map<uint32_t, std::unordered_map<uint32_t, Rendering::ResourceBindingDesc>> &aggregatedSets) {
+    SpvReflectShaderModule module;
+    SpvReflectResult result = spvReflectCreateShaderModule(code.size(), code.data(), &module);
+
+    if (result != SPV_REFLECT_RESULT_SUCCESS) {
+        return;
+    }
+
+    uint32_t descriptorCount = 0;
+    spvReflectEnumerateDescriptorBindings(&module, &descriptorCount, nullptr);
+
+    std::vector<SpvReflectDescriptorBinding*> bindings(descriptorCount);
+    spvReflectEnumerateDescriptorBindings(&module, &descriptorCount, bindings.data());
+
+    for (const auto* b : bindings) {
+        uint32_t setIdx = b->set;
+        uint32_t bindingSlot = b->binding;
+
+        if (aggregatedSets[setIdx].contains(bindingSlot)) {
+            aggregatedSets[setIdx][bindingSlot].stage_flags |= stage;
+        } else {
+            Rendering::ResourceBindingDesc bindingDesc{};
+            bindingDesc.binding_slot = bindingSlot;
+            bindingDesc.type = MapDescriptorType(b->descriptor_type);
+            bindingDesc.stage_flags = stage;
+
+            uint32_t count = 1;
+            for (uint32_t i = 0; i < b->array.dims_count; ++i) {
+                count *= b->array.dims[i];
+            }
+            bindingDesc.count = count;
+
+            aggregatedSets[setIdx][bindingSlot] = bindingDesc;
+        }
+    }
+
+    spvReflectDestroyShaderModule(&module);
+}
+
+Rendering::ResourceType ShaderImporter::MapDescriptorType(const SpvReflectDescriptorType type) {
+    switch (type) {
+        case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+            return Rendering::ResourceType::UniformBuffer;
+        case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+        case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            return Rendering::ResourceType::SampledImage;
+        default:
+            return Rendering::ResourceType::UniformBuffer;
+    }
 }

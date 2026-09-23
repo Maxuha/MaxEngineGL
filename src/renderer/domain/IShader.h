@@ -5,7 +5,6 @@
 #ifndef MAXENGINE_ISHADER_H
 #define MAXENGINE_ISHADER_H
 #include <cstdint>
-#include "IPipeline.h"
 #include "../../math/Color.h"
 #include "../../math/Matrix4x4.h"
 #include <variant>
@@ -66,7 +65,6 @@ public:
 
     virtual std::unordered_map<ShaderProperty, ShaderMetaProperty>& GetProperties() = 0;
 
-    virtual std::vector<Rendering::ShaderInput> GetShader() = 0;
 };
 
 

@@ -9,9 +9,15 @@
 
 class SpotLight : public Light {
 public:
+    SpotLight();
+
     float GetInnerAngle() const;
     float GetOuterAngle() const;
     float GetRange() const;
+
+    void SetInnerAngle(float innerAngle);
+    void SetOuterAngle(float outerAngle);
+    void SetRange(float range);
 
 private:
     // swap inner and outer
