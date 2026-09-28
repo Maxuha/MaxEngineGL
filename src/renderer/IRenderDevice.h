@@ -78,7 +78,7 @@ namespace Rendering {
 
         virtual void Present() = 0;
 
-        virtual ImageFormat GetDisplayFormat() = 0;
+        virtual TextureFormat GetDisplayFormat() = 0;
 
     };
 } // namespace Rendering

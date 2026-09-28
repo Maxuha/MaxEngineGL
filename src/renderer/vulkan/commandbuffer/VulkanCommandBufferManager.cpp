@@ -3,8 +3,10 @@
 //
 
 #include "VulkanCommandBufferManager.h"
+
 #include "../../ICommandPoolManager.h"
 #include "../VulkanLogicalDevice.h"
+
 
 namespace Rendering {
     VulkanCommandBufferManager::VulkanCommandBufferManager(VulkanLogicalDevice &logicalDevice) : logicalDevice(logicalDevice) {
@@ -22,7 +24,7 @@ namespace Rendering {
     }
 
     VkCommandBuffer VulkanCommandBufferManager::GetCommandBuffer(const CommandBufferHandle handle) const {
-        return commandBuffers[handle.Id].CommandBuffer;
+        return commandBuffers[handle.Id].GetCommandBuffer();
     }
 
     VkCommandBuffer VulkanCommandBufferManager::AllocateCommandBuffer(const CommandPoolType type, const VkCommandBufferLevel level) {

@@ -65,7 +65,7 @@ namespace Rendering {
 
         void Present() override;
 
-        ImageFormat GetDisplayFormat() override;
+        TextureFormat GetDisplayFormat() override;
 
     private:
         int MAX_FRAMES_IN_FLIGHT = 2;
@@ -98,19 +98,19 @@ namespace Rendering {
         std::vector<VulkanDescriptorSet> descriptorSets;
 
 
-        ImageFormat MapVkFormat(const VkFormat format) {
+        TextureFormat MapVkFormat(const VkFormat format) {
             switch (format) {
                 case VK_FORMAT_R8G8B8A8_UNORM: {
-                    return ImageFormat::BGRA8_Srgb;
+                    return TextureFormat::RGBA;
                 }
                 case VK_FORMAT_R8G8B8A8_SRGB: {
-                    return ImageFormat::RGBA8_Srgb;
+                    return TextureFormat::SRGBA;
                 }
                 case VK_FORMAT_B8G8R8A8_SRGB: {
-                    return ImageFormat::BGRA8_Srgb;
+                    return TextureFormat::SRGBA;
                 }
                 default: {
-                    return ImageFormat::Undefined;
+                    return TextureFormat::RGBA;
                 }
             }
         }

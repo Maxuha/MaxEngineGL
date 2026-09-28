@@ -48,14 +48,9 @@ namespace Rendering {
     };
 
     struct GLCommand_BeginRenderPass {
-        std::array<AttachmentDescription, 2> attachments;
-        uint32_t attachmentCount = 0;
-        GLuint fboId{};
-        uint32_t width{}, height{};
+        std::optional<AttachmentDescription> colorAttachment{};
+        std::optional<AttachmentDescription> depthAttachment{};
         Color clearColor;
-
-        RenderPassHandle renderPass{};
-        FrameBufferHandle frameBuffer{};
         Rect viewport{};
     };
 

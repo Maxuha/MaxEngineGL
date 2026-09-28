@@ -16,7 +16,7 @@ class IShaderImporter {
 public:
     virtual ~IShaderImporter() = default;
 
-    virtual Shader* Import(const std::string &shaderName) = 0;
+    virtual Shader* Import(const std::string &shaderName, const std::unordered_map<std::string, std::string>& params = std::unordered_map<std::string, std::string>()) = 0;
 };
 
 

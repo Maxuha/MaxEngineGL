@@ -24,7 +24,7 @@ public:
     }
 
     template<typename T>
-    T* Import(const std::string &path);
+    T* Import(const std::string &path, const std::unordered_map<std::string, std::string>& params = std::unordered_map<std::string, std::string>());
 
 private:
     MeshAssetManager *meshAssetManager;
@@ -33,13 +33,13 @@ private:
 };
 
 template<typename T>
-T* AssetManager::Import(const std::string &path) {
+T* AssetManager::Import(const std::string &path, const std::unordered_map<std::string, std::string>& params) {
     if constexpr (std::is_same_v<T, Model>) {
         return meshAssetManager->Import(path);
     } else if constexpr (std::is_same_v<T, TextureAsset>) {
         return textureImporter->Import(path);
     } else if constexpr (std::is_same_v<T, Shader>) {
-        return shaderImporter->Import(path);
+        return shaderImporter->Import(path, params);
     }
     return nullptr;
 }

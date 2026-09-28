@@ -37,127 +37,6 @@ namespace Rendering {
         return PipelineLayoutHandle{.Id = pipelineLayouts.size() - 1};
     }
 
-    PipelineHandle VulkanPipelineManager::CreatePipeline(const std::vector<ShaderHandle> &shaders,
-                                                         const RenderPassHandle renderPass,
-                                                         const PipelineStateDesc &pipelineStateDesc) {
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStages = CreateShaderStages(shaders);
-
-        const VkPipelineDynamicStateCreateInfo dynamicState = CreateDynamicState(pipelineStateDesc.DynamicState);
-
-        std::vector<VkVertexInputBindingDescription> bindingDescriptions;
-        bindingDescriptions.resize(pipelineStateDesc.VertexLayout.bindings.size());
-
-        for (uint32_t i = 0; i < pipelineStateDesc.VertexLayout.bindings.size(); i++) {
-            const auto &binding = pipelineStateDesc.VertexLayout.bindings[i];
-            bindingDescriptions[i].binding = binding.bufferIndex;
-            bindingDescriptions[i].stride = binding.stride;
-            //TODO Add input rate mapping
-            bindingDescriptions[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        }
-
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-        attributeDescriptions.resize(pipelineStateDesc.VertexLayout.attributes.size());
-
-        for (uint32_t i = 0; i < pipelineStateDesc.VertexLayout.attributes.size(); i++) {
-            const auto &attribute = pipelineStateDesc.VertexLayout.attributes[i];
-            attributeDescriptions[i].binding = attribute.bufferIndex;
-            attributeDescriptions[i].location = attribute.location;
-            attributeDescriptions[i].format = MapVertexFormat(attribute.format);
-            attributeDescriptions[i].offset = attribute.offset;
-        }
-
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = bindingDescriptions.size();
-        vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data(); // Optional
-        vertexInputInfo.vertexAttributeDescriptionCount = attributeDescriptions.size();
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
-
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-        static VkViewport viewport{};
-        static VkRect2D scissor{};
-
-        const VkPipelineViewportStateCreateInfo viewportState = CreateViewportState(
-            pipelineStateDesc.Viewport, viewport, scissor);
-
-        const VkPipelineRasterizationStateCreateInfo rasterizer = CreateRasterizationState(
-            pipelineStateDesc.RasterizerState);
-
-        const VkPipelineMultisampleStateCreateInfo multisampling = CreateMultisampleState();
-
-        VkPipelineColorBlendStateCreateInfo colorBlending = CreateColorBlendAttachmentState(
-            pipelineStateDesc.BlendAttachmentDesc);
-
-        const VkPipelineDepthStencilStateCreateInfo depthStencil = CreateDepthStencilState();
-
-        VkDescriptorSetLayout descriptorSetLayout1 = CreateDescriptorSetLayout(
-            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-        VkDescriptorSetLayout descriptorSetLayout2 = CreateDescriptorSetLayout(
-            1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
-        VkDescriptorSetLayout descriptorSetLayout3 = CreateDescriptorSetLayout(
-            2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        std::vector descriptorSetLayouts = {
-            descriptorSetLayout1, descriptorSetLayout2, descriptorSetLayout3,
-        };
-
-        VkPipelineLayout pipelineLayout = CreatePipelineLayout2(descriptorSetLayouts);
-
-        static VkFormat colorFormat = MapImageFormat(pipelineStateDesc.ColorFormat);
-        static VkFormat depthFormat = MapImageFormat(pipelineStateDesc.DepthFormat);
-
-        VkPipelineRenderingCreateInfo renderingCreateInfo{};
-        renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-        renderingCreateInfo.pNext = nullptr;
-        renderingCreateInfo.colorAttachmentCount = 1;
-        renderingCreateInfo.pColorAttachmentFormats = &colorFormat;
-        renderingCreateInfo.depthAttachmentFormat = depthFormat;
-        renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
-
-        VkGraphicsPipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.pNext = &renderingCreateInfo;
-        pipelineInfo.stageCount = shaderStages.size();
-        pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = nullptr; // Optional
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.pDepthStencilState = &depthStencil;
-        pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = pipelineLayout;
-        pipelineInfo.renderPass = VK_NULL_HANDLE;
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-        pipelineInfo.basePipelineIndex = -1; // Optional
-
-        VkPipeline pipeline;
-
-        if (VkResult result = vkCreateGraphicsPipelines(logicalDevice.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
-                                                        nullptr,
-                                                        &pipeline); result != VK_SUCCESS) {
-            throw std::runtime_error("failed to create graphics pipeline! Error code: " + std::to_string(result));
-        }
-
-        const PipelineHandle pipelineHandle{.Id = pipelines.size()};
-
-        VulkanPipeline pipelineData;
-        pipelineData.Pipeline = pipeline;
-        pipelineData.pipelineLayout = pipelineLayout;
-        pipelineData.descriptionSetLayouts = descriptorSetLayouts;
-
-        pipelines.push_back(pipelineData);
-
-        return pipelineHandle;
-    }
-
     PipelineHandle VulkanPipelineManager::CreatePipeline(const GraphicsVulkanShader &shader,
                                                          const PipelineStateDesc &pipelineStateDesc) {
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages = CreateShaderStages(shader);
@@ -216,14 +95,22 @@ namespace Rendering {
 
         VkPipelineLayout pipelineLayout = CreatePipelineLayout2(shader.DescriptorSetLayouts);
 
-        static VkFormat colorFormat = MapImageFormat(pipelineStateDesc.ColorFormat);
-        static VkFormat depthFormat = MapImageFormat(pipelineStateDesc.DepthFormat);
+        VkFormat depthFormat = MapTextureFormat(pipelineStateDesc.DepthFormat);
 
         VkPipelineRenderingCreateInfo renderingCreateInfo{};
         renderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
         renderingCreateInfo.pNext = nullptr;
-        renderingCreateInfo.colorAttachmentCount = 1;
-        renderingCreateInfo.pColorAttachmentFormats = &colorFormat;
+
+        renderingCreateInfo.colorAttachmentCount = 0;
+        renderingCreateInfo.pColorAttachmentFormats = nullptr;
+
+        if (pipelineStateDesc.ColorFormat != TextureFormat::UNDEFINED) {
+            VkFormat colorFormat = MapTextureFormat(pipelineStateDesc.ColorFormat);
+
+            renderingCreateInfo.colorAttachmentCount = 1;
+            renderingCreateInfo.pColorAttachmentFormats = &colorFormat;
+        }
+
         renderingCreateInfo.depthAttachmentFormat = depthFormat;
         renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
@@ -237,7 +124,6 @@ namespace Rendering {
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = nullptr; // Optional
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.pDynamicState = &dynamicState;
@@ -299,45 +185,6 @@ namespace Rendering {
         }
 
         return descriptorPool;
-    }
-
-    VkDescriptorSetLayout VulkanPipelineManager::CreateDescriptorSetLayout(
-        const uint32_t binding, const VkDescriptorType descriptorType, const VkShaderStageFlags stageFlags) const {
-        VkDescriptorSetLayoutBinding layout_binding{};
-        layout_binding.binding = binding;
-        layout_binding.descriptorType = descriptorType;
-        layout_binding.descriptorCount = 1;
-        layout_binding.stageFlags = stageFlags;
-        layout_binding.pImmutableSamplers = nullptr; // Optional
-
-        const std::array bindings = {layout_binding};
-
-        VkDescriptorSetLayout descriptorSetLayout;
-
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());;
-        layoutInfo.pBindings = bindings.data();
-
-        if (vkCreateDescriptorSetLayout(logicalDevice.GetDevice(), &layoutInfo, nullptr, &descriptorSetLayout) !=
-            VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor set layout!");
-        }
-        return descriptorSetLayout;
-    }
-
-    VkDescriptorSetLayout VulkanPipelineManager::CreateDescriptorSetLayout(
-        const std::vector<VkDescriptorSetLayoutBinding> &bindings) const {
-        VkDescriptorSetLayout descriptorSetLayout;
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = bindings.size();
-        layoutInfo.pBindings = bindings.data();
-        if (vkCreateDescriptorSetLayout(logicalDevice.GetDevice(), &layoutInfo, nullptr, &descriptorSetLayout) !=
-            VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor set layout!");
-        }
-        return descriptorSetLayout;
     }
 
     VkPipelineDynamicStateCreateInfo VulkanPipelineManager::CreateDynamicState(const DynamicStateDesc &dynamicState) {
@@ -443,7 +290,6 @@ namespace Rendering {
     VkPipelineColorBlendStateCreateInfo VulkanPipelineManager::CreateColorBlendAttachmentState(
         const BlendAttachmentDesc &attachments) {
         static std::vector<VkPipelineColorBlendAttachmentState> vkBlendAttachments;
-        vkBlendAttachments.clear();
         vkBlendAttachments.reserve(attachments.blendMode.size());
 
         for (const auto blendMode: attachments.blendMode) {
@@ -463,11 +309,6 @@ namespace Rendering {
         colorBlending.blendConstants[3] = 0.0f; // Optional
 
         return colorBlending;
-    }
-
-    VkPipelineColorBlendStateCreateInfo VulkanPipelineManager::CreateColorBlendState() {
-        //
-        return {};
     }
 
     VkPipelineViewportStateCreateInfo VulkanPipelineManager::CreateViewportState(
@@ -702,34 +543,23 @@ namespace Rendering {
         }
     }
 
-    VkFormat VulkanPipelineManager::MapImageFormat(const ImageFormat imageFormat) {
-        switch (imageFormat) {
-            case ImageFormat::RGBA8_Srgb: {
-                return VK_FORMAT_R8G8B8A8_SRGB;
+    VkFormat VulkanPipelineManager::MapTextureFormat(const TextureFormat format) {
+        VkFormat vkFormat = VK_FORMAT_UNDEFINED;
+
+        switch (format) {
+            case TextureFormat::RGB:
+                vkFormat = VK_FORMAT_R8G8B8_UNORM;
                 break;
-            }
-            case ImageFormat::BGRA8_Srgb: {
-                return VK_FORMAT_R8G8B8A8_SRGB;
-            }
-            case ImageFormat::D32_Sfloat_S8_Uint: {
-                return VK_FORMAT_D32_SFLOAT_S8_UINT;
+            case TextureFormat::RGBA:
+                vkFormat = VK_FORMAT_R8G8B8A8_UNORM;
                 break;
-            }
-            case ImageFormat::D24_Unorm_S8_Uint: {
-                return VK_FORMAT_D24_UNORM_S8_UINT;
+            case TextureFormat::SRGBA:
+                vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
                 break;
-            }
-            case ImageFormat::D32_Sfloat: {
-                return VK_FORMAT_D32_SFLOAT;
+            case TextureFormat::DEPTH:
+                vkFormat = VK_FORMAT_D32_SFLOAT;
                 break;
-            }
-            case ImageFormat::Undefined: {
-                return VK_FORMAT_UNDEFINED;
-                break;
-            }
-            default: {
-                throw std::runtime_error("Unsupported image format!");
-            }
         }
+        return vkFormat;
     }
 } // Rendering

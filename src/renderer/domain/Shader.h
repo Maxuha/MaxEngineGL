@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "IShader.h"
 #include "../managers/IShaderManager.h"
+#include "struct/PipelineStateDesc.h"
 #include "struct/ResourceSet.h"
 
 #define MAT_COLOR_DIFFUSE
@@ -19,6 +20,8 @@ struct ShaderDesc {
     std::vector<char> vertexCode;
     std::vector<char> fragmentCode;
     std::vector<Rendering::ResourceSetLayoutDesc> resourceSetLayouts;
+    Rendering::CullMode CullMode = Rendering::CullMode::Back;
+    bool IsDepthOnly = false;
 };
 
 class Shader : public IShader {

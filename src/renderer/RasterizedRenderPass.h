@@ -10,7 +10,7 @@
 namespace Rendering {
     class RasterizedRenderPass : public IRenderPass {
     public:
-        explicit RasterizedRenderPass(ImageFormat imageFormat);
+        explicit RasterizedRenderPass(TextureFormat imageFormat);
 
         ~RasterizedRenderPass() override = default;
 

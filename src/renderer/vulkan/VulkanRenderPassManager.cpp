@@ -121,27 +121,21 @@ namespace Rendering {
         return vkStoreOp;
     }
 
-    VkFormat VulkanRenderPassManager::MapImageFormat(ImageFormat imageFormat) {
+    VkFormat VulkanRenderPassManager::MapImageFormat(const TextureFormat imageFormat) {
         VkFormat vkFormat = {};
 
         switch (imageFormat) {
-            case ImageFormat::Undefined:
-                vkFormat = VK_FORMAT_UNDEFINED;
-                break;
-            case ImageFormat::BGRA8_Srgb:
+            case TextureFormat::RGB:
                 vkFormat = VK_FORMAT_B8G8R8A8_SRGB;
                 break;
-            case ImageFormat::D24_Unorm_S8_Uint:
-                vkFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+            case TextureFormat::SRGBA:
+                vkFormat = VK_FORMAT_B8G8R8A8_SRGB;
                 break;
-            case ImageFormat::D32_Sfloat:
+            case TextureFormat::DEPTH:
                 vkFormat = VK_FORMAT_D32_SFLOAT;
                 break;
-            case ImageFormat::D32_Sfloat_S8_Uint:
-                vkFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-                break;
-            case ImageFormat::RGBA8_Srgb:
-                vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
+            case TextureFormat::RGBA:
+                vkFormat = VK_FORMAT_B8G8R8A8_SRGB;
                 break;
         }
 

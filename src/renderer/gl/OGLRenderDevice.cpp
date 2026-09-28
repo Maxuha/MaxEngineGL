@@ -10,67 +10,122 @@
 #include "OGLTextureManager.h"
 #include "OGLCommandPoolManager.h"
 #include "OGLDescriptorSetManager.h"
-#include "OGLFrameBufferManager.h"
 #include "OGLPipelineManager.h"
 #include "OGLVertexBufferManager.h"
 #include "stb_image_write.h"
 #include "../../math/Color.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
 
 namespace Rendering {
     bool SaveGLTextureToDisk(GLuint textureID, const char* filename) {
-    // 1. Bind the texture to query its properties
-    glBindTexture(GL_TEXTURE_2D, textureID);
+        if (textureID == 0 || !glIsTexture(textureID)) {
+            std::cerr << "Error: Invalid texture id " << textureID << "\n";
+            return false;
+        }
 
-    GLint width = 0;
-    GLint height = 0;
-    GLint internalFormat = 0;
+        glBindTexture(GL_TEXTURE_2D, textureID);
 
-    // Get texture dimensions and internal format from the GPU
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
+        GLint width = 0;
+        GLint height = 0;
+        GLint internalFormat = 0;
 
-    if (width <= 0 || height <= 0) {
-        std::cerr << "Error: Invalid texture dimensions (" << width << "x" << height << ")\n";
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internalFormat);
+
+        if (width <= 0 || height <= 0) {
+            std::cerr << "Error: Invalid texture dimensions (" << width << "x" << height << ")\n";
+            glBindTexture(GL_TEXTURE_2D, 0);
+            return false;
+        }
+
+        const bool isDepth =
+            internalFormat == GL_DEPTH_COMPONENT ||
+            internalFormat == GL_DEPTH_COMPONENT16 ||
+            internalFormat == GL_DEPTH_COMPONENT24 ||
+            internalFormat == GL_DEPTH_COMPONENT32 ||
+            internalFormat == GL_DEPTH_COMPONENT32F ||
+            internalFormat == GL_DEPTH24_STENCIL8 ||
+            internalFormat == GL_DEPTH32F_STENCIL8;
+
+        std::vector<unsigned char> pixels;
+        int channels = 4;
+
+        GLint previousPackAlignment = 0;
+        glGetIntegerv(GL_PACK_ALIGNMENT, &previousPackAlignment);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+        if (isDepth) {
+            std::vector<float> depth(static_cast<size_t>(width) * height);
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, depth.data());
+
+            float minDepth = std::numeric_limits<float>::max();
+            float maxDepth = std::numeric_limits<float>::lowest();
+
+            for (const float value : depth) {
+                if (!std::isfinite(value)) {
+                    continue;
+                }
+
+                minDepth = std::min(minDepth, value);
+                maxDepth = std::max(maxDepth, value);
+            }
+
+            pixels.resize(depth.size());
+            channels = 1;
+
+            const bool hasRange = minDepth < maxDepth;
+            const float range = hasRange ? (maxDepth - minDepth) : 1.0f;
+
+            for (size_t i = 0; i < depth.size(); ++i) {
+                const float rawValue = std::clamp(depth[i], 0.0f, 1.0f);
+                const float normalized = hasRange ? ((rawValue - minDepth) / range) : rawValue;
+                pixels[i] = static_cast<unsigned char>(std::clamp(normalized, 0.0f, 1.0f) * 255.0f);
+            }
+
+            std::cout << "Depth texture stats for " << filename
+                      << ": min=" << minDepth
+                      << ", max=" << maxDepth
+                      << ", normalized=" << (hasRange ? "yes" : "no")
+                      << "\n";
+        } else {
+            GLenum format = GL_RGBA;
+
+            if (internalFormat == GL_RGB || internalFormat == GL_RGB8 || internalFormat == GL_SRGB8) {
+                format = GL_RGB;
+                channels = 3;
+            } else if (
+                internalFormat == GL_RGBA ||
+                internalFormat == GL_RGBA8 ||
+                internalFormat == GL_SRGB8_ALPHA8
+            ) {
+                format = GL_RGBA;
+                channels = 4;
+            }
+
+            pixels.resize(static_cast<size_t>(width) * height * channels);
+            glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, pixels.data());
+        }
+
+        glPixelStorei(GL_PACK_ALIGNMENT, previousPackAlignment);
         glBindTexture(GL_TEXTURE_2D, 0);
-        return false;
+
+        stbi_flip_vertically_on_write(true);
+
+        const int success = stbi_write_png(filename, width, height, channels, pixels.data(), width * channels);
+
+        if (!success) {
+            std::cerr << "Error: Failed to write image file: " << filename << "\n";
+            return false;
+        }
+
+        std::cout << "Successfully saved texture (" << width << "x" << height << ") to " << filename << "\n";
+        return true;
     }
-
-    // 2. Determine channels and pixel configuration based on format
-    GLenum format = GL_DEPTH_COMPONENT;
-    int channels = 1;
-
-    if (internalFormat == GL_RGB || internalFormat == GL_RGB8) {
-        format = GL_RGB;
-        channels = 3;
-    }
-
-    // 3. Allocate memory buffer to hold the downloaded pixel bytes
-    std::vector<unsigned char> pixels(width * height * channels);
-
-    // Ensure driver pixel alignment restrictions won't cause corruption
-    glPixelStorei(GL_PACK_ALIGNMENT, 4);
-
-    // 4. Read the texture data from the GPU into the CPU memory buffer
-    glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, pixels.data());
-    glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture
-
-    // 5. Flip the pixels vertically (OpenGL's Y-axis starts at the bottom-left,
-    //    but standard image file formats start at the top-left)
-    stbi_flip_vertically_on_write(true);
-
-    // 6. Write out to the file system as a PNG
-    int success = stbi_write_png(filename, width, height, channels, pixels.data(), width * channels);
-
-    if (!success) {
-        std::cerr << "Error: Failed to write image file: " << filename << "\n";
-        return false;
-    }
-
-    std::cout << "Successfully saved texture (" << width << "x" << height << ") to " << filename << "\n";
-    return true;
-}
 
     OGLRenderDevice::OGLRenderDevice(IWindow& window) {
         this->window = static_cast<GLFWwindow *>(window.GetHandle());
@@ -258,6 +313,7 @@ namespace Rendering {
         std::vector<uint8_t> commands = commandBuffer->GetCommands();
         size_t readOffset = 0;
         size_t head = commandBuffer->GetHead();
+        GLuint lastRenderTargetTexture = 0;
 
         while (readOffset < head) {
             const GLCommandType type = *reinterpret_cast<GLCommandType *>(&commands[readOffset]);
@@ -268,114 +324,62 @@ namespace Rendering {
                     const auto *cmd = reinterpret_cast<GLCommand_BeginRenderPass *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_BeginRenderPass);
 
-                    // 1. ??????????, ????? FBO ????????????.
-                    // ??????? ?????? ?????????, ??????? ?????????? ? ????????. ???? ??? 999999, ?? ??? default FBO (0).
                     GLuint activeFBO = 0;
-                    for (const auto& attachment : cmd->attachments) {
-                        if (attachment.type != AttachmentType::NONE && attachment.renderTarget.Id != 999999) {
-                            OGLTexture texture = textureManager->GetTexture(attachment.renderTarget);
-                            activeFBO = texture.fbo;
-                            break;
-                        }
+
+                    std::optional<AttachmentDescription> colorAttachment = cmd->colorAttachment;
+                    std::optional<AttachmentDescription> depthAttachment = cmd->depthAttachment;
+
+                    if (depthAttachment.has_value() && !colorAttachment.has_value()) {
+                        OGLTexture texture = textureManager->GetTexture(depthAttachment->renderTarget);
+                        activeFBO = texture.fbo;
                     }
 
-                    // ??????????? ?????????? ???? ??? ?? ???? Render Pass
                     glBindFramebuffer(GL_FRAMEBUFFER, activeFBO);
-                    glViewport(0, 0, cmd->width, cmd->height);
 
-                    // 2. ?????? ???????? ? ????? FBO (???? ??? ?? ????????? ?????)
+                    Rect viewport = cmd->viewport;
+
+                    glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
+
                     if (activeFBO != 0) {
-                        for (const auto& attachment : cmd->attachments) {
-                            if (attachment.type == AttachmentType::NONE || attachment.renderTarget.Id == 999999) continue;
+                        GLenum attachmentType = MapAttachment(depthAttachment.value().type);
+                        OGLTexture texture = textureManager->GetTexture(depthAttachment.value().renderTarget);
+                        lastRenderTargetTexture = texture.Id;
+                        glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, 0);
 
-                            GLenum attachmentType = MapAttachment(attachment.type);
-                            OGLTexture texture = textureManager->GetTexture(attachment.renderTarget);
-
-                            // ?????????? Direct State Access (DSA) ??? ???????? ???????? ? FBO ??? ????? ????? ???????????
-                             glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, 0);
+                        if (colorAttachment.has_value()) {
+                            glNamedFramebufferDrawBuffer(activeFBO, GL_COLOR_ATTACHMENT0);
+                            glNamedFramebufferReadBuffer(activeFBO, GL_COLOR_ATTACHMENT0);
+                        } else {
+                            glNamedFramebufferDrawBuffer(activeFBO, GL_NONE);
+                            glNamedFramebufferReadBuffer(activeFBO, GL_NONE);
                         }
                     }
 
-                    // 3. ???????????? LoadOp (???????)
                     GLbitfield clearMask = 0;
-                    for (const auto& attachment : cmd->attachments) {
-                        if (attachment.type == AttachmentType::NONE) continue;
+                    if (colorAttachment.has_value() && colorAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
+                        if (colorAttachment.value().type == AttachmentType::COLOR)   clearMask |= GL_COLOR_BUFFER_BIT;
+                        if (colorAttachment.value().type == AttachmentType::DEPTH)   clearMask |= GL_DEPTH_BUFFER_BIT;
+                        if (colorAttachment.value().type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
+                    }
 
-                        if (attachment.loadOp == AttachmentLoadOp::CLEAR) {
-                            if (attachment.type == AttachmentType::COLOR)   clearMask |= GL_COLOR_BUFFER_BIT;
-                            if (attachment.type == AttachmentType::DEPTH)   clearMask |= GL_DEPTH_BUFFER_BIT;
-                            if (attachment.type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
-                        }
+                    if (depthAttachment.has_value() && depthAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
+                        if (depthAttachment.value().type == AttachmentType::COLOR)   clearMask |= GL_COLOR_BUFFER_BIT;
+                        if (depthAttachment.value().type == AttachmentType::DEPTH)   clearMask |= GL_DEPTH_BUFFER_BIT;
+                        if (depthAttachment.value().type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
                     }
 
                     if (clearMask != 0) {
-                        // ????????????? ???? ??????? ?? ???????
                         glClearColor(cmd->clearColor.r, cmd->clearColor.g, cmd->clearColor.b, cmd->clearColor.a);
-                        // ??? ??????? ? ????????? ????? ????????? ??????????? ???????? (??? ??????? ? cmd)
                         glClearDepth(1.0f);
                         glClearStencil(0);
-
                         glClear(clearMask);
                     }
-
-
-
-                    // const float width = cmd->width;
-                    // const float height = cmd->height;
-                    // constexpr GLuint fbo = 0;
-                    //
-                    // glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-                    // glViewport(0, 0, width, height);
-                    //
-                    // GLbitfield clearMask = 0;
-                    //
-                    // auto& attachments = cmd->attachments;
-                    //
-                    // for (auto attachment : attachments) {
-                    //
-                    //     GLenum attachmentType = MapAttachment(attachment.type);
-                    //
-                    //     if (attachment.renderTarget.Id == 999999) {
-                    //         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-                    //     } else {
-                    //         OGLTexture texture = textureManager->GetTexture(attachment.renderTarget);
-                    //         glBindFramebuffer(GL_FRAMEBUFFER, texture.fbo);
-                    //         glNamedFramebufferTexture(texture.fbo, attachmentType, texture.Id, 0);
-                    //     }
-                    //
-                    //     if (attachment.loadOp == AttachmentLoadOp::CLEAR) {
-                    //         if (attachment.type == AttachmentType::COLOR) {
-                    //             clearMask |= GL_COLOR_BUFFER_BIT;
-                    //         }
-                    //         if (attachment.type == AttachmentType::DEPTH) {
-                    //             clearMask |= GL_DEPTH_BUFFER_BIT;
-                    //         }
-                    //         if (attachment.type == AttachmentType::STENCIL) {
-                    //             clearMask |= GL_STENCIL_BUFFER_BIT;
-                    //         }
-                    //     }
-                    // }
-                    //
-                    // if (clearMask != 0) {
-                    //     glClearColor(cmd->clearColor.r, cmd->clearColor.g, cmd->clearColor.b, cmd->clearColor.a);
-                    //     glClear(clearMask);
-                    // }
                     break;
                 }
 
                 case GLCommandType::EndRenderPass: {
                     const auto *cmd = reinterpret_cast<GLCommand_EndRenderPass *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_EndRenderPass);
-
-                    // if (cmd->attachment.storeOp == AttachmentStoreOp::DONT_CARE) {
-                    //     GLenum attachment = (cmd->attachment.type == AttachmentType::DEPTH)
-                    //                             ? GL_DEPTH_ATTACHMENT
-                    //                             : GL_COLOR_ATTACHMENT0;
-                    //
-                    //     //glInvalidateFramebuffer(GL_FRAMEBUFFER, static_cast<GLsizei>(1), &attachment);
-                    // }
-                    //
-                    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
                     break;
                 }
@@ -389,19 +393,10 @@ namespace Rendering {
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
 
                     glUseProgram(pipeline.program);
-
-                    // glDisable(GL_CULL_FACE);
-                     // glDisable(GL_DEPTH_TEST);
-                    //  pipeline.cullEnable ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
+                    pipeline.cullEnable ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
                     pipeline.depthTestEnable ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
-                    //
-                    //  glDepthMask(pipeline.depthWriteEnable);
-                    // //
-                    //  glCullFace(pipeline.cullMode);
-                    // //
-                    //  // TODO check this
-                    //  glPolygonMode(GL_FRONT_AND_BACK, pipeline.fillMode);
-
+                    glDepthMask(pipeline.depthWriteEnable ? GL_TRUE : GL_FALSE);
+                    glCullFace(pipeline.cullMode);
                     break;
                 }
 
@@ -482,27 +477,6 @@ namespace Rendering {
                 case GLCommandType::PushConstants: {
                     const auto *cmd = reinterpret_cast<GLCommand_PushConstants *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_PushConstants);
-
-                    auto value = cmd->mat;
-                    const auto value1 = cmd->value;
-
-                    // if (value1) {
-                    //     glProgramUniform1i(
-                    //         pipelines[currentPipeline.Id].program, // TODO should be pipeline here
-                    //         1,
-                    //         static_cast<GLint>(value1)
-                    //     );
-                    // } else {
-                    //     glProgramUniformMatrix4fv(
-                    //          pipelines[currentPipeline.Id].program, // TODO should be pipeline here
-                    //          //pipelines[currentPipeline.Id].layout.items[cmd->key].bindingIndex,
-                    //          cmd->key,
-                    //          1,
-                    //          GL_FALSE,
-                    //          glm::value_ptr(value.Convert<glm::mat4>())
-                    //      );
-                    // }
-
                     break;
                 }
 
@@ -533,7 +507,10 @@ namespace Rendering {
             }
         }
 
-        SaveGLTextureToDisk(1, "output_texture2.png");
+        if (lastRenderTargetTexture != 0) {
+           // SaveGLTextureToDisk(lastRenderTargetTexture, "output_texture2.png");
+            lastRenderTargetTexture = 0;
+        }
 
         head = 0;
         Present();
@@ -543,8 +520,8 @@ namespace Rendering {
         glfwSwapBuffers(window);
     }
 
-    ImageFormat OGLRenderDevice::GetDisplayFormat() {
-        return ImageFormat::RGBA8_Srgb;
+    TextureFormat OGLRenderDevice::GetDisplayFormat() {
+        return TextureFormat::SRGBA;
     }
 
     void OGLRenderDevice::SetupVertexLayoutForPSO(const GLuint vao, const VertexLayout &layout) {
@@ -581,8 +558,9 @@ namespace Rendering {
         switch (format) {
             case TextureFormat::RGBA: return GL_RGBA8;
             case TextureFormat::RGB: return GL_RGB8;
-            case TextureFormat::D32_FLOAT: return GL_DEPTH_COMPONENT32F;
             case TextureFormat::DEPTH: return GL_DEPTH_COMPONENT24;
+            case TextureFormat::SRGBA: return GL_SRGB8_ALPHA8;
+                break;
         }
         return GL_RGBA8;
     }
@@ -592,7 +570,7 @@ namespace Rendering {
             case TextureFormat::RGBA: return GL_RGBA;
             case TextureFormat::RGB: return GL_RGB;
             case TextureFormat::DEPTH: return GL_DEPTH_COMPONENT;
-            case TextureFormat::D32_FLOAT: return GL_DEPTH_COMPONENT;
+            case TextureFormat::SRGBA: return GL_SRGB_ALPHA;
         }
         return GL_RGBA;
     }

@@ -22,8 +22,8 @@ namespace Rendering {
     struct FrameBufferHandle;
 
     struct RenderPass {
-        std::array<AttachmentDescription, 2> colorAttachments = {};
-        uint32_t attachmentCount = 0;
+        std::optional<AttachmentDescription> colorAttachment = {};
+        std::optional<AttachmentDescription> depthAttachment = {};
 
         Rect viewport = Rect{0, 0, 2160, 1440};
         Color clearColor = Color{0.5f, 0.5f, 0.5f, 1.0f};
@@ -120,11 +120,14 @@ namespace Rendering {
         uint32_t lastPointLightIndex = 0;
         uint32_t lastSpotLightIndex = 0;
 
-        ImageFormat depthFormat;
+        TextureFormat depthFormat;
+
+        CameraRenderData lightSpace;
 
         ResourceSetLayoutHandle cameraAndLightSetLayout{};
         ResourceSetLayoutHandle modelSetLayout{};
         PipelineLayoutHandle mainPipelineLayout{};
+
     };
 } // namespace Rendering
 

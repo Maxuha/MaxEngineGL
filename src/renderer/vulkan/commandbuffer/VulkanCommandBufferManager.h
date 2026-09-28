@@ -5,15 +5,13 @@
 #ifndef MAXENGINE_VULKANCOMMANDBUFFER_H
 #define MAXENGINE_VULKANCOMMANDBUFFER_H
 #include <vulkan/vulkan_core.h>
+
 #include "../../ICommandBufferManager.h"
+#include "VulkanCommandBufferi.h"
 
 namespace Rendering {
     enum class CommandPoolType;
     class VulkanLogicalDevice;
-
-    struct VulkanCommandBuffer {
-        VkCommandBuffer CommandBuffer;
-    };
 
     class VulkanCommandBufferManager : public ICommandBufferManager {
         public:
@@ -27,7 +25,7 @@ namespace Rendering {
     private:
         VulkanLogicalDevice& logicalDevice;
 
-        std::vector<VulkanCommandBuffer> commandBuffers;
+        std::vector<VulkanCommandBufferi> commandBuffers;
         std::vector<VkCommandBuffer> graphicsCommandBuffers;
         std::vector<VkCommandBuffer> transferCommandBuffers;
 

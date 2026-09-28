@@ -13,8 +13,8 @@ namespace Rendering {
         RGB,
         RGBA,
         SRGBA,
-        D32_FLOAT,
-        DEPTH
+        DEPTH,
+        UNDEFINED
     };
 
     enum class TextureWrap : std::uint8_t {

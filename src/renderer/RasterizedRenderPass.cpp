@@ -7,7 +7,7 @@
 #include "gl/OGLRenderPassManager.h"
 
 namespace Rendering {
-    RasterizedRenderPass::RasterizedRenderPass(const ImageFormat imageFormat) : renderPassManager(nullptr) {
+    RasterizedRenderPass::RasterizedRenderPass(const TextureFormat imageFormat) : renderPassManager(nullptr) {
         std::vector attachments = {
             AttachmentDescription{
                 .format = imageFormat,
@@ -16,7 +16,7 @@ namespace Rendering {
                 .storeOp = AttachmentStoreOp::STORE
             },
             AttachmentDescription {
-                .format = ImageFormat::D32_Sfloat_S8_Uint,
+                .format = TextureFormat::DEPTH,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE

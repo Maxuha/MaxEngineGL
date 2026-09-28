@@ -10,8 +10,8 @@
 
 namespace Rendering {
     struct OGLTexture {
-        uint32_t Id;
-        uint32_t fbo;
+        uint32_t Id = 0;
+        uint32_t fbo = 0;
     };
 
     class OGLTextureManager : public ITextureManager {

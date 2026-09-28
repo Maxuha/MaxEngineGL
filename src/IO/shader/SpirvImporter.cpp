@@ -10,7 +10,7 @@
 #include "../../renderer/domain/Shader.h"
 
 
-Shader *SpirvImporter::Import(const std::string &shaderName) {
+Shader *SpirvImporter::Import(const std::string &shaderName, const std::unordered_map<std::string, std::string>& params) {
     const std::string vSource = FileReader::ReadFileString((std::string(ASSETS_ROOT) + "/shaders/" + shaderName + ".vert").c_str());
     const std::string fSource = FileReader::ReadFileString((std::string(ASSETS_ROOT) + "/shaders/" + shaderName + ".frag").c_str());
 

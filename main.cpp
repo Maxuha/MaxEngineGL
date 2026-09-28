@@ -31,46 +31,18 @@ int main() {
 
     AssetManager* assetManager = container->Get<AssetManager>();
 
-    auto phongShader = assetManager->Import<Shader>("phong/phong");
-    auto depthShader = assetManager->Import<Shader>("depth/depth");
+    auto phongShader = assetManager->Import<Shader>("phong/phong", {{"cullMode", "Front"}});
+    auto depthShader = assetManager->Import<Shader>("depth/depth", {{"cullMode", "Front"}, {"isDepthOnly", "true"}});
 
     renderer->SetDepthShader(*depthShader);
 
     auto material1 = new Material(phongShader);
 
-    const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-    };
-
-    std::vector<uint16_t> indices = {
-        0, 1, 2, 2, 3, 0,
-        4, 5, 6, 6, 7, 4
-    };
-
-    Mesh* mesh = renderer->CreateMesh(vertices, indices);
-
-    auto gameObject = new GameObject("test");
-    gameObject->AddComponent<Transform>();
-    gameObject->GetComponent<Transform>()->position = Vector3(0, 4.0f, -3.0f);
-    gameObject->AddComponent<MeshRenderer>();
-    gameObject->GetComponent<MeshRenderer>()->mesh = std::make_shared<Mesh>(*mesh);
-  //  gameObject->GetComponent<MeshRenderer>()->material = material1;
-    gameObject->AddComponent<Game::RotationComponent>();
-
     auto *camera = new FPSCamera(60, 0.01, 1000, static_cast<float>(width) / static_cast<float>(height));
     camera->GetTransform()->position = Vector3(10, 0, 10);
     camera->Start();
 
-    auto *houseModel = container->Get<AssetManager>()->Import<Model>(
-    R"(assets/models/autumn-house/source/House_scene_01.fbx)");
+    auto *houseModel = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
 
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = material1;
@@ -126,10 +98,10 @@ int main() {
 
     GameObject *ambientLight = lightFactory->SpawnAmbientLight();
     ambientLight->GetComponent<Light>()->color = Color(1.0f, 1.0f, 1.0f, 1.0f);
-    ambientLight->GetComponent<Light>()->intensity = 0.01f;
+    ambientLight->GetComponent<Light>()->intensity = 0.06f;
 
     GameObject *sun = lightFactory->SpawnDirectionalLight();
-    sun->GetComponent<Transform>()->position = Vector3(0, 5, 0);
+    sun->GetComponent<Transform>()->position = Vector3(0, 40.0, 0);
     sun->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
     sun->GetComponent<Light>()->intensity = 1.0f;
 
@@ -163,7 +135,6 @@ int main() {
 
     auto *scene = new Scene(camera);
     scene->Add(cube1);
-    scene->Add(gameObject);
     scene->Add(houseModel->root);
     scene->Add(ambientLight);
     scene->Add(sun);
@@ -183,10 +154,10 @@ int main() {
     while (container->Get<IWindow>()->IsOpen()) {
         controller->Update();
         delta_time = container->Get<IWindow>()->GetDeltaTime();
-        gameObject->GetComponent<Behaviour>()->Update(delta_time);
         camera->Update(delta_time);
         ambientLight->GetComponent<Light>()->Update(delta_time);
         sun->GetComponent<Light>()->Update(delta_time);
+        // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
         t += delta_time * 127;
         material1->SetProperty("material.shininess", t);
 

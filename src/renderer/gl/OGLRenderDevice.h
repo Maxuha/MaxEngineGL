@@ -63,9 +63,7 @@ namespace Rendering {
 
         void Present() override;
 
-        ImageFormat GetDisplayFormat() override;
-
-
+        TextureFormat GetDisplayFormat() override;
 
     private:
         OGLInstance* instance;

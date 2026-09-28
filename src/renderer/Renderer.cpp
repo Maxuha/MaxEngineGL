@@ -68,7 +68,7 @@ namespace Rendering {
 
         viewport = window.GetCurrentSize();
 
-        const ImageFormat displayImageFormat = renderDevice->GetDisplayFormat();
+        const TextureFormat displayImageFormat = renderDevice->GetDisplayFormat();
 
         IRenderPass *rasterizedRenderPass = new RasterizedRenderPass(displayImageFormat);
 
@@ -112,15 +112,15 @@ namespace Rendering {
         viewport = window.GetCurrentSize();
 
         const auto mainRenderPass = RenderPass{
-            attachments,
-            2,
+            attachments[0],
+            attachments[1],
             viewport,
             clearColor
         };
 
         const auto shadowRenderPass = RenderPass{
-            shadowAttachments,
-            1,
+            {},
+            shadowAttachments[0],
             viewport,
             clearColor
         };
@@ -207,6 +207,21 @@ namespace Rendering {
         renderDevice->UpdateResourceSet(lightRenderData.resourceSet, 1, lightRenderData.buffer);
 
         // Setup shadows
+
+        // Map
+        BufferDesc lightSpaceBuffer;
+        lightSpaceBuffer.size = sizeof(CameraBuffer);
+        lightSpaceBuffer.index = 0;
+        lightSpaceBuffer.usage = BufferUsage::Uniform;
+        lightSpaceBuffer.set = 0;
+        lightSpaceBuffer.isDynamic = true;
+
+        lightSpace.ViewProjectionBuffer = renderDevice->CreateBuffer(cameraBuffer, nullptr);
+        lightSpace.ResourceSet = renderDevice->CreateResourceSet(cameraAndLightSetLayout);
+        renderDevice->UpdateResourceSet(lightSpace.ResourceSet, 0, lightSpace.ViewProjectionBuffer);
+
+        // Light space
+
         BufferDesc shadowsBuffer;
         shadowsBuffer.size = sizeof(Matrix4x4);
         shadowsBuffer.index = 7;
@@ -259,10 +274,21 @@ namespace Rendering {
     ShaderHandle Renderer::CreateShader(const ShaderDesc &shaderDesc) {
         GraphicsShader graphicsShader;
 
+        const CullMode cullMode = shaderDesc.CullMode;
+        const bool isDepthOnly = shaderDesc.IsDepthOnly;
+
+        auto colorFormat = TextureFormat::UNDEFINED;
+
+        if (!isDepthOnly) {
+            colorFormat = renderDevice->GetDisplayFormat();
+        }
+
         PipelineStateDesc pipelineStateDesc;
         pipelineStateDesc.VertexLayout = vertexLayout;
         pipelineStateDesc.Viewport = viewport;
         pipelineStateDesc.DepthFormat = depthFormat;
+        pipelineStateDesc.ColorFormat = colorFormat;
+        pipelineStateDesc.CullMode = cullMode;
 
         if (shaderDesc.resourceSetLayouts.size() >= 3) {
             graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
@@ -352,6 +378,7 @@ namespace Rendering {
         bufferDesc.isDynamic = true;
 
         const BufferHandle modelBuffer = renderDevice->CreateBuffer(bufferDesc, nullptr);
+
         const ResourceSetHandle modelResourceSet = renderDevice->CreateResourceSet(modelSetLayout);
         renderDevice->UpdateResourceSet(modelResourceSet, 2, modelBuffer);
 
@@ -420,11 +447,8 @@ namespace Rendering {
 
                     const auto colorIntensity = Vector4(lightData->color.rgb(), lightData->intensity);
                     const auto direction = Vector4(light->GetGameObject()->GetTransform()->Forward(), 1);
-                    const auto space = light->GetGameObject()->GetTransform()->GetWorldMatrix();
-
                     lightRenderData.data.directionalLight.colorIntensity = colorIntensity;
                     lightRenderData.data.directionalLight.direction = direction;
-                    lightRenderData.data.directionalLight.space = space;
                     break;
                 }
                 case LightType::Point: {
@@ -468,46 +492,31 @@ namespace Rendering {
             }
         }
 
-        renderDevice->UpdateBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(lightRenderData.data));
-
         // Light persp
 
         CameraBuffer cameraBuffer;
         cameraBuffer.view = lights[1]->GetGameObject()->GetTransform()->LookAt();
-        cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Perspective(60, 2160/1440, 0.001, 100000);
+        cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Perspective(90.0f, 2160.0f / 1440.0f, 0.1f, 100.0f);
         cameraBuffer.position = Vector4(lights[1]->GetGameObject()->GetTransform()->position, 1.0f);
 
         Matrix4x4 pv = cameraBuffer.proj * cameraBuffer.view;
+        lightRenderData.data.directionalLight.space = pv;
 
-        std::cout << "start" << std::endl;
-        std::cout << pv.m[0][0] << " " << pv.m[0][1] << " "  << pv.m[0][2] << " "  << pv.m[0][3] << std::endl;
-        std::cout << pv.m[1][0] << " " << pv.m[1][1] << " "  << pv.m[1][2] << " "  << pv.m[1][3] << std::endl;
-        std::cout << pv.m[2][0] << " " << pv.m[2][1] << " "  << pv.m[2][2] << " "  << pv.m[2][3] << std::endl;
-        std::cout << pv.m[3][0] << " " << pv.m[3][1] << " "  << pv.m[3][2] << " "  << pv.m[3][3] << std::endl;
-        std::cout << "end" << std::endl;
-
-        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
-
-        //
-
-        // Matrix4x4 shadowMatrix = lights[2]->GetGameObject()->GetTransform()->GetWorldMatrix();
-        // renderDevice->UpdateBuffer(shadowRenderData.buffer, &shadowMatrix, 0, sizeof(Matrix4x4));
-
-        //
+        renderDevice->UpdateBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(lightRenderData.data));
+        renderDevice->UpdateBuffer(lightSpace.ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
 
         cmd->BeginRenderPass(renderPassesDesc[1]);
-        cmd->BindResourceSet(cameras[activeCamera->GetHandle().Id].ResourceSet, mainPipelineLayout, 0);
+        cmd->BindPipeline(shaders[depthShader->GetHandle().Id].pipeline);
+        cmd->BindResourceSet(lightSpace.ResourceSet, shaders[depthShader->GetHandle().Id].pipeline, 0);
 
         for (const auto drawCall: drawCalls) {
-            cmd->BindPipeline(shaders[depthShader->GetHandle().Id].pipeline);
             cmd->BindVertexBuffer(drawCall._mesh->vertexBuffer);
             cmd->BindIndexBuffer(drawCall._mesh->indexBuffer);
             cmd->BindResourceSet(drawCall._mesh->modelResourceSet, shaders[depthShader->GetHandle().Id].pipeline, 1);
             cmd->DrawIndexed(drawCall._mesh->GetIndexCount());
         }
-        //cmd->EndRenderPass();
 
-        //
+        cmd->EndRenderPass();
 
         // Camera persp
 
@@ -528,18 +537,19 @@ namespace Rendering {
             // material properties
             if (lastMaterial != drawCall.material) {
                 lastMaterial = drawCall.material;
-                cmd->BindPipeline(shaders[materials[drawCall.material->GetMaterialHandle().Id].shader.Id].pipeline);
-                cmd->BindResourceSet(materials[drawCall.material->GetMaterialHandle().Id].resourceSet,
-                                     materials[drawCall.material->GetMaterialHandle().Id].pipeline, 2);
+                cmd->BindPipeline(shaders[materials[lastMaterial->GetMaterialHandle().Id].shader.Id].pipeline);
+                cmd->BindResourceSet(materials[lastMaterial->GetMaterialHandle().Id].resourceSet,
+                                     materials[lastMaterial->GetMaterialHandle().Id].pipeline, 2);
             }
 
             // mesh properties
             cmd->BindVertexBuffer(drawCall._mesh->vertexBuffer);
             cmd->BindIndexBuffer(drawCall._mesh->indexBuffer);
             cmd->BindResourceSet(drawCall._mesh->modelResourceSet,
-                                 materials[drawCall.material->GetMaterialHandle().Id].pipeline, 1);
+                                 mainPipelineLayout, 1);
             cmd->DrawIndexed(drawCall._mesh->GetIndexCount());
         }
+
         cmd->EndRenderPass();
         cmd->End();
 

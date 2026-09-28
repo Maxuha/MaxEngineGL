@@ -21,6 +21,14 @@ namespace Rendering {
         glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        if (format == TextureFormat::DEPTH) {
+            constexpr float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+            glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTextureParameterfv(texture, GL_TEXTURE_BORDER_COLOR, borderColor);
+            glTextureParameteri(texture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        }
+
         textures.emplace_back(OGLTexture{texture});
 
         if (data) {
@@ -39,7 +47,6 @@ namespace Rendering {
             case TextureFormat::SRGBA: return GL_SRGB8_ALPHA8;
             case TextureFormat::RGBA: return GL_RGBA8;
             case TextureFormat::RGB: return GL_RGB8;
-            case TextureFormat::D32_FLOAT: return GL_DEPTH_COMPONENT32F;
             case TextureFormat::DEPTH: return GL_DEPTH_COMPONENT24;
         }
         return GL_RGBA8;
@@ -51,7 +58,6 @@ namespace Rendering {
             case TextureFormat::RGBA: return GL_RGBA;
             case TextureFormat::RGB: return GL_RGB;
             case TextureFormat::DEPTH: return GL_DEPTH_COMPONENT;
-            case TextureFormat::D32_FLOAT: return GL_DEPTH_COMPONENT;
         }
         return GL_RGBA;
     }

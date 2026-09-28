@@ -32,11 +32,8 @@ void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount) {
 
 void Rendering::CommandBuffer::BeginRenderPass(const RenderPass &renderPass) {
     auto *cmd = allocateCommand<GLCommand_BeginRenderPass>(GLCommandType::BeginRenderPass);
-    cmd->attachments[0] = renderPass.colorAttachments[0];
-    cmd->attachments[1] = renderPass.colorAttachments[1];
-    cmd->attachmentCount = renderPass.attachmentCount;
-    cmd->width = renderPass.viewport.width;
-    cmd->height = renderPass.viewport.height;
+    cmd->colorAttachment = renderPass.colorAttachment;
+    cmd->depthAttachment = renderPass.depthAttachment;
     cmd->viewport = renderPass.viewport;
     cmd->clearColor = renderPass.clearColor;
 }
@@ -91,6 +88,7 @@ void Rendering::CommandBuffer::BindResourceSet(const ResourceSetHandle setIndex,
     auto *cmd = allocateCommand<GLCommand_BindResourceSet>(GLCommandType::BindResourceSet);
     cmd->resourceId = setIndex;
     cmd->pipeline = pipelineHandle;
+    cmd->isPipelineLayout = false;
     cmd->index = index;
 }
 

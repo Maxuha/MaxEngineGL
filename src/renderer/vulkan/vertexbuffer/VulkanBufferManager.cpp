@@ -4,7 +4,6 @@
 
 #include "VulkanBufferManager.h"
 #include "../VulkanFrameManager.h"
-#include "../VulkanSwapChain.h"
 #include "../../domain/buffer/BufferDesc.h"
 
 

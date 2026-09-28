@@ -245,6 +245,7 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
     desc.resourceSetLayouts.push_back(layout_0);
     desc.resourceSetLayouts.push_back(layout_1);
     desc.resourceSetLayouts.push_back(layout_2);
+    desc.CullMode = CullMode::Front;
 
     const auto mainShader = new Shader(vSPV, fSPV, desc);
 

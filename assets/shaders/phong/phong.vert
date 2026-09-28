@@ -1,14 +1,45 @@
 #version 460
 
+struct AmbientLight {
+    vec3 color;
+    float intensity;
+};
+
+struct DirectionalLight {
+    mat4 space;
+    vec3 color;
+    float intensity;
+    vec3 direction;
+    float padding;
+};
+
+struct PointLight {
+    vec3 color;
+    float intensity;
+    vec3 position;
+    float range;
+};
+
+struct SpotLight {
+    vec4 colorIntensity;
+    vec4 positionRange;
+    vec4 direction;
+    vec4 coneAngle;
+};
+
 layout(set = 0, binding = 0) uniform Camera {
     mat4 view;
     mat4 proj;
     vec4 position;
 } camera;
 
-//layout(set = 0, binding = 7) uniform LightSpaceMatrix {
-//    mat4 space;
-//} lightSpaceMatrix;
+
+layout (set = 0, binding = 1) uniform LightsBlock {
+    AmbientLight ambientLight;
+    DirectionalLight directionalLight;
+    PointLight pointLight[8];
+    SpotLight spotLight[8];
+} light;
 
 layout(set = 1, binding = 2) uniform Model {
     mat4 position;
@@ -24,28 +55,12 @@ layout (location = 2) out vec2 TexCoord;
 layout (location = 3) out vec3 CameraPos;
 layout (location = 4) out vec4 FragPosLightSpace;
 
-mat4 m = mat4(
-        1.73205, 0.0, 0.0, 0.0, // 1-? ???????
-        0.0, 0.0, -1.0, -1.0, // 2-? ???????
-        0.0, 1.73205, 0.0, 0.0, // 3-? ???????
-        0.0, 0.0, 4.999, 5.0  // 4-? ???????
-);
-
-
-//mat4 m = mat4(
-//        1.0, 0.0, 0.0, 0.0, // 1-? ???????
-//        0.0, 0.0, 1.0, 0.0, // 2-? ???????
-//        0.0, -1.0, 0.0, 9.9901, // 3-? ???????
-//        0.0, -1.0, 0.0, 1.0  // 4-? ???????
-//);
-
 void main()
 {
     FragPos = vec3(model.position * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model.position))) * aNormal;
     TexCoord = aTexCoord;
     CameraPos = vec3(camera.position);
-//    FragPosLightSpace = lightSpaceMatrix.space * vec4(FragPos, 1.0);
-    FragPosLightSpace = m * vec4(FragPos, 1.0);
+    FragPosLightSpace = light.directionalLight.space * vec4(FragPos, 1.0);
     gl_Position = camera.proj * camera.view * vec4(FragPos, 1.0);
 }

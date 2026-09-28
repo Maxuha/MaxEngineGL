@@ -7,6 +7,7 @@
 #include "../IPipelineManager.h"
 #include "../domain/struct/VertexLayout.h"
 #include "../gl/model/OGLPipelineLayout.h"
+#include "../domain/struct/PipelineStateDesc.h"
 
 namespace Rendering {
     struct RenderContext;
@@ -34,8 +35,6 @@ namespace Rendering {
 
         ~OGLPipelineManager() override;
 
-        PipelineHandle CreatePipeline(const std::vector<ShaderHandle> &shaders, RenderPassHandle renderPass,
-                                      const PipelineStateDesc &pipelineStateDesc) override;
 
         PipelineHandle CreatePipeline(const OGLGraphicsShader& shader, const PipelineStateDesc &pipelineStateDesc);
 
@@ -44,26 +43,22 @@ namespace Rendering {
     private:
         std::vector<OGLPipeline> pipelines;
 
+        GLenum MapCullMode(CullMode cullMode);
+
         GLuint MapVertexFormat(const VertexFormat format) {
             switch (format) {
                 case VertexFormat::Float:
                     return 1;
-                    break;
                 case VertexFormat::Float2:
                     return 2;
-                    break;
                 case VertexFormat::Float3:
                     return 3;
-                    break;
                 case VertexFormat::Float4:
                     return 4;
-                    break;
                 case VertexFormat::UByte4N:
                     return 4;
-                    break;
                 case VertexFormat::Int4:
                     return 4;
-                    break;
             }
             return 1;
         }

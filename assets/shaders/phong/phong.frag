@@ -51,38 +51,27 @@ layout (location = 4) in vec4 FragPosLightSpace;
 
 layout (location = 0) out vec4 FragColor;
 
-//float DirShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
-//{
-//    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-//
-//    vec4 shadowCoords = fragPosLightSpace;
-//
-//    shadowCoords.xy = (shadowCoords.xy * 0.5) + (vec2(0.5) * shadowCoords.w);
-//
-//    shadowCoords.z = (shadowCoords.z * 0.5) + (0.5 * shadowCoords.w);
-//
-//    shadowCoords.z -= bias * shadowCoords.w;
-//
-//    return textureProj(depthMap, shadowCoords);
-//}
-
 float DirShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
-    // 1. ????????????? ??????? ??? ???????? ? NDC [-1, 1]
+    if (fragPosLightSpace.w <= 0.0) {
+        return 1.0;
+    }
+
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 
-    // 2. ??????? ????????? ? ???????? [0, 1] ??? ????????
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
-    // 3. ?????????? ????????? ??????? ?? ????? ?????
+    if (projCoords.z > 1.0 ||
+        projCoords.x < 0.0 || projCoords.x > 1.0 ||
+        projCoords.y < 0.0 || projCoords.y > 1.0) {
+        return 1.0;
+    }
+
+    projCoords.y = 1.0 - projCoords.y;
+
     float closestDepth = texture(depthMap, projCoords.xy).r;
-
-    // 4. ????????? ??????? ???????? ?????????
     float currentDepth = projCoords.z;
 
-    // 5. ?????? ??????????? bias
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-
-    // 6. ?????????: ???? ??????? ??????? ??????, ???????? ????????? ? ???? (?????????? 0.0)
+    float bias = max(0.00005 * (1.0 - dot(normal, lightDir)), 0.000005);
     float shadow = currentDepth - bias > closestDepth ? 0.0 : 1.0;
 
     return shadow;
@@ -117,10 +106,9 @@ void main()
     float dirShadow = DirShadowCalculation(FragPosLightSpace, norm, dirLightDir);
 
     vec3 dirDiffuse = calculateDiffuse(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, norm, diffTex);
-    result += dirDiffuse;
-
     vec3 dirSpecular = calculateSpecular(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, norm, viewDir, specTex);
-    result += dirSpecular;
+
+    result += (dirDiffuse + dirSpecular) * (dirShadow);
 
     for (int i = 0; i < 8; i++) {
         if (light.pointLight[i].range <= 0.0) continue;
@@ -166,9 +154,10 @@ void main()
         result += (diff + spec) * (attenuation * intensity);
     }
 
-    result *= dirShadow;
-
+//    FragColor = texture(depthMap, TexCoord);
+//    FragColor = vec4(dirShadow, dirShadow, dirShadow, 1.0);
+//    float depth = texture(depthMap, TexCoord).r;
+//    FragColor = vec4(vec3(1.0 - depth), 1.0);
     FragColor = vec4(result, 1.0);
-//    FragColor = vec4(vec3(dirShadow, dirShadow, dirShadow), 1.0);
-  //  FragColor = vec4(vec3(texture(depthMap, TexCoord)), 1.0);
+
 }

@@ -7,7 +7,9 @@
 
 #include "ResourceSet.h"
 #include "VertexLayout.h"
+#include "../../ITextureManager.h"
 #include "../../../math/Rect.h"
+#include "../../gl/model/TextureData.h"
 
 namespace Rendering {
     enum class CullMode { Front, Back };
@@ -15,14 +17,14 @@ namespace Rendering {
     enum class FrontFace { Clockwise, CounterClockwise };
     enum class BlendMode { Opaque, AlphaBlend, Additive };
 
-    enum class ImageFormat : uint32_t {
-        Undefined = 0,
-        RGBA8_Srgb,
-        BGRA8_Srgb,
-        D32_Sfloat,
-        D32_Sfloat_S8_Uint,
-        D24_Unorm_S8_Uint
-    };
+    // enum class ImageFormat : uint32_t {
+    //     Undefined = 0,
+    //     RGBA8_Srgb,
+    //     BGRA8_Srgb,
+    //     D32_Sfloat,
+    //     D32_Sfloat_S8_Uint,
+    //     D24_Unorm_S8_Uint
+    // };
 
     enum class AttachmentLoadOp { LOAD, CLEAR, DONT_CARE };
 
@@ -61,7 +63,7 @@ namespace Rendering {
     };
 
     struct AttachmentDescription {
-        ImageFormat format = ImageFormat::Undefined;
+        TextureFormat format = TextureFormat::SRGBA;
         AttachmentType type = AttachmentType::NONE;
         AttachmentLoadOp loadOp = AttachmentLoadOp::DONT_CARE;
         AttachmentStoreOp storeOp = AttachmentStoreOp::DONT_CARE;
@@ -93,8 +95,9 @@ namespace Rendering {
         DepthStencilDesc DepthStencilState;
         RasterizerDesc RasterizerState;
         Rect Viewport{};
-        ImageFormat ColorFormat = ImageFormat::RGBA8_Srgb;
-        ImageFormat DepthFormat = ImageFormat::D32_Sfloat_S8_Uint;
+        TextureFormat ColorFormat = TextureFormat::SRGBA;
+        TextureFormat DepthFormat = TextureFormat::DEPTH;
+        CullMode CullMode = CullMode::Back;
     };
 
     struct MaterialDesc {

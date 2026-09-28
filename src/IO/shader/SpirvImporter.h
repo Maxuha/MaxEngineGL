@@ -32,7 +32,7 @@ struct PipelineReflection {
 
 class SpirvImporter : IShaderImporter {
 public:
-    Shader* Import(const std::string& shaderName) override;
+    Shader* Import(const std::string& shaderName, const std::unordered_map<std::string, std::string>& params = std::unordered_map<std::string, std::string>()) override;
 };
 
 

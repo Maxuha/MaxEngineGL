@@ -42,17 +42,10 @@ DIContainer::DIContainer()
     WindowDesc windowDesc;
     windowDesc.width = 2160;
     windowDesc.height = 1440;
-    window = std::make_unique<GLFWWindowImpl>(windowDesc, new OpenGLGLFWGraphicsContext);
-
-    // Shader* standardLitShader = shaderImporter->Import("phong/phong");
-    // standardLitShader->AddProperty(ShaderProperty::SHININESS, ShaderMetaProperty(0, sizeof(float)));
-    // standardLitShader->AddProperty(ShaderProperty::COLOR_DIFFUSE, ShaderMetaProperty(16, sizeof(Vector4)));
-  //  Shader* standardShadowShader = shaderImporter->Import("depth/depth");
+    window = std::make_unique<GLFWWindowImpl>(windowDesc, new VulkanGLFWGraphicsContext);
 
     RenderConfig renderConfig;
-    renderConfig.api = RenderAPI::OpenGL;
-  //  renderConfig.litShader = standardLitShader;
-  //  renderConfig.shadowShader = standardShadowShader;
+    renderConfig.api = RenderAPI::Vulkan;
 
     renderer = std::make_unique<Renderer>(renderConfig, *window);
 

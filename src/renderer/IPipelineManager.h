@@ -17,8 +17,6 @@ namespace Rendering {
     class IPipelineManager {
     public:
         virtual ~IPipelineManager() = default;
-
-        virtual PipelineHandle CreatePipeline(const std::vector<ShaderHandle> &shaders, const RenderPassHandle renderPass, const PipelineStateDesc &pipelineStateDesc) = 0;
     };
 } // Rendering
 

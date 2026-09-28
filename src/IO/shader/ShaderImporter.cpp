@@ -13,19 +13,31 @@
 ShaderImporter::~ShaderImporter() {
 }
 
-Shader* ShaderImporter::Import(const std::string &shaderName) {
+Shader* ShaderImporter::Import(const std::string &shaderName, const std::unordered_map<std::string, std::string>& params) {
     const std::vector<char> vSPV = FileReader::ReadFileBytes(
      std::string(ASSETS_ROOT) + "/shaders/" + shaderName + "-v" + ".spv");
     const std::vector<char> fSPV = FileReader::ReadFileBytes(
         std::string(ASSETS_ROOT) + "/shaders/" + shaderName + "-f" + ".spv");
 
-    ShaderDesc desc2;
-    desc2.vertexCode = vSPV;
-    desc2.fragmentCode = fSPV;
+    ShaderDesc desc;
+    desc.vertexCode = vSPV;
+    desc.fragmentCode = fSPV;
 
-    reflectShader(desc2);
+    if (params.contains("cullMode")) {
+        const std::string cullMode = params.at("cullMode");
 
-    const auto shader = new Shader(vSPV, fSPV, desc2);
+        if (cullMode == "Front") desc.CullMode = Rendering::CullMode::Front;
+        if (cullMode == "Back") desc.CullMode = Rendering::CullMode::Back;
+    }
+
+    if (params.contains("isDepthOnly")) {
+        const std::string isDepthOnly = params.at("isDepthOnly");
+        desc.IsDepthOnly = isDepthOnly == "true";
+    }
+
+    reflectShader(desc);
+
+    const auto shader = new Shader(vSPV, fSPV, desc);
 
     return shader;
 }

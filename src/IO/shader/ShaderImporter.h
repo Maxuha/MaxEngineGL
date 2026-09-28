@@ -16,7 +16,7 @@ class ShaderImporter : public IShaderImporter {
 public:
     ~ShaderImporter() override;
 
-    Shader *Import(const std::string &shaderName) override;
+    Shader *Import(const std::string &shaderName, const std::unordered_map<std::string, std::string>& params = std::unordered_map<std::string, std::string>()) override;
 
 private:
     void reflectShader(ShaderDesc& desc);

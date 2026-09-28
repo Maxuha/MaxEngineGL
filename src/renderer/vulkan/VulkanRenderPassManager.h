@@ -34,7 +34,7 @@ namespace Rendering {
 
         VkAttachmentLoadOp MapLoadOp(AttachmentLoadOp loadOp);
         VkAttachmentStoreOp MapStoreOp(AttachmentStoreOp storeOp);
-        VkFormat MapImageFormat(ImageFormat imageFormat);
+        VkFormat MapImageFormat(TextureFormat imageFormat);
     };
 } // Rendering
 

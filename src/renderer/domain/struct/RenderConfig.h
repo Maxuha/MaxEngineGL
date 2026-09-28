@@ -32,7 +32,7 @@ namespace Rendering {
         FrameBuffering frameBuffering = FrameBuffering::Double;
         Shader* litShader;
         Shader* shadowShader;
-        ImageFormat depthFormat = ImageFormat::D32_Sfloat_S8_Uint;
+        TextureFormat depthFormat = TextureFormat::DEPTH;
     };
 } // Rendering
 

@@ -228,7 +228,6 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/vulkan/framebuffer/IVulkanFramebufferManager.h
         src/renderer/vulkan/framebuffer/VulkanFrameBufferManager.cpp
         src/renderer/vulkan/framebuffer/VulkanFrameBufferManager.h
-        src/renderer/vulkan/commandbuffer/IVulkanCommandBufferManager.h
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferManager.cpp
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferManager.h
         src/renderer/vulkan/pipeline/IVulkanPipelineManager.h
@@ -299,6 +298,8 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/vulkan/vertexbuffer/VulkanStagingBufferPool.h
         src/renderer/domain/LightItemRenderData.cpp
         src/renderer/domain/LightItemRenderData.h
+        src/renderer/vulkan/commandbuffer/VulkanCommandBufferi.cpp
+        src/renderer/vulkan/commandbuffer/VulkanCommandBufferi.h
 )
 
 target_include_directories(MaxEngine PRIVATE

@@ -55,7 +55,7 @@ namespace Rendering {
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
 
-        const VkFormat _format = ToVulkanFormat(format);
+        const VkFormat _format = MapTextureFormat(format);
         VkImageUsageFlags usageFlags;
         VkImageAspectFlags aspectFlags;
 
@@ -66,7 +66,7 @@ namespace Rendering {
         }
 
         if (format == TextureFormat::DEPTH) {
-            usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         } else {
             usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         }
@@ -259,14 +259,13 @@ namespace Rendering {
         );
     }
 
-    constexpr VkFormat VulkanTextureManager::ToVulkanFormat(const TextureFormat format) const {
+    constexpr VkFormat VulkanTextureManager::MapTextureFormat(const TextureFormat format) const {
         switch (format) {
             case TextureFormat::RGB:       return VK_FORMAT_R8G8B8_UNORM;
             case TextureFormat::RGBA:      return VK_FORMAT_R8G8B8A8_UNORM;
             case TextureFormat::SRGBA:     return VK_FORMAT_R8G8B8A8_SRGB;
-            case TextureFormat::D32_FLOAT: return VK_FORMAT_D32_SFLOAT;
-            case TextureFormat::DEPTH:     return VK_FORMAT_D32_SFLOAT_S8_UINT;
-            default:                       return VK_FORMAT_UNDEFINED;
+            case TextureFormat::DEPTH:     return VK_FORMAT_D32_SFLOAT;
         }
+        return VK_FORMAT_R8G8B8A8_SRGB;
     }
 } // Rendering

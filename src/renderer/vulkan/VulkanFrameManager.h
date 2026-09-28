@@ -77,22 +77,22 @@ namespace Rendering {
         std::vector<VulkanFrame> frames;
         uint32_t currentFrame = 0;
 
-        ImageFormat MapVkFormat(const VkFormat format) {
-            switch (format) {
-                case VK_FORMAT_R8G8B8A8_UNORM: {
-                    return ImageFormat::BGRA8_Srgb;
-                }
-                case VK_FORMAT_R8G8B8A8_SRGB: {
-                    return ImageFormat::RGBA8_Srgb;
-                }
-                case VK_FORMAT_B8G8R8A8_SRGB: {
-                    return ImageFormat::BGRA8_Srgb;
-                }
-                default: {
-                    return ImageFormat::Undefined;
-                }
-            }
-        }
+        // TextureFormat MapVkFormat(const VkFormat format) {
+        //     switch (format) {
+        //         case VK_FORMAT_R8G8B8A8_UNORM: {
+        //             return ImageFormat::BGRA8_Srgb;
+        //         }
+        //         case VK_FORMAT_R8G8B8A8_SRGB: {
+        //             return ImageFormat::RGBA8_Srgb;
+        //         }
+        //         case VK_FORMAT_B8G8R8A8_SRGB: {
+        //             return ImageFormat::BGRA8_Srgb;
+        //         }
+        //         default: {
+        //             return ImageFormat::Undefined;
+        //         }
+        //     }
+        // }
     };
 } // Rendering
 

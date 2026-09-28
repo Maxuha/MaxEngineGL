@@ -24,18 +24,11 @@ namespace Rendering {
 
         PipelineLayoutHandle CreatePipelineLayout(const std::vector<VkDescriptorSetLayout> &descriptorSetLayouts);
 
-        PipelineHandle CreatePipeline(const std::vector<ShaderHandle> &shaders, RenderPassHandle renderPass, const PipelineStateDesc &pipelineStateDesc) override;
-
         PipelineHandle CreatePipeline(const GraphicsVulkanShader& shader, const PipelineStateDesc &pipelineStateDesc);
 
         VulkanPipeline GetPipeline(PipelineHandle handle) const;
 
         VkPipelineLayout GetPipelineLayout(PipelineLayoutHandle handle) const;
-
-        VkDescriptorSetLayout CreateDescriptorSetLayout(uint32_t binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags) const;
-
-        VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) const;
-
 
     private:
         VulkanLogicalDevice& logicalDevice;
@@ -60,8 +53,6 @@ namespace Rendering {
         VkPipelineMultisampleStateCreateInfo CreateMultisampleState();
 
         VkPipelineColorBlendStateCreateInfo CreateColorBlendAttachmentState(const BlendAttachmentDesc& attachments);
-
-        VkPipelineColorBlendStateCreateInfo CreateColorBlendState();
 
         VkPipelineDepthStencilStateCreateInfo CreateDepthStencilState();
 
@@ -90,7 +81,9 @@ namespace Rendering {
         VkPipelineColorBlendAttachmentState MapBlendMode(BlendMode mode);
         VkDynamicState MapDynamicState(DynamicState state);
 
-        VkFormat MapImageFormat(ImageFormat imageFormat);
+        // VkFormat MapImageFormat(ImageFormat imageFormat);
+
+        VkFormat MapTextureFormat(TextureFormat format);
     };
 } // Rendering
 

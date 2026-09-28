@@ -45,7 +45,7 @@ namespace Rendering {
         void CopyBufferToImage(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize offset, VkImage image, uint32_t width, uint32_t height) ;
         void TransitionImageLayout(VkCommandBuffer cmd, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-        constexpr VkFormat ToVulkanFormat(TextureFormat format) const;
+        constexpr VkFormat MapTextureFormat(TextureFormat format) const;
     };
 } // Rendering
 
