@@ -127,6 +127,11 @@ void ShaderImporter::reflectStage(const std::vector<char> &code, const Rendering
             bindingDesc.binding_slot = bindingSlot;
             bindingDesc.type = MapDescriptorType(b->descriptor_type);
             bindingDesc.stage_flags = stage;
+            //todo remove
+            if (bindingSlot == 2) {
+                // bindingDesc.is_dynamic = true;
+                bindingDesc.type = Rendering::ResourceType::StorageBuffer;
+            }
 
             uint32_t count = 1;
             for (uint32_t i = 0; i < b->array.dims_count; ++i) {

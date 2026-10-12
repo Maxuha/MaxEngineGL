@@ -4,13 +4,13 @@
 
 #ifndef MAXENGINE_LIGHTRENDERDATA_H
 #define MAXENGINE_LIGHTRENDERDATA_H
-#include "IBufferManager.h"
 #include "../AmbientLightData.h"
 #include "../IResourceSetManager.h"
 
-enum class LightType;
 
 namespace Rendering {
+    enum class LightType;
+
     struct LightHandle {
         uint32_t id;
     };

@@ -6,6 +6,7 @@
 #define MAXENGINE_RASTERIZEDRENDERPASS_H
 #include "IRenderPass.h"
 #include "../src/renderer/domain/struct/PipelineStateDesc.h"
+#include "../renderer/IRenderPassManager.h"
 
 namespace Rendering {
     class RasterizedRenderPass : public IRenderPass {
@@ -16,7 +17,7 @@ namespace Rendering {
 
         RenderPassHandle GetHandle() override;
 
-        void Render(CommandBuffer &commandBuffer, FrameBufferHandle frameBuffer, PipelineHandle pipeline) override;
+        void Render(CommandBuffer &commandBuffer, PipelineHandle pipeline) override;
 
     private:
         IRenderPassManager *renderPassManager;

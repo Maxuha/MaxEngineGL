@@ -13,7 +13,6 @@
 #include "model/TextureData.h"
 #include "../domain/struct/VertexLayout.h"
 #include "GLFW/glfw3.h"
-#include "managers/BufferManager.h"
 #include "OGLShaderManager.h"
 #include "OGLInstance.h"
 #include "OGLTextureManager.h"
@@ -37,7 +36,7 @@ namespace Rendering {
 
         ~OGLRenderDevice() override;
 
-        CommandBuffer * AllocateCommandBuffer() override;
+        CommandBuffer * AllocateCommandBuffer(CommandBufferType type) override;
 
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
@@ -51,7 +50,7 @@ namespace Rendering {
 
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) override;
 
-        BufferHandle CreateBuffer(const BufferDesc &desc, const void *data) override;
+        BufferHandle CreateBuffer(const BufferDesc &desc) override;
 
         void UpdateBuffer(BufferHandle id, const void *data, int offset, int size) override;
 

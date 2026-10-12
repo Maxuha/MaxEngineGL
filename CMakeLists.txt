@@ -159,7 +159,7 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/components/light/LightFactory.h
         src/renderer/domain/buffer/BufferUsage.h
         src/renderer/domain/buffer/BufferDesc.h
-        src/renderer/domain/buffer/BufferSlot.h
+        src/renderer/domain/buffer/BufferHandle.h
         src/renderer/domain/Texture.cpp
         src/renderer/domain/Texture.h
         src/renderer/domain/IShader.h
@@ -173,7 +173,6 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/gl/CommandBuffer.cpp
         src/renderer/gl/CommandBuffer.h
         src/renderer/domain/IGLTexture.h
-        src/renderer/gl/desc/TextureCreateRequest.h
         src/IO/model/TextureAsset.h
         src/IWindow.h
         src/renderer/domain/struct/RenderConfig.h
@@ -225,9 +224,6 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/vulkan/shaders/VulkanShaderManager.cpp
         src/renderer/vulkan/shaders/VulkanShaderManager.h
         src/renderer/managers/IShaderManager.h
-        src/renderer/vulkan/framebuffer/IVulkanFramebufferManager.h
-        src/renderer/vulkan/framebuffer/VulkanFrameBufferManager.cpp
-        src/renderer/vulkan/framebuffer/VulkanFrameBufferManager.h
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferManager.cpp
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferManager.h
         src/renderer/vulkan/pipeline/IVulkanPipelineManager.h
@@ -237,12 +233,6 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/math/Rect.h
         src/renderer/ILogicalDevice.h
         src/renderer/ISwapchain.h
-        src/renderer/ISemaphore.h
-        src/renderer/vulkan/VulkanSemaphore.cpp
-        src/renderer/vulkan/VulkanSemaphore.h
-        src/renderer/IFence.h
-        src/renderer/vulkan/VulkanFence.cpp
-        src/renderer/vulkan/VulkanFence.h
         src/renderer/IFrameManager.h
         src/renderer/vulkan/VulkanFrameManager.cpp
         src/renderer/vulkan/VulkanFrameManager.h
@@ -275,7 +265,6 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/gl/OGLPipelineManager.h
         src/renderer/gl/OGLFrameManager.cpp
         src/renderer/gl/OGLFrameManager.h
-        src/renderer/domain/IBufferManager.h
         src/renderer/vulkan/vertexbuffer/VulkanBufferManager.cpp
         src/renderer/vulkan/vertexbuffer/VulkanBufferManager.h
         src/renderer/gl/OGLVertexBufferManager.cpp
@@ -300,6 +289,7 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/domain/LightItemRenderData.h
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferi.cpp
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferi.h
+        src/renderer/domain/buffer/BufferHandle.h
 )
 
 target_include_directories(MaxEngine PRIVATE

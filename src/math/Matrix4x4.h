@@ -5,6 +5,7 @@
 #ifndef MAXENGINE_MATRIX4X4_H
 #define MAXENGINE_MATRIX4X4_H
 
+#include <iomanip>
 #include <glm/glm.hpp>
 
 #include "Matrix3x3.h"
@@ -52,6 +53,16 @@ public:
     Vector3 operator*(const Vector3& v1) const;
 
     Vector4 operator[](unsigned int row) const;
+
+    friend std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat) {
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                os << std::setw(10) << mat.m[i][j] << " ";
+            }
+            os << "\n";
+        }
+        return os;
+    }
 };
 
 

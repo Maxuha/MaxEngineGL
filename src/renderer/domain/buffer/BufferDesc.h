@@ -7,17 +7,15 @@
 #include "BufferUsage.h"
 
 namespace Rendering {
-
-struct BufferDesc {
-    unsigned size = 0;
-    unsigned stride = 0;
-    unsigned index = 0;
-    uint32_t set = 0;
-    uint32_t binding = 0;
-    BufferUsage usage {};
-    bool isDynamic = false;
-};
-
+    struct BufferDesc {
+        unsigned size = 0;
+        unsigned stride = 0;
+        BufferUsage usage{};
+        bool isDynamic = false;
+        bool isDynamicB = false;
+        //need to remove
+        bool isNewApproach = false;
+    };
 } // namespace Rendering
 
 #endif //MAXENGINE_BUFFERDESC_H

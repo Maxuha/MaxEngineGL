@@ -11,15 +11,15 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "stb_image_write.h"
 #include "VulkanDescriptorSetManager.h"
 #include "VulkanFrameManager.h"
 #include "VulkanInstance.h"
 #include "VulkanPhysicalDevice.h"
 #include "VulkanSurface.h"
 #include "VulkanSwapChain.h"
+#include "../ICommandPoolManager.h"
+#include "../domain/buffer/BufferDesc.h"
 #include "commandbuffer/VulkanCommandBufferManager.h"
-#include "framebuffer/VulkanFrameBufferManager.h"
 #include "pipeline/VulkanPipelineManager.h"
 #include "shaders/VulkanShaderManager.h"
 #include "texture/VulkanTextureManager.h"
@@ -27,244 +27,8 @@
 
 
 namespace Rendering {
-
-#include <vulkan/vulkan.h>
-#include <iostream>
-#include <vector>
-#include <cmath>
-#include <algorithm>
-
-// ??????????????? ??????? ??? ?????? ??????????? ???? ??????
-uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-    return 0xFFFFFFFF;
-}
-
-bool SaveVkImageToDisk(
-    VkDevice device,
-    VkPhysicalDevice physicalDevice,
-    VkCommandPool commandPool,
-    VkQueue queue,
-    VkImage srcImage,
-    VkFormat format,
-    uint32_t width,
-    uint32_t height,
-    const char* filename)
-{
-    if (srcImage == VK_NULL_HANDLE || width == 0 || height == 0) {
-        std::cerr << "Error: Invalid image or dimensions (" << width << "x" << height << ")\n";
-        return false;
-    }
-
-    bool isDepth = false;
-    int channels = 4;
-    size_t elementSize = 1;
-
-    if (format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D16_UNORM) {
-        isDepth = true;
-        channels = 1;
-        elementSize = (format == VK_FORMAT_D16_UNORM) ? 2 : 4;
-    } else if (format == VK_FORMAT_R8G8B8_UNORM || format == VK_FORMAT_R8G8B8_SRGB) {
-        channels = 3;
-        elementSize = 1;
-    } else if (format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB || format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB) {
-        channels = 4;
-        elementSize = 1;
-    } else {
-        std::cerr << "Error: Unsupported image format for saving.\n";
-        return false;
-    }
-
-    VkDeviceSize bufferSize = static_cast<VkDeviceSize>(width) * height * channels * elementSize;
-
-    VkBuffer dstBuffer;
-    VkDeviceMemory dstBufferMemory;
-
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = bufferSize;
-    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &dstBuffer) != VK_SUCCESS) {
-        std::cerr << "Error: Failed to create buffer.\n";
-        return false;
-    }
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, dstBuffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = FindMemoryType(physicalDevice, memRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &dstBufferMemory) != VK_SUCCESS) {
-        std::cerr << "Error: Failed to allocate buffer memory.\n";
-        vkDestroyBuffer(device, dstBuffer, nullptr);
-        return false;
-    }
-    vkBindBufferMemory(device, dstBuffer, dstBufferMemory, 0);
-
-    VkCommandBufferAllocateInfo cmdAllocInfo{};
-    cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cmdAllocInfo.commandPool = commandPool;
-    cmdAllocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(device, &cmdAllocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    bool hasStencil = (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT);
-
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image = srcImage;
-
-    if (isDepth) {
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (hasStencil) {
-            barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        }
-    } else {
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    }
-
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-    barrier.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
-    region.imageSubresource.aspectMask = isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT; // ????????? DEPTH
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {width, height, 1};
-
-    vkCmdCopyImageToBuffer(commandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstBuffer, 1, &region);
-
-    // ?????????? Image ? ???????? ??????
-    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-    vkEndCommandBuffer(commandBuffer);
-
-    // ?????????? ??????? ?? ?????????? ? ???? ??????????
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(queue);
-    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-
-    // 4. ?????? ?????? ?????? ?? CPU ? ?????????????? ?????? ????????
-    void* data;
-    vkMapMemory(device, dstBufferMemory, 0, bufferSize, 0, &data);
-
-    std::vector<unsigned char> pixels;
-
-    if (isDepth) {
-        pixels.resize(static_cast<size_t>(width) * height);
-        float minDepth = std::numeric_limits<float>::max();
-        float maxDepth = std::numeric_limits<float>::lowest();
-
-        // ????????? ???????? ??????? (?????????????? 32-bit float ??????)
-        float* depthData = reinterpret_cast<float*>(data);
-        size_t pixelCount = static_cast<size_t>(width) * height;
-
-        for (size_t i = 0; i < pixelCount; ++i) {
-            float value = depthData[i];
-            if (!std::isfinite(value)) continue;
-            minDepth = std::min(minDepth, value);
-            maxDepth = std::max(maxDepth, value);
-        }
-
-        const bool hasRange = minDepth < maxDepth;
-        const float range = hasRange ? (maxDepth - minDepth) : 1.0f;
-
-        for (size_t i = 0; i < pixelCount; ++i) {
-            float rawValue = std::clamp(depthData[i], 0.0f, 1.0f);
-            float normalized = hasRange ? ((rawValue - minDepth) / range) : rawValue;
-            pixels[i] = static_cast<unsigned char>(std::clamp(normalized, 0.0f, 1.0f) * 255.0f);
-        }
-        std::cout << "Depth image stats for " << filename << ": min=" << minDepth << ", max=" << maxDepth << "\n";
-    } else {
-        // ??? ???????? ????? (RGB/RGBA)
-        pixels.resize(static_cast<size_t>(width) * height * channels);
-        auto srcData = static_cast<unsigned char*>(data);
-
-        // ???? ?????? BGR(A), ???????????? ? RGB(A) ??? stb_image
-        if (format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB) {
-            for (size_t i = 0; i < static_cast<size_t>(width) * height; ++i) {
-                pixels[i * channels + 0] = srcData[i * channels + 2]; // R <- B
-                pixels[i * channels + 1] = srcData[i * channels + 1]; // G <- G
-                pixels[i * channels + 2] = srcData[i * channels + 0]; // B <- R
-                if (channels == 4) pixels[i * channels + 3] = srcData[i * channels + 3]; // A
-            }
-        } else {
-            std::memcpy(pixels.data(), srcData, bufferSize);
-        }
-    }
-
-    vkUnmapMemory(device, dstBufferMemory);
-    vkDestroyBuffer(device, dstBuffer, nullptr);
-    vkFreeMemory(device, dstBufferMemory, nullptr);
-
-    // 5. ?????? ? ???? ? ??????? stb_image_write
-    stbi_flip_vertically_on_write(true);
-    int success = stbi_write_png(filename, width, height, channels, pixels.data(), width * channels);
-
-    if (!success) {
-        std::cerr << "Error: Failed to write image file: " << filename << "\n";
-        return false;
-    }
-
-    std::cout << "Successfully saved Vulkan image (" << width << "x" << height << ") to " << filename << "\n";
-    return true;
-}
-
-
-    //
-
-    VulkanRenderDevice::VulkanRenderDevice(IWindow &window) : physicalDevice(nullptr),
-                                                              logicalDevice(nullptr),
-                                                              frameBufferManager(nullptr),
-                                                              commandPoolManager(nullptr),
-                                                              textureManager(nullptr),
-                                                              bufferManager(nullptr),
-                                                              queueFamily(nullptr),
-                                                              renderPass(nullptr) {
+    VulkanRenderDevice::VulkanRenderDevice(IWindow &window)
+    {
         if (!window.CheckVulkanSupport()) {
             std::cout << "Vulkan is not supported" << std::endl;
             return;
@@ -289,34 +53,20 @@ bool SaveVkImageToDisk(
         stagingBufferPool = new VulkanStagingBufferPool(logicalDevice->GetDevice(), physicalDevice->GetPhysicalDevice(),
                                                         512 * 1024 * 1024);
 
-        renderPassManager = new VulkanRenderPassManager(*logicalDevice);
-
-        frameBufferManager = new VulkanFrameBufferManager(*logicalDevice, *renderPassManager, *textureManager);
-
-        // swapchain
         swapChain = new VulkanSwapChain(
             *physicalDevice,
             *logicalDevice,
             *surface,
-            window,
-            *frameBufferManager,
-            *renderPassManager
+            window
         );
-
-
-        swapChain->CreateTextures();
-        swapChain->CreateFrameBuffers();
-
-        // end swapchain
 
         frameManager = new VulkanFrameManager(
             *logicalDevice,
             *swapChain,
-            *frameBufferManager,
-            *commandBufferManager
+            MAX_FRAMES_IN_FLIGHT
         );
 
-        bufferManager = new VulkanBufferManager(*logicalDevice, *frameManager, *commandBufferManager);
+        bufferManager = new VulkanBufferManager(*logicalDevice, *commandBufferManager);
 
         textureManager = new VulkanTextureManager(*logicalDevice, *stagingBufferPool, *commandBufferManager);
 
@@ -326,13 +76,18 @@ bool SaveVkImageToDisk(
 
         const TextureHandle texture = textureManager->CreateTexture(rect.width, rect.height, TextureFormat::DEPTH, nullptr);
         depthTexture = textureManager->GetTexture(texture);
+
+        mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        loaderCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     }
 
     VulkanRenderDevice::~VulkanRenderDevice() {
     }
 
-    CommandBuffer *VulkanRenderDevice::AllocateCommandBuffer() {
-        return new CommandBuffer(2048 * 2048);
+    CommandBuffer *VulkanRenderDevice::AllocateCommandBuffer(const CommandBufferType type = CommandBufferType::Graphics) {
+        // should be allicate here
+
+        return new CommandBuffer(9048 * 1024, type);
     }
 
     TextureHandle VulkanRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
@@ -342,7 +97,7 @@ bool SaveVkImageToDisk(
 
         if (initialData != nullptr) {
             const VkCommandBuffer uploadCmd = commandBufferManager->AllocateCommandBuffer(
-                CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY).GetCommandBuffer();
 
             VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -377,58 +132,7 @@ bool SaveVkImageToDisk(
 
     ResourceSetLayoutHandle VulkanRenderDevice::CreateResourceSetLayout(
         const ResourceSetLayoutDesc &resourceSetLayoutDesc) {
-        std::vector<VkDescriptorSetLayoutBinding> vkBindings;
-        vkBindings.reserve(resourceSetLayoutDesc.bindings.size());
-
-        for (const auto &binding: resourceSetLayoutDesc.bindings) {
-            VkDescriptorSetLayoutBinding vkBinding{};
-            vkBinding.binding = binding.binding_slot;
-            vkBinding.descriptorCount = resourceSetLayoutDesc.bindings.size();
-
-            switch (binding.type) {
-                case ResourceType::SampledImage:
-                    vkBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    break;
-                case ResourceType::UniformBuffer:
-                    vkBinding.descriptorType = binding.is_dynamic
-                                                   ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
-                                                   : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    break;
-                case ResourceType::StorageBuffer:
-                    vkBinding.descriptorType = binding.is_dynamic
-                                                   ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
-                                                   : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                    break;
-                case ResourceType::StorageImage:
-                    vkBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-                    break;
-                case ResourceType::Sampler:
-                    vkBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                    break;
-            }
-
-            vkBinding.stageFlags = 0;
-            const uint32_t stages = static_cast<uint32_t>(binding.stage_flags);
-
-            if (stages & static_cast<uint32_t>(ShaderStageFlags::Vertex)) {
-                vkBinding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
-            }
-            if (stages & static_cast<uint32_t>(ShaderStageFlags::Fragment)) {
-                vkBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-            }
-            if (stages & static_cast<uint32_t>(ShaderStageFlags::Compute)) {
-                vkBinding.stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
-            }
-            if (stages == static_cast<uint32_t>(ShaderStageFlags::AllStages)) {
-                vkBinding.stageFlags = VK_SHADER_STAGE_ALL;
-            }
-
-            vkBinding.pImmutableSamplers = nullptr;
-
-            vkBindings.push_back(vkBinding);
-        }
-
-        return descriptorSetManager->CreateDescriptorSetLayout(vkBindings);
+        return descriptorSetManager->CreateDescriptorSetLayout(resourceSetLayoutDesc);
     }
 
     ResourceSetHandle VulkanRenderDevice::CreateResourceSet(const ResourceSetLayoutHandle resourceSetLayoutHandle) {
@@ -464,14 +168,27 @@ bool SaveVkImageToDisk(
 
             std::array descriptorWrites = {descriptorWrite};
 
-            vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+            vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
+                                   nullptr);
         }
     }
 
     void VulkanRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
                                                const BufferHandle bufferHandle) {
         const VulkanDescriptorSet descriptorSet = descriptorSets[setHandle.id];
-        const VulkanVertexBuffer buffer = buffers[bufferHandle.Id];
+        const VulkanDynamicBuffer buffer = dynamicBuffers[bufferHandle.Id];
+
+        VkDescriptorType descriptorType;
+
+        if (buffer.isDynamic) {
+            descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        } else {
+            descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        }
+
+        if (buffer.usage == BufferUsage::Storage) {
+            descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        }
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VkDescriptorBufferInfo bufferInfo{};
@@ -484,7 +201,7 @@ bool SaveVkImageToDisk(
             descriptorWrite.dstSet = descriptorSet.set[i];
             descriptorWrite.dstBinding = binding;
             descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorType = descriptorType;
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pBufferInfo = &bufferInfo;
             descriptorWrite.pImageInfo = nullptr; // Optional
@@ -497,37 +214,77 @@ bool SaveVkImageToDisk(
         }
     }
 
-    BufferHandle VulkanRenderDevice::CreateBuffer(const BufferDesc &desc, const void *data) {
-        VulkanVertexBuffer vbuffer;
+    BufferHandle VulkanRenderDevice::CreateBuffer(const BufferDesc& desc) {
+        VulkanDynamicBuffer vbuffer;
         vbuffer.size = desc.size;
+        vbuffer.isDynamic = desc.isDynamicB;
+        vbuffer.usage = desc.usage;
+
+        if (desc.isNewApproach) {
+            switch (desc.usage) {
+                case BufferUsage::Vertex: {
+                    const VulkanBuffer vertexBuffer = bufferManager->CreateDeviceLocalBuffer(desc.size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+                    buffers.push_back(vertexBuffer);
+
+                    return BufferHandle { .Id = buffers.size() - 1 };
+                }
+                case BufferUsage::Index: {
+                    const VulkanBuffer indexBuffer = bufferManager->CreateDeviceLocalBuffer(desc.size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+                    buffers.push_back(indexBuffer);
+
+                    return BufferHandle { .Id = buffers.size() - 1 };
+                }
+                case BufferUsage::Uniform: {
+                    VulkanDynamicBuffer buffers;
+                    buffers.size = desc.size;
+                    buffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+                    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                        VulkanBuffer buffer = bufferManager->CreateDeviceLocalBuffer(desc.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+                        buffers.buffers[i] = buffer.buffer;
+                        buffers.memories[i] = buffer.memory;
+
+                        vkMapMemory(logicalDevice->GetDevice(), buffer.memory, 0, desc.size, 0, &buffers.mappedPointers[i]);
+                    }
+
+                    dynamicBuffers.push_back(buffers);
+
+                    return BufferHandle { .Id = dynamicBuffers.size() - 1 };
+                }
+                case BufferUsage::Storage:
+                    break;
+            }
+        }
 
         if (desc.isDynamic) {
             vbuffer.buffers.resize(MAX_FRAMES_IN_FLIGHT);
             vbuffer.memories.resize(MAX_FRAMES_IN_FLIGHT);
             vbuffer.mappedPointers.resize(MAX_FRAMES_IN_FLIGHT);
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                const VulkanBuffer buffer = bufferManager->CreateInternalBuffer(desc, data);
-                vbuffer.buffers[i] = buffer.buffer;
-                vbuffer.memories[i] = buffer.bufferMemory;
-                vbuffer.mappedPointers[i] = buffer.mappedPointer;
+                const VulkanBuffer temp = bufferManager->CreateInternalBuffer(desc);
+                vbuffer.buffers[i] = temp.buffer;
+                vbuffer.memories[i] = temp.memory;
+                vbuffer.mappedPointers[i] = temp.mappedPointer;
             }
         } else {
             vbuffer.buffers.resize(1);
             vbuffer.memories.resize(1);
             vbuffer.mappedPointers.resize(1);
 
-            const VulkanBuffer buffer = bufferManager->CreateInternalBuffer(desc, data);
-            vbuffer.buffers[0] = buffer.buffer;
-            vbuffer.memories[0] = buffer.bufferMemory;
-            vbuffer.mappedPointers[0] = buffer.mappedPointer;
+            const VulkanBuffer temp = bufferManager->CreateInternalBuffer(desc);
+            vbuffer.buffers[0] = temp.buffer;
+            vbuffer.memories[0] = temp.memory;
+            vbuffer.mappedPointers[0] = temp.mappedPointer;
         }
 
         if (!desc.isDynamic) {
             const StagingAllocation stagingBuffer = stagingBufferPool->Allocate(desc.size);
-            memcpy(stagingBuffer.cpuMappedPointer, data, desc.size);
 
             const VkCommandBuffer commandBuffer = commandBufferManager->AllocateCommandBuffer(
-                CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+                CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY).GetCommandBuffer();
             VkCommandBufferBeginInfo beginInfo{};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -554,14 +311,16 @@ bool SaveVkImageToDisk(
             stagingBufferPool->Reset();
         }
 
-        buffers.push_back(vbuffer);
+        dynamicBuffers.push_back(vbuffer);
 
-        return BufferHandle{.Id = buffers.size() - 1};
+        return BufferHandle{.Id = dynamicBuffers.size() - 1};
     }
 
     void VulkanRenderDevice::UpdateBuffer(const BufferHandle id, const void *data, const int offset, const int size) {
-        VulkanVertexBuffer &buffer = buffers[id.Id];
-        bufferManager->UpdateInternalUniformBuffer(buffer, data, offset, size);
+        const uint32_t frameIndex = frameManager->GetCurrentIndexFrame();
+        const VulkanDynamicBuffer &buffer = dynamicBuffers[id.Id];
+        const auto dstMemory = static_cast<uint8_t*>(buffer.mappedPointers[frameIndex]);
+        memcpy(dstMemory + offset, data, size);
     }
 
     void VulkanRenderDevice::DestroyBuffer(BufferHandle id) {
@@ -593,40 +352,28 @@ bool SaveVkImageToDisk(
     }
 
     void VulkanRenderDevice::SubmitCommandBuffer(CommandBuffer *commandBuffer) {
-        VulkanFrame &frame = frameManager->AcquireFrame();
-        frame.DepthImageView = depthTexture.ImageView;
+        VulkanFrame frame;
 
-        const VkCommandBuffer vkCommandBuffer = commandBufferManager->AllocateCommandBuffer(
-            CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-         VkCommandBuffer vkSecondaryCommandBuffer = commandBufferManager->AllocateCommandBuffer(
-            CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+        VulkanCommandBufferi mainCommandBuffer;
 
-        const VkCommandBuffer vkSecondaryCommandBuffer2 = commandBufferManager->AllocateCommandBuffer(
-            CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+        if (commandBuffer->GetType() == CommandBufferType::Graphics) {
+            frame = frameManager->AcquireFrame();
+            mainCommandBuffer = this->mainCommandBuffer;
+        } else if (commandBuffer->GetType() == CommandBufferType::Compute) {
+            mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        } else if (commandBuffer->GetType() == CommandBufferType::Transfer) {
+            mainCommandBuffer = this->loaderCommandBuffer;
+        }
 
-        bool isFirstPassCompleted = false;
+        mainCommandBuffer.Begin();
 
-        frame.commandBuffer = vkCommandBuffer;
-        frame.secondaryCommandBuffer = vkSecondaryCommandBuffer;
-
-        vkResetCommandBuffer(vkCommandBuffer, 0);
-        vkResetCommandBuffer(vkSecondaryCommandBuffer, 0);
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0;
-
-        vkBeginCommandBuffer(vkCommandBuffer, &beginInfo);
+        VulkanCommandBufferi secondaryCommandBuffer;
 
         std::vector<uint8_t> commands = commandBuffer->GetCommands();
         size_t readOffset = 0;
         const size_t head = commandBuffer->GetHead();
 
-        auto commandBufferi = VulkanCommandBufferi(vkCommandBuffer);
-
         VkImage depthImage = nullptr;
-
-        VkImage lastRenderTargetTexture = nullptr;
 
         while (readOffset < head) {
             const GLCommandType type = *reinterpret_cast<GLCommandType *>(&commands[readOffset]);
@@ -636,106 +383,46 @@ bool SaveVkImageToDisk(
                     const auto *cmd = reinterpret_cast<GLCommand_BeginRenderPass *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_BeginRenderPass);
 
-                    if (isFirstPassCompleted) {
-                        vkSecondaryCommandBuffer = vkSecondaryCommandBuffer2;
-                    }
+                    secondaryCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
-                    Color color = cmd->clearColor;
                     Rect viewport = cmd->viewport;
-
                     std::optional<AttachmentDescription> colorAttachmentDescription = cmd->colorAttachment;
                     std::optional<AttachmentDescription> depthAttachmentDescription = cmd->depthAttachment;
-
-                    VkCommandBufferInheritanceRenderingInfo inheritanceRenderingInfo{};
-                    inheritanceRenderingInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO;
-                    inheritanceRenderingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-                    if (colorAttachmentDescription.has_value()) {
-                        VkFormat colorFormat = VK_FORMAT_B8G8R8A8_SRGB;
-
-                        inheritanceRenderingInfo.colorAttachmentCount = 1;
-                        inheritanceRenderingInfo.pColorAttachmentFormats = &colorFormat;
-                    }
-
-                    if (depthAttachmentDescription.has_value()) {
-                        inheritanceRenderingInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
-                    }
-
-                    VkCommandBufferInheritanceInfo inheritanceInfo{};
-                    inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-                    inheritanceInfo.pNext = &inheritanceRenderingInfo;
-
-                    VkCommandBufferBeginInfo secondaryBeginInfo{};
-                    secondaryBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                    secondaryBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-                    secondaryBeginInfo.pInheritanceInfo = &inheritanceInfo;
-
-                    std::vector<VkRenderingAttachmentInfo> colorAttachments;
+                    VkFormat colorFormat;
+                    VkFormat depthFormat;
+                    uint32_t colorCount = 0;
 
                     if (colorAttachmentDescription.has_value()) {
-                        VkRenderingAttachmentInfo colorAttachment{};
-                        colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-                        colorAttachment.imageView = frame.ColorTexture.ImageView; // <-- Render directly to the view
-                        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                        colorAttachment.clearValue.color = {color.r, color.g, color.b, color.a};
-                        colorAttachments.push_back(colorAttachment);
+                        AttachmentDescription attachmentDescription = colorAttachmentDescription.value();
+                        colorFormat = MapVkFormat(attachmentDescription.format);
+                        colorCount = 1;
                     }
 
-                    VkRenderingAttachmentInfo vkDepthAttachment{};
+                    VkImageView depthImageView;
+
                     if (depthAttachmentDescription.has_value()) {
-                        VkImageView depthImageView = frame.DepthImageView;
+                        AttachmentDescription attachmentDescription = depthAttachmentDescription.value();
 
-                        VkRenderingAttachmentInfo depthAttachment{};
-                        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                        depthImageView = this->depthTexture.ImageView;
 
-                        if (depthAttachmentDescription.value().renderTarget.Id != 999999) {
-                            depthImageView = textureManager->GetTexture(depthAttachmentDescription.value().renderTarget).ImageView;
-                            depthImage = textureManager->GetTexture(depthAttachmentDescription.value().renderTarget).Image;
+                        std::optional<TextureHandle> renderTargetOpt = attachmentDescription.renderTarget;
 
-                            commandBufferi.transitionImageLayout(depthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
+                        if (renderTargetOpt.has_value()) {
+                            TextureHandle renderTarget = renderTargetOpt.value();
+                            const auto &depthTex = textureManager->GetTexture(renderTarget);
+                            depthImageView = depthTex.ImageView;
+                            depthImage = depthTex.Image;
 
-                            depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                            depthFormat = MapVkFormat(attachmentDescription.format);
+
+                            mainCommandBuffer.TransitionImageLayout(depthImage, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                 VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                                 VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
                         }
-
-                        depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-                        depthAttachment.imageView = depthImageView; // <-- Render directly to the view
-                        depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-                        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                        depthAttachment.clearValue.depthStencil.depth = 1.0f;
-                        depthAttachment.clearValue.depthStencil.stencil = 0;
-                        vkDepthAttachment = depthAttachment;
                     }
 
-                    VkRect2D renderArea = {
-                        {static_cast<int32_t>(viewport.x), static_cast<int32_t>(viewport.y)},
-                        {static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height)}
-                    };
-
-                    uint32_t colorAttachmentCount;
-                    VkRenderingAttachmentInfo *pColorAttachments;
-
-                    if (colorAttachments.size() > 0) {
-                        colorAttachmentCount = colorAttachments.size();
-                        pColorAttachments = colorAttachments.data();
-                    } else {
-                        colorAttachmentCount = 0;
-                        pColorAttachments = nullptr;
-                    }
-
-                    VkRenderingInfo renderingInfo{};
-                    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-                    renderingInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
-                    renderingInfo.renderArea = renderArea;
-                    renderingInfo.layerCount = 1;
-                    renderingInfo.colorAttachmentCount = colorAttachmentCount;
-                    renderingInfo.pColorAttachments = pColorAttachments;
-                    renderingInfo.pDepthAttachment = &vkDepthAttachment;
-                    renderingInfo.pStencilAttachment = nullptr;
-
-                    vkCmdBeginRendering(vkCommandBuffer, &renderingInfo);
-                    vkBeginCommandBuffer(vkSecondaryCommandBuffer, &secondaryBeginInfo);
+                    mainCommandBuffer.BeginRenderPass(viewport, colorAttachmentDescription, depthAttachmentDescription, frame.ColorTexture.ImageView, depthImageView);
+                    secondaryCommandBuffer.Begin(colorCount, colorFormat, depthFormat);
                     break;
                 }
                 case GLCommandType::BindPipeline: {
@@ -744,7 +431,7 @@ bool SaveVkImageToDisk(
 
                     VulkanPipeline vkPipeline = pipelineManager->GetPipeline(cmd->pipeline);
 
-                    vkCmdBindPipeline(vkSecondaryCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline.Pipeline);
+                    secondaryCommandBuffer.BindPipeline(vkPipeline);
                     break;
                 }
                 case GLCommandType::UpdateBuffer: {
@@ -757,24 +444,13 @@ bool SaveVkImageToDisk(
                     auto size = cmd->size;
 
                     const uint32_t currentFrame = frameManager->GetCurrentIndexFrame();
-                    const VulkanVertexBuffer *vulkanVertexBuffer = bufferManager->GetVertexBuffer(bufferHandle);
-                    const auto dstMemory = static_cast<uint8_t *>(vulkanVertexBuffer->mappedPointers[currentFrame]);
-                    memcpy(dstMemory + offset, data, size);
-                    break;
-                }
-                case GLCommandType::UpdateUniformBuffer: {
-                    const auto *cmd = reinterpret_cast<GLCommand_UpdateBuffer *>(&commands[readOffset]);
-                    readOffset += sizeof(GLCommand_UpdateBuffer);
+                    const VulkanDynamicBuffer &vulkanVertexBuffer = dynamicBuffers[bufferHandle.Id];
+                    for (auto i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                        if (currentFrame == i) continue;
 
-                    auto bufferHandle = cmd->buffer;
-                    auto data = cmd->data;
-                    auto offset = cmd->offset;
-                    auto size = cmd->size;
-
-                    const uint32_t currentFrame = frameManager->GetCurrentIndexFrame();
-                    const VulkanVertexBuffer &vulkanVertexBuffer = buffers[bufferHandle.Id];
-                    const auto dstMemory = static_cast<uint8_t *>(vulkanVertexBuffer.mappedPointers[currentFrame]);
-                    memcpy(dstMemory + offset, data, size);
+                        const auto srcMemory = static_cast<uint8_t *>(vulkanVertexBuffer.mappedPointers[i]);
+                        memcpy(srcMemory + offset, data, size);
+                    }
                     break;
                 }
                 case GLCommandType::BindVertexBuffer: {
@@ -782,12 +458,9 @@ bool SaveVkImageToDisk(
                     readOffset += sizeof(GLCommand_BindBuffer);
 
                     BufferHandle bufferHandle = cmd->buffer;
-                    VulkanVertexBuffer &buffer = buffers[bufferHandle.Id];
+                    VulkanBuffer &buffer = buffers[bufferHandle.Id];
 
-                    VkBuffer vertexBuffers[] = {buffer.buffers[0]};
-                    VkDeviceSize offsets[] = {0};
-
-                    vkCmdBindVertexBuffers(vkSecondaryCommandBuffer, 0, 1, vertexBuffers, offsets);
+                    secondaryCommandBuffer.BindVertexBuffer(buffer);
                     break;
                 }
                 case GLCommandType::BindIndexBuffer: {
@@ -795,12 +468,9 @@ bool SaveVkImageToDisk(
                     readOffset += sizeof(GLCommand_BindBuffer);
 
                     BufferHandle bufferHandle = cmd->buffer;
-                    VulkanVertexBuffer &buffer = buffers[bufferHandle.Id];
+                    VulkanBuffer &buffer = buffers[bufferHandle.Id];
 
-                    VkBuffer indexBuffer = buffer.buffers[0];
-                    VkDeviceSize offset = 0;
-
-                    vkCmdBindIndexBuffer(vkSecondaryCommandBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT16);
+                    secondaryCommandBuffer.BindIndexBuffer(buffer);
                     break;
                 }
                 case GLCommandType::BindResourceSet: {
@@ -810,96 +480,103 @@ bool SaveVkImageToDisk(
                     auto resourceSet = descriptorSets[cmd->resourceId.id];
                     const std::vector<VkDescriptorSet> descriptorSets = resourceSet.set;
                     const auto imageIndex = swapChain->GetCurrentImageIndex();
+                    const uint32_t offset = cmd->dynamicOffset;
+
+                    VkPipelineLayout layout;
 
                     if (cmd->isPipelineLayout) {
-                        vkCmdBindDescriptorSets(
-                            vkSecondaryCommandBuffer,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineManager->GetPipelineLayout(cmd->pipelineLayout),
-                            cmd->index,
-                            1,
-                            &descriptorSets[imageIndex],
-                            0,
-                            nullptr
-                        );
+                        layout = pipelineManager->GetPipelineLayout(cmd->pipelineLayout);
                     } else {
-                        vkCmdBindDescriptorSets(
-                            vkSecondaryCommandBuffer,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineManager->GetPipeline(cmd->pipeline).pipelineLayout,
-                            cmd->index,
-                            1,
-                            &descriptorSets[imageIndex],
-                            0,
-                            nullptr
-                        );
+                        layout = pipelineManager->GetPipeline(cmd->pipeline).pipelineLayout;
                     }
+
+                    secondaryCommandBuffer.BindDescriptorSets(descriptorSets[imageIndex], layout, cmd->index, &offset);
                     break;
                 }
                 case GLCommandType::Draw: {
                     const auto *cmd = reinterpret_cast<GLCommand_Draw *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_Draw);
 
-                    vkCmdDraw(vkSecondaryCommandBuffer, cmd->vertexCount, 1, 0, 0);
+                    secondaryCommandBuffer.Draw(cmd->vertexCount, 1, 0, 0);
                     break;
                 }
                 case GLCommandType::DrawIndexed: {
                     const auto *cmd = reinterpret_cast<GLCommand_DrawIndexed *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_DrawIndexed);
 
-                    vkCmdDrawIndexed(vkSecondaryCommandBuffer, cmd->indexCount, 1, 0, 0, 0);
+                    uint32_t indexCount = cmd->indexCount;
+                    uint32_t indexMesh = cmd->indexMesh;
+
+                    secondaryCommandBuffer.DrawIndexed(indexCount, 1, 0, 0, indexMesh);
                     break;
                 }
                 case GLCommandType::EndRenderPass: {
                     const auto *cmd = reinterpret_cast<GLCommand_EndRenderPass *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_EndRenderPass);
 
-                    vkEndCommandBuffer(vkSecondaryCommandBuffer);
-
-                    vkCmdExecuteCommands(vkCommandBuffer, 1, &vkSecondaryCommandBuffer);
-
-                    vkCmdEndRendering(vkCommandBuffer);
-
                     if (depthImage != nullptr) {
-                        commandBufferi.transitionImageLayout(depthImage, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
-                        lastRenderTargetTexture = depthImage;
+                        mainCommandBuffer.TransitionImageLayout(depthImage, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                             VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
                         depthImage = nullptr;
                     } else {
-                        commandBufferi.transitionImageLayout(frame.ColorTexture.Image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+                        mainCommandBuffer.TransitionImageLayout(frame.ColorTexture.Image,
+                                                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT,
+                                                             1, 1);
                     }
 
-                    isFirstPassCompleted = true;
+                    secondaryCommandBuffer.End();
+
+                    mainCommandBuffer.ExecuteCommands(secondaryCommandBuffer);
+
                     break;
+                }
+                case GLCommandType::UploadBufferData: {
+                    const auto *cmd = reinterpret_cast<GLCommand_UploadBufferData *>(&commands[readOffset]);
+                    readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
+
+                    auto bufferHandle = cmd->buffer;
+                    // auto data = cmd->data;
+                    auto data = reinterpret_cast<const uint8_t*>(cmd) + sizeof(GLCommand_UploadBufferData);;
+                    auto size = cmd->size;
+                    auto offset = cmd->offset;
+
+                    VulkanBuffer& buffer = buffers[bufferHandle.Id];
+
+                    VulkanBuffer staging = bufferManager->CreateHostVisibleBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+                    void* mapped;
+                    vkMapMemory(logicalDevice->GetDevice(), staging.memory, 0, size, 0, &mapped);
+                    std::memcpy(mapped, data, size);
+                    vkUnmapMemory(logicalDevice->GetDevice(), staging.memory);
+
+                    mainCommandBuffer.CopyBuffer(staging.buffer, buffer.buffer, size);
                 }
                 default: ;
             }
         }
 
-        vkEndCommandBuffer(vkCommandBuffer);
+        mainCommandBuffer.End();
 
-        frameManager->SendFrameToGPU(frame);
-
-    if (lastRenderTargetTexture != nullptr) {
-        VkCommandPool commandPool;
-
-        VkCommandPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = 0;
-
-        if (const VkResult result = vkCreateCommandPool(logicalDevice->GetDevice(), &poolInfo, nullptr, &commandPool);
-            result != VK_SUCCESS) {
-            throw std::runtime_error("failed to create command pool!");
+        switch (commandBuffer->GetType()) {
+            case CommandBufferType::Graphics: {
+                commandBufferManager->SendCommandBuffer(mainCommandBuffer, CommandPoolType::Graphics, frame.ImageAvailableSemaphoreVk, frame.RenderFinishedSemaphoreVk, frame.InFlightVk);
+                break;
             }
-
-         SaveVkImageToDisk(logicalDevice->GetDevice(), physicalDevice->GetPhysicalDevice(), commandPool, logicalDevice->GetGraphicsQueue(), lastRenderTargetTexture, VK_FORMAT_D32_SFLOAT, 2160, 1440, "output_texture2.png");
-        lastRenderTargetTexture = nullptr;
-    }
-
-        frameManager->Present(frame);
+            case CommandBufferType::Compute:
+                break;
+            case CommandBufferType::Transfer: {
+                commandBufferManager->SendCommandBufferAndWait(mainCommandBuffer, CommandPoolType::Transfer);
+                break;
+            }
+        }
     }
 
     void VulkanRenderDevice::Present() {
+        const VulkanFrame &frame = frameManager->GetCurrentFrame();
+        swapChain->Present(frame.RenderFinishedSemaphoreVk, frame.imageIndex);
+        vkResetCommandBuffer(mainCommandBuffer.GetCommandBuffer(), 0);
     }
 
     TextureFormat VulkanRenderDevice::GetDisplayFormat() {

@@ -11,9 +11,8 @@
 #include "domain/Mesh.h"
 #include "domain/Texture.h"
 #include "domain/struct/PipelineStateDesc.h"
-#include "gl/desc/TextureCreateRequest.h"
 
-class MaterialHandle;
+struct MaterialHandle;
 
 namespace Rendering {
 

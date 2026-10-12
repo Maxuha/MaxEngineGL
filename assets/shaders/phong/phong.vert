@@ -34,15 +34,15 @@ layout(set = 0, binding = 0) uniform Camera {
 } camera;
 
 
-layout (set = 0, binding = 1) uniform LightsBlock {
+layout (set = 0, binding = 1, std140) uniform LightsBlock {
     AmbientLight ambientLight;
     DirectionalLight directionalLight;
     PointLight pointLight[8];
     SpotLight spotLight[8];
 } light;
 
-layout(set = 1, binding = 2) uniform Model {
-    mat4 position;
+layout(set = 1, binding = 2) readonly buffer Model {
+    mat4 position[];
 } model;
 
 layout (location = 0) in vec3 aPos;
@@ -57,10 +57,11 @@ layout (location = 4) out vec4 FragPosLightSpace;
 
 void main()
 {
-    FragPos = vec3(model.position * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(model.position))) * aNormal;
+    mat4 modelMatrix = model.position[gl_BaseInstance];
+    FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(modelMatrix))) * aNormal;
     TexCoord = aTexCoord;
     CameraPos = vec3(camera.position);
     FragPosLightSpace = light.directionalLight.space * vec4(FragPos, 1.0);
-    gl_Position = camera.proj * camera.view * vec4(FragPos, 1.0);
+    gl_Position =  camera.proj * camera.view  * vec4(FragPos, 1.0);
 }

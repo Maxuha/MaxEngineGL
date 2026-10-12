@@ -3,11 +3,9 @@
 //
 
 #include "CommandBuffer.h"
-#include "glad/glad.h"
-#include "../../math/Color.h"
 
 
-Rendering::CommandBuffer::CommandBuffer(const size_t bufferSize) {
+Rendering::CommandBuffer::CommandBuffer(const size_t bufferSize, const CommandBufferType type) : type(type) {
     buffer.resize(bufferSize);
 }
 
@@ -25,9 +23,10 @@ void Rendering::CommandBuffer::Draw(const uint32_t vertexCount) {
     cmd->vertexCount = vertexCount;
 }
 
-void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount) {
+void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount, const uint32_t indexMesh) {
     auto *cmd = allocateCommand<GLCommand_DrawIndexed>(GLCommandType::DrawIndexed);
     cmd->indexCount = indexCount;
+    cmd->indexMesh = indexMesh;
 }
 
 void Rendering::CommandBuffer::BeginRenderPass(const RenderPass &renderPass) {
@@ -35,15 +34,6 @@ void Rendering::CommandBuffer::BeginRenderPass(const RenderPass &renderPass) {
     cmd->colorAttachment = renderPass.colorAttachment;
     cmd->depthAttachment = renderPass.depthAttachment;
     cmd->viewport = renderPass.viewport;
-    cmd->clearColor = renderPass.clearColor;
-}
-
-Rendering::CommandBufferHandle Rendering::CommandBuffer::GetHandle() const {
-    return {};
-}
-
-Rendering::CommandPoolHandle Rendering::CommandBuffer::GetPool() const {
-    return {};
 }
 
 void Rendering::CommandBuffer::EndRenderPass() {
@@ -66,39 +56,33 @@ void Rendering::CommandBuffer::BindMaterial(const MaterialHandle &material) {
     cmd->material = material;
 }
 
-void Rendering::CommandBuffer::BindVertexBuffer(BufferHandle &buffer) {
+void Rendering::CommandBuffer::BindVertexBuffer(const BufferHandle &buffer) {
     auto *cmd = allocateCommand<GLCommand_BindBuffer>(GLCommandType::BindVertexBuffer);
     cmd->buffer = buffer;
 }
 
-void Rendering::CommandBuffer::BindIndexBuffer(BufferHandle &buffer) {
+void Rendering::CommandBuffer::BindIndexBuffer(const BufferHandle &buffer) {
     auto *cmd = allocateCommand<GLCommand_BindBuffer>(GLCommandType::BindIndexBuffer);
     cmd->buffer = buffer;
 }
 
-void Rendering::CommandBuffer::UpdateBuffer(const BufferHandle id, const void *data, const int offset, const int size) {
-    auto *cmd = allocateCommand<GLCommand_UpdateBuffer>(GLCommandType::UpdateBuffer);
-    cmd->buffer = id;
-    cmd->offset = offset;
-    cmd->size = size;
-    cmd->data = data;
-}
-
-void Rendering::CommandBuffer::BindResourceSet(const ResourceSetHandle setIndex, const PipelineHandle pipelineHandle, const uint32_t index) {
+void Rendering::CommandBuffer::BindResourceSet(const ResourceSetHandle setIndex, const PipelineHandle pipelineHandle, const uint32_t index, const uint32_t offset) {
     auto *cmd = allocateCommand<GLCommand_BindResourceSet>(GLCommandType::BindResourceSet);
     cmd->resourceId = setIndex;
     cmd->pipeline = pipelineHandle;
     cmd->isPipelineLayout = false;
     cmd->index = index;
+    cmd->dynamicOffset = offset;
 }
 
 void Rendering::CommandBuffer::BindResourceSet(const ResourceSetHandle setIndex, const PipelineLayoutHandle pipelineLayoutHandle,
-    const uint32_t index) {
+    const uint32_t index, const uint32_t offset) {
     auto *cmd = allocateCommand<GLCommand_BindResourceSet>(GLCommandType::BindResourceSet);
     cmd->resourceId = setIndex;
     cmd->pipelineLayout = pipelineLayoutHandle;
     cmd->isPipelineLayout = true;
     cmd->index = index;
+    cmd->dynamicOffset = offset;
 }
 
 void Rendering::CommandBuffer::PushConstants(const uint32_t key, const Matrix4x4 mat) {
@@ -112,12 +96,25 @@ void Rendering::CommandBuffer::PushConstants(const std::string &key, const uint3
     cmd->value = value;
 }
 
-void Rendering::CommandBuffer::UpdateUniformBuffer(const BufferHandle buffer, const void *data, const int offset, const int size) {
-    auto *cmd = allocateCommand<GLCommand_UpdateUniformBuffer>(GLCommandType::UpdateUniformBuffer);
+void Rendering::CommandBuffer::UpdateBuffer(const BufferHandle buffer, const void *data, const int offset, const int size) {
+    auto *cmd = allocateCommand<GLCommand_UpdateBuffer>(GLCommandType::UpdateBuffer);
     cmd->buffer = buffer;
     cmd->offset = offset;
     cmd->size = size;
     cmd->data = data;
+}
+
+void Rendering::CommandBuffer::UploadBufferData(const BufferHandle buffer, const void *data, const int offset, const int size) {
+    auto *cmd = allocateCommand<GLCommand_UploadBufferData>(GLCommandType::UploadBufferData);
+
+    cmd->buffer = buffer;
+    cmd->offset = offset;
+    cmd->size = size;
+    cmd->data = data;
+
+    std::memcpy(&this->buffer[this->head], data, size);
+
+    head += size;
 }
 
 std::vector<uint8_t>& Rendering::CommandBuffer::GetCommands() {
@@ -132,10 +129,10 @@ Rendering::PipelineHandle Rendering::CommandBuffer::GetPipeline() const {
     return pipeline;
 }
 
-void Rendering::CommandBuffer::Reset() {
-    head = 0;
+Rendering::CommandBufferType Rendering::CommandBuffer::GetType() const {
+    return type;
 }
 
-void Rendering::CommandBuffer::ResetAll() {
+void Rendering::CommandBuffer::Reset() {
     head = 0;
 }

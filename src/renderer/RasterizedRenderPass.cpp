@@ -33,7 +33,7 @@ namespace Rendering {
         return renderPass;
     }
 
-    void RasterizedRenderPass::Render(CommandBuffer &commandBuffer, const FrameBufferHandle frameBuffer, const PipelineHandle pipeline) {
+    void RasterizedRenderPass::Render(CommandBuffer &commandBuffer, const PipelineHandle pipeline) {
 
         commandBuffer.BindPipeline(pipeline);
         commandBuffer.Draw(3);

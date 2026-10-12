@@ -12,6 +12,7 @@
 #include "texture/VulkanTextureManager.h"
 #include "vertexbuffer/VulkanBufferManager.h"
 #include "vertexbuffer/VulkanStagingBufferPool.h"
+#include "../domain/buffer/BufferDesc.h"
 
 namespace Rendering {
     struct DescriptorLayout {
@@ -38,11 +39,11 @@ namespace Rendering {
 
         ~VulkanRenderDevice() override;
 
-        CommandBuffer *AllocateCommandBuffer() override;
+        CommandBuffer *AllocateCommandBuffer(CommandBufferType type) override;
 
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
-        PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle>& resourceSetLayouts) override;
+        PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle> &resourceSetLayouts) override;
 
         ResourceSetLayoutHandle CreateResourceSetLayout(const ResourceSetLayoutDesc &resourceSetLayoutDesc) override;
 
@@ -52,14 +53,14 @@ namespace Rendering {
 
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) override;
 
-        BufferHandle CreateBuffer(const BufferDesc &desc, const void *data) override;
-
+        BufferHandle CreateBuffer(const BufferDesc &desc) override;
 
         void UpdateBuffer(BufferHandle id, const void *data, int offset, int size) override;
 
         void DestroyBuffer(BufferHandle id) override;
 
-        PipelineHandle CreatePipeline(const ShaderDesc &shaderDesc, const PipelineStateDesc &pipelineStateDesc) override;
+        PipelineHandle
+        CreatePipeline(const ShaderDesc &shaderDesc, const PipelineStateDesc &pipelineStateDesc) override;
 
         void SubmitCommandBuffer(CommandBuffer *commandBuffer) override;
 
@@ -68,7 +69,11 @@ namespace Rendering {
         TextureFormat GetDisplayFormat() override;
 
     private:
-        int MAX_FRAMES_IN_FLIGHT = 2;
+        int MAX_FRAMES_IN_FLIGHT = 3;
+
+        VulkanCommandBufferi mainCommandBuffer;
+        VulkanCommandBufferi loaderCommandBuffer;
+
 
         VulkanInstance *instance;
         VulkanSurface *surface;
@@ -76,27 +81,21 @@ namespace Rendering {
         VulkanLogicalDevice *logicalDevice;
         VulkanShaderManager *shaderManager;
         VulkanPipelineManager *pipelineManager;
-        VulkanFrameBufferManager *frameBufferManager;
-        VulkanCommandPoolManager *commandPoolManager;
         VulkanCommandBufferManager *commandBufferManager;
         VulkanTextureManager *textureManager;
         VulkanBufferManager *bufferManager;
         VulkanFrameManager *frameManager;
-        VulkanDescriptorSetManager* descriptorSetManager;
-        VulkanStagingBufferPool* stagingBufferPool;
-        VulkanRenderPassManager* renderPassManager;
-        VulkanSwapChain* swapChain;
-
-        VulkanQueueFamily *queueFamily;
-        VulkanRenderPassManager *renderPass;
+        VulkanDescriptorSetManager *descriptorSetManager;
+        VulkanStagingBufferPool *stagingBufferPool;
+        VulkanSwapChain *swapChain;
 
         VulkanTexture depthTexture;
 
-        std::vector<VulkanVertexBuffer> buffers;
+        std::vector<VulkanDynamicBuffer> dynamicBuffers;
+        std::vector<VulkanBuffer> buffers;
         std::vector<GraphicsVulkanShader> shaders;
         std::unordered_map<ResourceSetLayoutDesc, VkDescriptorSetLayout> descriptorSetLayouts;
         std::vector<VulkanDescriptorSet> descriptorSets;
-
 
         TextureFormat MapVkFormat(const VkFormat format) {
             switch (format) {
@@ -113,6 +112,69 @@ namespace Rendering {
                     return TextureFormat::RGBA;
                 }
             }
+        }
+
+        VkFormat MapVkFormat(const TextureFormat format) {
+            switch (format) {
+                case TextureFormat::RGBA: {
+                    return VK_FORMAT_R8G8B8A8_UNORM;
+                }
+                case TextureFormat::SRGBA: {
+                    return VK_FORMAT_R8G8B8A8_SRGB;
+                }
+                case TextureFormat::DEPTH: {
+                    return VK_FORMAT_D32_SFLOAT;
+                }
+                case TextureFormat::RGB:
+                    return VK_FORMAT_R8G8B8_UNORM;
+                    break;
+                case TextureFormat::UNDEFINED:
+                    return VK_FORMAT_UNDEFINED;
+                    break;
+            }
+        }
+
+        constexpr VkAttachmentLoadOp MapAttachmentLoadOp(const AttachmentLoadOp op) {
+            switch (op) {
+                case AttachmentLoadOp::LOAD:      return VK_ATTACHMENT_LOAD_OP_LOAD;
+                case AttachmentLoadOp::CLEAR:     return VK_ATTACHMENT_LOAD_OP_CLEAR;
+                case AttachmentLoadOp::DONT_CARE: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            }
+            return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        }
+
+        constexpr VkAttachmentStoreOp MapAttachmentStoreOp(const AttachmentStoreOp  op) {
+            switch (op) {
+                case AttachmentStoreOp::STORE:     return VK_ATTACHMENT_STORE_OP_STORE;
+                case AttachmentStoreOp::DONT_CARE: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            }
+            return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        }
+
+        VkRenderingAttachmentInfo CreateAttachmentInfo(const AttachmentDescription& description, const VkImageView target) {
+            VkRenderingAttachmentInfo info = {};
+            info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+            info.loadOp = MapAttachmentLoadOp(description.loadOp);
+            info.storeOp = MapAttachmentStoreOp(description.storeOp);
+            info.imageView = target;
+
+            const VkClearColorValue clearColor = {description.clearColor.r, description.clearColor.g, description.clearColor.b, description.clearColor.a} ;
+
+            switch (description.type) {
+                case AttachmentType::COLOR:
+                    info.clearValue.color = clearColor;
+                    info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    break;
+                case AttachmentType::DEPTH:
+                    info.clearValue.depthStencil = {description.depthClearValue, 0};
+                    info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+                    break;
+                case AttachmentType::STENCIL:
+                    break;
+                case AttachmentType::NONE:
+                    break;
+            }
+            return info;
         }
     };
 } // Rendering

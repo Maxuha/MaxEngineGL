@@ -8,6 +8,7 @@
 
 #include "../../ICommandBufferManager.h"
 #include "VulkanCommandBufferi.h"
+#include "../../gl/CommandBuffer.h"
 
 namespace Rendering {
     enum class CommandPoolType;
@@ -20,14 +21,16 @@ namespace Rendering {
 
         VkCommandBuffer GetCommandBuffer(CommandBufferHandle handle) const;
 
-        VkCommandBuffer AllocateCommandBuffer(CommandPoolType type, VkCommandBufferLevel level);
+        VulkanCommandBufferi AllocateCommandBuffer(CommandPoolType type, VkCommandBufferLevel level) const;
+
+        void SendCommandBuffer(const VulkanCommandBufferi &commandBuffer, CommandPoolType type, VkSemaphore wait, VkSemaphore signal, VkFence fence) const;
+
+        void SendCommandBufferAndWait(const VulkanCommandBufferi &commandBuffer, CommandPoolType type) const;
 
     private:
         VulkanLogicalDevice& logicalDevice;
 
         std::vector<VulkanCommandBufferi> commandBuffers;
-        std::vector<VkCommandBuffer> graphicsCommandBuffers;
-        std::vector<VkCommandBuffer> transferCommandBuffers;
 
         VkCommandPool AllocateCommandPool(std::optional<uint32_t> queueFamily) const;
 

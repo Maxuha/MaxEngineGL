@@ -6,11 +6,9 @@
 #define MAXENGINE_IRENDERDEVICE_H
 #include "IPipelineManager.h"
 #include "domain/struct/ResourceSet.h"
-#include "gl/desc/TextureCreateRequest.h"
 #include "gl/model/TextureData.h"
 #include "domain/struct/PipelineStateDesc.h"
 #include "gl/CommandBuffer.h"
-#include "vulkan/shaders/VulkanShaderManager.h"
 
 
 class IWindow;
@@ -52,7 +50,7 @@ namespace Rendering {
     public:
         virtual ~IRenderDevice() = default;
 
-        virtual CommandBuffer* AllocateCommandBuffer() = 0;
+        virtual CommandBuffer* AllocateCommandBuffer(CommandBufferType type) = 0;
 
         virtual TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) = 0;
 
@@ -66,7 +64,7 @@ namespace Rendering {
 
         virtual void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) = 0;
 
-        virtual BufferHandle CreateBuffer(const BufferDesc &desc, const void *data) = 0;
+        virtual BufferHandle CreateBuffer(const BufferDesc &desc) = 0;
 
         virtual void UpdateBuffer(BufferHandle id, const void *data, int offset, int size) = 0;
 

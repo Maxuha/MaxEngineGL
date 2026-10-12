@@ -10,21 +10,14 @@
 #include "../../ITextureManager.h"
 #include "../../../math/Rect.h"
 #include "../../gl/model/TextureData.h"
+#include "../src/math/Color.h"
 
 namespace Rendering {
+
     enum class CullMode { Front, Back };
     enum class FillMode { Solid, Wireframe };
     enum class FrontFace { Clockwise, CounterClockwise };
     enum class BlendMode { Opaque, AlphaBlend, Additive };
-
-    // enum class ImageFormat : uint32_t {
-    //     Undefined = 0,
-    //     RGBA8_Srgb,
-    //     BGRA8_Srgb,
-    //     D32_Sfloat,
-    //     D32_Sfloat_S8_Uint,
-    //     D24_Unorm_S8_Uint
-    // };
 
     enum class AttachmentLoadOp { LOAD, CLEAR, DONT_CARE };
 
@@ -67,7 +60,9 @@ namespace Rendering {
         AttachmentType type = AttachmentType::NONE;
         AttachmentLoadOp loadOp = AttachmentLoadOp::DONT_CARE;
         AttachmentStoreOp storeOp = AttachmentStoreOp::DONT_CARE;
-        TextureHandle renderTarget = { .Id = 999999 };
+        Color clearColor;
+        float depthClearValue = 1.0f;
+        std::optional<TextureHandle> renderTarget = { };
     };
 
     struct RasterizerDesc {

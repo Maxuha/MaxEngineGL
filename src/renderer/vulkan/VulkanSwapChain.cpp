@@ -4,12 +4,10 @@
 
 #include "VulkanSwapChain.h"
 
-#include "VulkanFrameManager.h"
 #include "VulkanLogicalDevice.h"
 #include "VulkanPhysicalDevice.h"
 #include "VulkanQueueFamily.h"
 #include "texture/VulkanTextureManager.h"
-#include "../../renderer/gl/model/TextureData.h"
 
 namespace Rendering {
     struct VulkanFrame;
@@ -18,17 +16,15 @@ namespace Rendering {
         VulkanPhysicalDevice &physicalDevice,
         ILogicalDevice &logicalDevice,
         const VulkanSurface &surface,
-        IWindow &window,
-        VulkanFrameBufferManager &frameBufferManager,
-        VulkanRenderPassManager& renderPassManager
-    ) : frameBufferManager(&frameBufferManager), logicalDevice(static_cast<VulkanLogicalDevice *>(&logicalDevice)), renderPassManager(&renderPassManager) {
+        IWindow &window
+    ) : logicalDevice(static_cast<VulkanLogicalDevice *>(&logicalDevice)) {
         SwapChainSupportDetails swapChainSupport = physicalDevice.QuerySwapChainSupport(surface);
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         const VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities, &window);
 
-        swapChainImageFormat = surfaceFormat.format;
-        swapChainExtent = extent;
+        imageFormat = surfaceFormat.format;
+        this->extent = extent;
 
         uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -37,7 +33,7 @@ namespace Rendering {
         createInfo.pNext = nullptr;
         createInfo.surface = surface.GetSurface();
         createInfo.minImageCount = imageCount;
-        createInfo.imageFormat = swapChainImageFormat;
+        createInfo.imageFormat = imageFormat;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
@@ -66,13 +62,12 @@ namespace Rendering {
             result != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");
         }
+
+        CreateTextures();
     }
 
     VulkanSwapChain::~VulkanSwapChain() {
-        // vkDestroySwapchainKHR(logicalDevice->GetDevice(), swapChain, nullptr);
-        // for (const auto imageView : swapChainImageViews) {
-        //     vkDestroyImageView(logicalDevice->GentDevice(), imageView, nullptr);
-        // }
+        vkDestroySwapchainKHR(logicalDevice->GetDevice(), swapChain, nullptr);
     }
 
     uint32_t VulkanSwapChain::GetImageCount() const {
@@ -81,20 +76,8 @@ namespace Rendering {
         return imageCount;
     }
 
-    VkImageView *VulkanSwapChain::GetSwapChainImageViews() {
-        return swapChainImageViews.data();
-    }
-
     VulkanTexture VulkanSwapChain::GetSwapChainImageView(const uint32_t index) const {
-        return swapChainTexturesData[index];
-    }
-
-    VkImageView VulkanSwapChain::GetDepthImageView() const {
-        return depthImageView;
-    }
-
-    VkExtent2D VulkanSwapChain::GetExtent() const {
-        return swapChainExtent;
+        return ColorTextures[index];
     }
 
     VkSwapchainKHR VulkanSwapChain::GetSwapChain() const {
@@ -102,16 +85,16 @@ namespace Rendering {
     }
 
     VkFormat VulkanSwapChain::GetImageFormat() const  {
-        return swapChainImageFormat;
+        return imageFormat;
     }
 
     uint32_t VulkanSwapChain::GetCurrentImageIndex() const {
         return imageIndex;
     }
 
-    VkResult VulkanSwapChain::AcquireNextImage(const ISemaphore *semaphore, uint32_t& imageIndex) {
+    VkResult VulkanSwapChain::AcquireNextImage(const VkSemaphore semaphore, uint32_t& imageIndex) {
         const VkResult result = vkAcquireNextImageKHR(logicalDevice->GetDevice(), GetSwapChain(), UINT64_MAX,
-                               static_cast<const VulkanSemaphore *>(semaphore)->GetSemaphore(), VK_NULL_HANDLE, &imageIndex);
+                               semaphore, VK_NULL_HANDLE, &imageIndex);
 
         this->imageIndex = imageIndex;
 
@@ -134,7 +117,7 @@ namespace Rendering {
             createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             createInfo.image = images[i];
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = swapChainImageFormat;
+            createInfo.format = imageFormat;
             createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
             createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -151,30 +134,18 @@ namespace Rendering {
                     throw std::runtime_error("failed to create image views!");
                 }
 
-            swapChainTexturesData.push_back(VulkanTexture { .Image = images[i], .ImageView = image_views[i] });
-
-            // swapChainTextures.push_back(textureManager->CreateTexture(images[i], image_views[i], swapChainExtent.width, swapChainExtent.height));
+            ColorTextures.push_back(VulkanTexture { .Image = images[i], .ImageView = image_views[i] });
         }
     }
 
-    void VulkanSwapChain::CreateFrameBuffers() const {
-        // for (size_t i = 0; i < GetImageCount(); i++) {
-        //    // swapChainFramebuffers.push_back(frameBufferManager->CreateFramebuffer(RenderPassHandle {.Id = 0}, swapChainTextures[i]));
-        // }
-    }
-
-    FrameBufferHandle VulkanSwapChain::GetCurrentFrameBuffer() const {
-        return swapChainFramebuffers[0];
-    }
-
-    void VulkanSwapChain::Present(const VulkanFrame* frame) const {
+    void VulkanSwapChain::Present(const VkSemaphore wait, const uint32_t imageIndex) const {
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &frame->RenderFinishedSemaphoreVk;
+        presentInfo.pWaitSemaphores = &wait;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapChain;
-        presentInfo.pImageIndices = &frame->imageIndex;
+        presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;
 
         vkQueuePresentKHR(logicalDevice->GetPresentQueue(), &presentInfo);
@@ -219,31 +190,5 @@ namespace Rendering {
                                          capabilities.maxImageExtent.height);
 
         return actualExtent;
-    }
-
-    void VulkanSwapChain::CreateImageViews() {
-        swapChainImageViews.resize(swapChainImages.size());
-
-        for (size_t i = 0; i < swapChainImages.size(); i++) {
-            VkImageViewCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image = swapChainImages[i];
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = swapChainImageFormat;
-            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-
-            if (const VkResult result = vkCreateImageView(logicalDevice->GetDevice(), &createInfo, nullptr,
-                                                          &swapChainImageViews[i]);
-                result != VK_SUCCESS) {
-                throw std::runtime_error("failed to create image views!");
-            }
-        }
     }
 } // Rendering

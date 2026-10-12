@@ -7,14 +7,10 @@
 #include <stdexcept>
 #include <vector>
 
-#include "../ICommandBufferManager.h"
-#include "../ICommandPoolManager.h"
-#include "../IFrameBufferManager.h"
-#include "../IRenderPassManager.h"
 #include "../IPipelineManager.h"
-#include "../../math/Color.h"
 #include "../../math/Rect.h"
 #include "../../math/Matrix4x4.h"
+#include "../domain/buffer/BufferHandle.h"
 #include "../domain/Material.h"
 #include "../domain/struct/PipelineStateDesc.h"
 #include "../IResourceSetManager.h"
@@ -41,16 +37,15 @@ namespace Rendering {
         BindIndexBuffer,
         BindResourceSet,
         PushConstants,
-        UpdateBuffer,
         Draw,
         DrawIndexed,
-        UpdateUniformBuffer
+        UpdateBuffer,
+        UploadBufferData
     };
 
     struct GLCommand_BeginRenderPass {
         std::optional<AttachmentDescription> colorAttachment{};
         std::optional<AttachmentDescription> depthAttachment{};
-        Color clearColor;
         Rect viewport{};
     };
 
@@ -68,10 +63,11 @@ namespace Rendering {
 
     struct GLCommand_DrawIndexed {
         uint32_t indexCount;
+        uint32_t indexMesh;
     };
 
     struct GLCommand_BindBuffer {
-          BufferHandle buffer;
+        BufferHandle buffer;
     };
 
     struct GLCommand_BindMaterial {
@@ -84,6 +80,13 @@ namespace Rendering {
         PipelineLayoutHandle pipelineLayout;
         bool isPipelineLayout;
         uint32_t index;
+        uint32_t dynamicOffset;
+    };
+
+    struct GLCommand_PushConstants {
+        uint32_t key{};
+        Matrix4x4 mat;
+        uint32_t value{};
     };
 
     struct GLCommand_UpdateBuffer {
@@ -93,22 +96,22 @@ namespace Rendering {
         const void *data;
     };
 
-    struct GLCommand_PushConstants {
-        uint32_t key{};
-        Matrix4x4 mat;
-        uint32_t value{};
-    };
-
-    struct GLCommand_UpdateUniformBuffer {
+    struct GLCommand_UploadBufferData {
         BufferHandle buffer;
         size_t offset;
         size_t size;
         const void *data;
     };
 
+    enum class CommandBufferType {
+        Graphics,
+        Compute,
+        Transfer
+    };
+
     class CommandBuffer {
     public:
-        explicit CommandBuffer(size_t bufferSize = 1024 * 1024);
+        explicit CommandBuffer(size_t bufferSize = 1024 * 1024, CommandBufferType type = CommandBufferType::Graphics);
         ~CommandBuffer();
 
         void Begin();
@@ -117,7 +120,7 @@ namespace Rendering {
 
         void Draw(uint32_t vertexCount);
 
-        void DrawIndexed(uint32_t indexCount);
+        void DrawIndexed(uint32_t indexCount, uint32_t indexMesh);
 
         void BeginRenderPass(const RenderPass &renderPass);
 
@@ -129,33 +132,29 @@ namespace Rendering {
 
         void BindMaterial(const MaterialHandle& material);
 
-        void ResetAll();
+        void BindVertexBuffer(const BufferHandle& buffer);
 
-        void BindVertexBuffer(BufferHandle& buffer);
+        void BindIndexBuffer(const BufferHandle& buffer);
 
-        void BindIndexBuffer(BufferHandle& buffer);
+        void BindResourceSet(ResourceSetHandle setIndex, PipelineHandle pipelineHandle, uint32_t index, uint32_t offset = 0);
 
-        void UpdateBuffer(BufferHandle id, const void *data, int offset, int size);
-
-        void BindResourceSet(ResourceSetHandle setIndex, PipelineHandle pipelineHandle, uint32_t index);
-
-        void BindResourceSet(ResourceSetHandle setIndex, PipelineLayoutHandle pipelineLayoutHandle, uint32_t index);
+        void BindResourceSet(ResourceSetHandle setIndex, PipelineLayoutHandle pipelineLayoutHandle, uint32_t index, uint32_t offset = 0);
 
         void PushConstants(uint32_t key, Matrix4x4 mat);
 
         void PushConstants(const std::string &key, uint32_t value);
 
-        void UpdateUniformBuffer(BufferHandle buffer, const void *data, int offset, int size);
+        void UpdateBuffer(BufferHandle buffer, const void *data, int offset, int size);
+
+        void UploadBufferData(BufferHandle buffer, const void *data, int offset, int size);
 
         std::vector<uint8_t>& GetCommands();
 
         size_t GetHead() const;
 
-        CommandBufferHandle GetHandle() const;
-
-        CommandPoolHandle GetPool() const;
-
         PipelineHandle GetPipeline() const;
+
+        CommandBufferType GetType() const;
 
         void Reset();
 
@@ -163,6 +162,8 @@ namespace Rendering {
         std::vector<uint8_t> buffer;
         size_t head = 0;
         PipelineHandle pipeline{};
+
+        CommandBufferType type;
 
         template<typename T>
         T *allocateCommand(const GLCommandType type) {

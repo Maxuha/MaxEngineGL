@@ -6,10 +6,7 @@
 
 #include <set>
 
-#include "VulkanFence.h"
 #include "VulkanQueueFamily.h"
-#include "VulkanSemaphore.h"
-#include "VulkanSwapChain.h"
 
 namespace Rendering {
     VulkanLogicalDevice::VulkanLogicalDevice(VulkanPhysicalDevice& physicalDevice): physicalDevice(physicalDevice) {
@@ -43,14 +40,24 @@ namespace Rendering {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
+        VkPhysicalDeviceVulkan11Features features11{};
+        features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+        features11.pNext = nullptr;
+        features11.shaderDrawParameters = VK_TRUE;
+
         VkPhysicalDeviceVulkan13Features features13{};
         features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        features13.pNext = &features11;
         features13.dynamicRendering = VK_TRUE;
         features13.synchronization2 = VK_TRUE;
 
+        VkPhysicalDeviceFeatures2 deviceFeatures2{};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &features13;
+
         VkDeviceCreateInfo deviceCreateInfo{};
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCreateInfo.pNext = &features13;
+        deviceCreateInfo.pNext = &deviceFeatures2;
         deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
         deviceCreateInfo.queueCreateInfoCount = queueCreateInfos.size();
         deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
@@ -123,19 +130,6 @@ namespace Rendering {
         return result;
 
     }
-    //
-    // Result VulkanLogicalDevice::WaitIdle(const IFence &fence) {
-    //     const VkFence vulkanFence = static_cast<const VulkanFence &>(fence).GetFence();
-    //
-    //     Result vkWaitForFencesResult = ToResult(vkWaitForFences(device, 1, &vulkanFence, VK_TRUE, UINT64_MAX));
-    //     Result vkResetFencesResult = ToResult(vkResetFences(device, 1, &vulkanFence));
-    //
-    //     auto result = Result {
-    //         .Success = vkWaitForFencesResult.Success && vkResetFencesResult.Success
-    //     };
-    //
-    //     return result;
-    // }
 
     VkSemaphore VulkanLogicalDevice::CreateSemaphor() {
         VkSemaphoreCreateInfo semaphoreInfo{};

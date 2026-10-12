@@ -12,6 +12,7 @@
 
 
 namespace Rendering {
+    struct ResourceSetLayoutDescHash;
 
     struct VulkanDescriptorSet {
         std::vector<VkDescriptorSet> set;
@@ -23,7 +24,7 @@ namespace Rendering {
 
         ~VulkanDescriptorSetManager() override;
 
-        ResourceSetLayoutHandle CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+        ResourceSetLayoutHandle CreateDescriptorSetLayout(const ResourceSetLayoutDesc &resourceSetLayoutDesc);
 
         std::vector<VkDescriptorSet> CreateDescriptorSets(VkDescriptorSetLayout layout, uint32_t count);
 
@@ -41,6 +42,7 @@ namespace Rendering {
         std::vector<VkDescriptorPool> pools;
         std::vector<VulkanDescriptorSet> sets;
         std::vector<VkDescriptorSetLayout> layouts;
+        std::unordered_map<ResourceSetLayoutDesc, ResourceSetLayoutHandle, ResourceSetLayoutDescHash> layoutHandles;
 
         uint32_t currentIndex = 0;
         uint32_t maxIndexPerPool = 2000;

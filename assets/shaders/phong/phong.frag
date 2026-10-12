@@ -27,7 +27,7 @@ struct SpotLight {
     vec4 coneAngle;
 };
 
-layout (set = 0, binding = 1) uniform LightsBlock {
+layout (set = 0, binding = 1, std140) uniform LightsBlock {
     AmbientLight ambientLight;
     DirectionalLight directionalLight;
     PointLight pointLight[8];
@@ -60,19 +60,19 @@ float DirShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
 
     projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0 ||
+    if (projCoords.z > 1.0 || projCoords.z < 0.0 ||
         projCoords.x < 0.0 || projCoords.x > 1.0 ||
         projCoords.y < 0.0 || projCoords.y > 1.0) {
         return 1.0;
     }
 
-    projCoords.y = 1.0 - projCoords.y;
+  //  projCoords.y = 1.0 - projCoords.y;
 
     float closestDepth = texture(depthMap, projCoords.xy).r;
     float currentDepth = projCoords.z;
 
-    float bias = max(0.00005 * (1.0 - dot(normal, lightDir)), 0.000005);
-    float shadow = currentDepth - bias > closestDepth ? 0.0 : 1.0;
+    float bias = max(0.0005 * (1.0 - dot(normal, lightDir)), 0.00005);
+    float shadow = (currentDepth - bias) > closestDepth ? 0.0 : 1.0;
 
     return shadow;
 }
@@ -154,10 +154,10 @@ void main()
         result += (diff + spec) * (attenuation * intensity);
     }
 
-//    FragColor = texture(depthMap, TexCoord);
+    FragColor = texture(depthMap, TexCoord);
 //    FragColor = vec4(dirShadow, dirShadow, dirShadow, 1.0);
 //    float depth = texture(depthMap, TexCoord).r;
-//    FragColor = vec4(vec3(1.0 - depth), 1.0);
+//    FragColor = vec4(vec3(depth), 1.0);
     FragColor = vec4(result, 1.0);
 
 }

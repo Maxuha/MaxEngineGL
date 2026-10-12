@@ -6,9 +6,8 @@
 #define MAXENGINE_IRESOURCESETMANAGER_H
 #include <cstdint>
 
-#include "domain/IBufferManager.h"
-
 namespace Rendering {
+    struct BufferHandle;
     struct TextureHandle;
 
     struct PipelineLayoutHandle { uint32_t Id; };

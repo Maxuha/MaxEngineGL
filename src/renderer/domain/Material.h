@@ -48,7 +48,6 @@ public:
             const ShaderMetaProperty& meta = it->second;
             memcpy(cpuBuffer.data() + meta.offset, &value, meta.size);
             isDirty = true;
-            dirtyFrames = 3;
         }
     }
 
@@ -75,7 +74,7 @@ public:
         textures[slot] = &texture;
     }
 
-    void SetTexture(const uint32_t slot, Rendering::Texture &texture);
+    void SetTexture(const uint32_t slot, const Rendering::Texture &texture);
 
     Rendering::IGLTexture* GetTexture(const std::string &slot) const {
         return textures.at(slot);
@@ -88,8 +87,6 @@ public:
     MaterialHandle GetMaterialHandle() const;
 
     std::string GetName() const;
-
-    uint32_t dirtyFrames;
 
 private:
     MaterialHandle id{};

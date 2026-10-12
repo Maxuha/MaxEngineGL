@@ -7,56 +7,65 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "../../domain//IBufferManager.h"
 #include "../../IResourceSetManager.h"
+#include "../../domain/buffer/BufferUsage.h"
 
 namespace Rendering {
+    struct BufferDesc;
+    enum class BufferUsage;
     class VulkanLogicalDevice;
     class VulkanFrameManager;
     class VulkanCommandBufferManager;
 
-    struct VulkanVertexBuffer {
+    struct VulkanDynamicBuffer {
         std::vector<VkBuffer> buffers;
         std::vector<VkDeviceMemory> memories;
         std::vector<void*> mappedPointers;
-        VkBuffer vertexBuffer;
         uint32_t size;
         ResourceSetHandle descriptorSet;
+        bool isDynamic = false;
+        BufferUsage usage = BufferUsage::Vertex;
+
+        void resize(const uint32_t count) {
+            buffers.resize(count);
+            memories.resize(count);
+            mappedPointers.resize(count);
+        }
     };
 
     struct VulkanBuffer {
         VkBuffer buffer;
-        VkDeviceMemory bufferMemory;
+        VkDeviceMemory memory;
         void* mappedPointer;
+        uint32_t size;
     };
 
-    class VulkanBufferManager : public IBufferManager {
+    class VulkanBufferManager {
     public:
         explicit VulkanBufferManager(
             VulkanLogicalDevice& logicalDevice,
-            VulkanFrameManager& frameManager,
             VulkanCommandBufferManager& commandBufferManager
         );
 
-        ~VulkanBufferManager() override;
+        ~VulkanBufferManager();
 
-        BufferHandle CreateBuffer(const BufferDesc& desc, const void* data) override;
+        VulkanBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) const;
 
-        VulkanBuffer CreateInternalBuffer(const BufferDesc& desc, const void* data) const;
+        VulkanBuffer CreateInternalBuffer(const BufferDesc& desc) const;
 
-        VkBuffer CreateStagingBuffer(const void* data, const size_t size) const;
+        VulkanBuffer CreateStagingBuffer(const void* data, size_t size) const;
 
-        BufferHandle CreateVertexBuffer(std::vector<Vertex> vertexes) override;
+        VulkanBuffer CreateVertexBuffer(const void* data, size_t size) const;
 
-        BufferHandle CreateIndexBuffer(std::vector<uint16_t> indices) override;
+        VulkanBuffer CreateIndexBuffer(const void* data, size_t size) const;
 
-        BufferHandle CreateUniformBuffer(void *data, size_t size) override;
+        VulkanBuffer CreateUniformBuffer(void *data, size_t size) const;
 
-        void UpdateUniformBuffer(BufferHandle handle, const void* data, size_t offset, size_t size) override;
+        VulkanBuffer CreateDeviceLocalBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const;
 
-        void UpdateInternalUniformBuffer(VulkanVertexBuffer& buffer, const void* data, size_t offset, size_t size) const;
+        VulkanBuffer CreateHostVisibleBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const;
 
-        VulkanVertexBuffer* GetVertexBuffer(BufferHandle handle);
+        VulkanDynamicBuffer* GetVertexBuffer(BufferHandle handle);
 
         void BindDescriptorSet(BufferHandle buffer_handle, ResourceSetHandle set_handle);
 
@@ -64,11 +73,12 @@ namespace Rendering {
 
     private:
         VulkanLogicalDevice& logicalDevice;
-        VulkanFrameManager& frameManager;
         VulkanCommandBufferManager& commandBufferManager;
 
-        std::vector<VulkanVertexBuffer> vertexBuffers;
+        std::vector<VulkanDynamicBuffer> vertexBuffers;
         std::vector<VulkanBuffer> buffers;
+
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
 

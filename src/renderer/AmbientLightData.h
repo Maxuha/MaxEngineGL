@@ -9,50 +9,33 @@
 
 
 namespace Rendering {
-    struct AmbientLightData {
+    struct alignas(16) AmbientLightData {
         Vector4 colorIntensity{};
     };
 
-    struct DirectionalLightData {
-        // Matrix4x4 projection{};
-        // Matrix4x4 view{};
+    struct alignas(16) DirectionalLightData {
         Matrix4x4 space{};
         Vector4 colorIntensity{};
         Vector4 direction{};
     };
 
-    struct PointLightData {
+    struct alignas(16) PointLightData {
         Vector4 colorIntensity{};
         Vector4 positionRange{};
     };
 
-    struct SpotLightData {
+    struct alignas(16) SpotLightData {
         Vector4 colorIntensity{};
         Vector4 positionRange{};
         Vector4 direction{};
         Vector4 coneAngle{};
     };
 
-    struct LightData {
+    struct alignas(16) LightData {
         AmbientLightData ambientLight;
         DirectionalLightData directionalLight;
         PointLightData pointLights[8];
         SpotLightData spotLights[8];
-
-        // int currentPointLight = 0;
-        // int currentSpotLight = 0;
-        //
-        // void addAmbientLight(const AmbientLightData& light) {
-        //     ambientLight = light;
-        // }
-        //
-        // void addDirectionalLight(const DirectionalLightData& light) {
-        //     directionalLight = light;
-        // }
-        //
-        // void addPointLight(const PointLightData& light) {
-        //
-        // }
     };
 } // namespace Rendering
 

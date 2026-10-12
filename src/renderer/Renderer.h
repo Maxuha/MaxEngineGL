@@ -81,18 +81,15 @@ namespace Rendering {
         void SetDepthShader( Shader& shader);
 
     private:
-
         Camera *activeCamera{};
-        Shader* litShader;
         Shader* depthShader;
 
         IRenderDevice *renderDevice;
-        CommandBuffer *commandBuffer;
         MeshManager *meshManager{};
 
         PipelineHandle shadowPipeline{};
 
-        TextureHandle depthTexture{};
+        TextureHandle shadowTexture{};
 
         BufferHandle cameraBufferId{};
         BufferHandle depthBuffer{};
@@ -127,6 +124,12 @@ namespace Rendering {
         ResourceSetLayoutHandle cameraAndLightSetLayout{};
         ResourceSetLayoutHandle modelSetLayout{};
         PipelineLayoutHandle mainPipelineLayout{};
+
+        BufferHandle modelBuffer{};
+        ResourceSetHandle modelResourceSet{};
+        uint32_t indexMesh = 0;
+
+        CommandBuffer *uploadCommandBuffer{};
 
     };
 } // namespace Rendering

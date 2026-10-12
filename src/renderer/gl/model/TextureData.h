@@ -4,8 +4,6 @@
 
 #ifndef MAXENGINE_TEXTUREDESC_H
 #define MAXENGINE_TEXTUREDESC_H
-#include <cstdint>
-#include "../../ITextureManager.h"
 
 
 namespace Rendering {
@@ -22,6 +20,15 @@ namespace Rendering {
         MirroredRepeat,
         ClampToEdge,
         ClampToBorder
+    };
+
+    struct TextureCreateRequest {
+
+        size_t Width{};
+        size_t Height{};
+        size_t MipLevels{};
+        size_t ArraySize{};
+        TextureFormat Format{};
     };
 
     struct TextureData {

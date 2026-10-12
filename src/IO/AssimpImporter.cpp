@@ -170,71 +170,72 @@ Mesh *AssimpImporter::ProcessMesh(const aiMesh *mesh, const aiScene *scene) {
 }
 
 void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
-    //const auto standardShader = DIContainer::GetInstance().Get<IRenderer>()->GetLitShader();
-
     const std::vector<char> vSPV = FileReader::ReadFileBytes(
      std::string(ASSETS_ROOT) + "/shaders/phong/" + "phong-v" + ".spv");
     const std::vector<char> fSPV = FileReader::ReadFileBytes(
         std::string(ASSETS_ROOT) + "/shaders/phong/" + "phong-f" + ".spv");
 
-    Rendering::ResourceSetLayoutDesc layout_0;
+    ResourceSetLayoutDesc layout_0;
     layout_0.set_index = 0;
 
-    Rendering::ResourceBindingDesc binding_0;
+    ResourceBindingDesc binding_0;
     binding_0.binding_slot = 0;
-    binding_0.type = Rendering::ResourceType::UniformBuffer;
-    binding_0.stage_flags = Rendering::ShaderStageFlags::Vertex;
+    binding_0.type = ResourceType::UniformBuffer;
+    binding_0.stage_flags = ShaderStageFlags::Vertex;
     binding_0.count = 1;
 
-    Rendering::ResourceBindingDesc binding_3;
+    ResourceBindingDesc binding_3;
     binding_3.binding_slot = 1;
-    binding_3.type = Rendering::ResourceType::UniformBuffer;
-    binding_3.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_3.type = ResourceType::UniformBuffer;
+    binding_3.stage_flags = ShaderStageFlags::Fragment | ShaderStageFlags::Vertex;
     binding_3.count = 1;
 
     layout_0.bindings.push_back(binding_0);
     layout_0.bindings.push_back(binding_3);
 
-    Rendering::ResourceSetLayoutDesc layout_1;
+    ResourceSetLayoutDesc layout_1;
     layout_1.set_index = 1;
 
-    Rendering::ResourceBindingDesc binding_1;
+    ResourceBindingDesc binding_1;
     binding_1.binding_slot = 2;
-    binding_1.type = Rendering::ResourceType::UniformBuffer;
-    binding_1.stage_flags = Rendering::ShaderStageFlags::Vertex;
+    binding_1.type = ResourceType::StorageBuffer;
+    binding_1.stage_flags = ShaderStageFlags::Vertex;
     binding_1.count = 1;
+    // binding_1.is_dynamic = true;
 
     layout_1.bindings.push_back(binding_1);
 
-    Rendering::ResourceSetLayoutDesc layout_2;
+    ResourceSetLayoutDesc layout_2;
     layout_2.set_index = 2;
 
-    Rendering::ResourceBindingDesc binding_2;
+    ResourceBindingDesc binding_2;
     binding_2.binding_slot = 4;
-    binding_2.type = Rendering::ResourceType::SampledImage;
-    binding_2.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_2.type = ResourceType::SampledImage;
+    binding_2.stage_flags = ShaderStageFlags::Fragment;
     binding_2.count = 1;
 
     layout_2.bindings.push_back(binding_2);
 
-    Rendering::ResourceBindingDesc binding_4;
+    ResourceBindingDesc binding_4;
     binding_4.binding_slot = 5;
-    binding_4.type = Rendering::ResourceType::SampledImage;
-    binding_4.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_4.type = ResourceType::SampledImage;
+    binding_4.stage_flags = ShaderStageFlags::Fragment;
     binding_4.count = 1;
 
-    Rendering::ResourceBindingDesc binding_6;
+    layout_2.bindings.push_back(binding_4);
+
+    ResourceBindingDesc binding_6;
     binding_6.binding_slot = 6;
-    binding_6.type = Rendering::ResourceType::SampledImage;
-    binding_6.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_6.type = ResourceType::SampledImage;
+    binding_6.stage_flags = ShaderStageFlags::Fragment;
     binding_6.count = 1;
 
     layout_2.bindings.push_back(binding_6);
 
-    Rendering::ResourceBindingDesc binding_5;
+    ResourceBindingDesc binding_5;
     binding_5.binding_slot = 3;
-    binding_5.type = Rendering::ResourceType::UniformBuffer;
-    binding_5.stage_flags = Rendering::ShaderStageFlags::Fragment;
+    binding_5.type = ResourceType::UniformBuffer;
+    binding_5.stage_flags = ShaderStageFlags::Fragment;
     binding_5.count = 1;
 
     layout_2.bindings.push_back(binding_5);
@@ -272,105 +273,6 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
     }
 
     model->materials.push_back(material);
-
-    // return;
-    //
-    // aiString materialName;
-    // if (mat->Get(AI_MATKEY_NAME, materialName) == AI_SUCCESS) {
-    //     std::cout << "Material Name: " << materialName.C_Str() << std::endl;
-    // }
-    //
-    // aiColor3D diffuseColor(0.0f, 0.0f, 0.0f);
-    // if (mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == AI_SUCCESS) {
-    // }
-    //
-    // aiColor3D specularColor(0.0f, 0.0f, 0.0f);
-    // mat->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
-    //
-    // float shininess = 0.0f;
-    // mat->Get(AI_MATKEY_SHININESS, shininess);
-    //
-    // std::cout << "Material shininess: " << shininess << std::endl;
-    //
-    // int twoSided = 0;
-    // mat->Get(AI_MATKEY_TWOSIDED, twoSided);
-    //
-    // std::cout << "Material twoSided: " << twoSided << std::endl;
-    //
-    // std::cout << "=== Total properties: " << mat->mNumProperties << " ===\n";
-    //
-    // for (unsigned int i = 0; i < mat->mNumProperties; ++i) {
-    //     aiMaterialProperty *prop = mat->mProperties[i];
-    //
-    //     // ???? ???????? (?????????? ??? Assimp)
-    //     std::string key = prop->mKey.C_Str();
-    //     std::cout << "Key: " << key << " | ";
-    //
-    //     // ?????????? ??? ?????? ????????
-    //     switch (prop->mType) {
-    //         case aiPTI_Float: {
-    //             // ???????? ????? ???? ???????? (????????, ???? ?? 3-4 float ??? ???????)
-    //             unsigned int numElements = prop->mDataLength / sizeof(float);
-    //             float *values = reinterpret_cast<float *>(prop->mData);
-    //
-    //             std::cout << "[Float] value(s): ";
-    //             for (unsigned int j = 0; j < numElements; ++j) {
-    //                 std::cout << values[j] << (j == numElements - 1 ? "" : ", ");
-    //             }
-    //             break;
-    //         }
-    //         case aiPTI_Double: {
-    //             unsigned int numElements = prop->mDataLength / sizeof(double);
-    //             double *values = reinterpret_cast<double *>(prop->mData);
-    //
-    //             std::cout << "[Double] value(s): ";
-    //             for (unsigned int j = 0; j < numElements; ++j) {
-    //                 std::cout << values[j] << (j == numElements - 1 ? "" : ", ");
-    //             }
-    //             break;
-    //         }
-    //         case aiPTI_String: {
-    //             // ?????? ? Assimp ???????? ? ????????? ????? (?????? 4 ?????)
-    //             // ?????????? ????? ???????????? ?????????? ????????? aiString
-    //             aiString str;
-    //             // ???????? ?????? ???????? ? aiString (????????? ??? ???????? ?????????)
-    //             // ?? ? aiMaterial ???? ??????? ????? ??? ?????? ????? ?? ?????:
-    //             if (mat->Get(key.c_str(), prop->mSemantic, prop->mIndex, str) == AI_SUCCESS) {
-    //                 std::cout << "[String] value: " << str.C_Str();
-    //             } else {
-    //                 std::cout << "[String] (failed to parse)";
-    //             }
-    //             break;
-    //         }
-    //         case aiPTI_Integer: {
-    //             unsigned int numElements = prop->mDataLength / sizeof(int);
-    //             int *values = reinterpret_cast<int *>(prop->mData);
-    //
-    //             std::cout << "[Integer] value(s): ";
-    //             for (unsigned int j = 0; j < numElements; ++j) {
-    //                 std::cout << values[j] << (j == numElements - 1 ? "" : ", ");
-    //             }
-    //             break;
-    //         }
-    //         case aiPTI_Buffer: {
-    //             std::cout << "[Binary Buffer] size: " << prop->mDataLength << " bytes";
-    //             break;
-    //         }
-    //         default:
-    //             std::cout << "[Unknown Type]";
-    //             break;
-    //     }
-    //
-    //     // ??????? ????????? (????? ??? ???????, ????????? ?? aiTextureType)
-    //     // ? ?????? ???????? (????????, ?????? ????????)
-    //     if (prop->mSemantic != 0) {
-    //         std::cout << " | Semantic: " << prop->mSemantic << " | Index: " << prop->mIndex;
-    //     }
-    //
-    //     std::cout << "\n";
-    // }
-    //
-    // return;
 }
 
 Material *AssimpImporter::ProcessMaterialTexture(const aiMaterial *mat) {

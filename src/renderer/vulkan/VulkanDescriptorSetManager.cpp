@@ -15,13 +15,70 @@ namespace Rendering {
     }
 
     ResourceSetLayoutHandle VulkanDescriptorSetManager::CreateDescriptorSetLayout(
-        const std::vector<VkDescriptorSetLayoutBinding> &bindings) {
+        const ResourceSetLayoutDesc &resourceSetLayoutDesc) {
+
+        auto it = layoutHandles.find(resourceSetLayoutDesc);
+        if (it != layoutHandles.end()) {
+            return it->second;
+        }
+
+        std::vector<VkDescriptorSetLayoutBinding> vkBindings;
+        vkBindings.reserve(resourceSetLayoutDesc.bindings.size());
+
+        for (const auto &binding: resourceSetLayoutDesc.bindings) {
+            VkDescriptorSetLayoutBinding vkBinding{};
+            vkBinding.binding = binding.binding_slot;
+            vkBinding.descriptorCount = resourceSetLayoutDesc.bindings.size();
+
+            switch (binding.type) {
+                case ResourceType::SampledImage:
+                    vkBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    break;
+                case ResourceType::UniformBuffer:
+                    vkBinding.descriptorType = binding.is_dynamic
+                                                   ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+                                                   : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    break;
+                case ResourceType::StorageBuffer:
+                    vkBinding.descriptorType = binding.is_dynamic
+                                                   ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+                                                   : VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    break;
+                case ResourceType::StorageImage:
+                    vkBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                    break;
+                case ResourceType::Sampler:
+                    vkBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                    break;
+            }
+
+            vkBinding.stageFlags = 0;
+            const uint32_t stages = static_cast<uint32_t>(binding.stage_flags);
+
+            if (stages & static_cast<uint32_t>(ShaderStageFlags::Vertex)) {
+                vkBinding.stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+            }
+            if (stages & static_cast<uint32_t>(ShaderStageFlags::Fragment)) {
+                vkBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+            }
+            if (stages & static_cast<uint32_t>(ShaderStageFlags::Compute)) {
+                vkBinding.stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+            }
+            if (stages == static_cast<uint32_t>(ShaderStageFlags::AllStages)) {
+                vkBinding.stageFlags = VK_SHADER_STAGE_ALL;
+            }
+
+            vkBinding.pImmutableSamplers = nullptr;
+
+            vkBindings.push_back(vkBinding);
+        }
+
         VkDescriptorSetLayout descriptorSetLayout;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = bindings.size();
-        layoutInfo.pBindings = bindings.data();
+        layoutInfo.bindingCount = vkBindings.size();
+        layoutInfo.pBindings = vkBindings.data();
 
         if (vkCreateDescriptorSetLayout(device.GetDevice(), &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
@@ -29,7 +86,11 @@ namespace Rendering {
 
         layouts.push_back(descriptorSetLayout);
 
-        return ResourceSetLayoutHandle { .Id = layouts.size() - 1 };
+        const ResourceSetLayoutHandle handle = {.Id = layouts.size() - 1};
+
+        layoutHandles[resourceSetLayoutDesc] = handle;
+
+        return handle;
     }
 
     DescriptorPoolHandle VulkanDescriptorSetManager::CreateDescriptorPool(const uint32_t poolSize) {
@@ -98,59 +159,10 @@ namespace Rendering {
     }
 
     void VulkanDescriptorSetManager::BindBuffer(const ResourceSetHandle setHandle, uint32_t slot, const BufferHandle bufferHandle) {
-        // constexpr int MAX_FRAMES_IN_FLIGHT = 3;
-        //
-        // const VulkanVertexBuffer* buffer = static_cast<VulkanBufferManager *>(context.BufferManager)->GetVertexBuffer(bufferHandle);
-        // VulkanDescriptorSet& descriptorSet = sets[setHandle.id];
-        //
-        // for (int i  = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        //     VkDescriptorBufferInfo bufferInfo{};
-        //     bufferInfo.buffer = buffer->buffers[i];
-        //     bufferInfo.offset = 0;
-        //     bufferInfo.range = buffer->size;
-        //
-        //     VkWriteDescriptorSet descriptorWrite{};
-        //     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        //     descriptorWrite.dstSet = descriptorSet.set[i];
-        //     descriptorWrite.dstBinding = descriptorSet.binding;
-        //     descriptorWrite.dstArrayElement = 0;
-        //     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        //     descriptorWrite.descriptorCount = 1;
-        //     descriptorWrite.pBufferInfo = &bufferInfo;
-        //     descriptorWrite.pImageInfo = nullptr; // Optional
-        //     descriptorWrite.pTexelBufferView = nullptr; // Optional
-        //
-        //     std::array descriptorWrites = { descriptorWrite };
-        //
-        //     vkUpdateDescriptorSets(device.GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-        // }
+
     }
 
     void VulkanDescriptorSetManager::BindTexture(const ResourceSetHandle setHandle, uint32_t slot, const TextureHandle textureHandle) {
-        // constexpr int MAX_FRAMES_IN_FLIGHT = 3;
-        //
-        // const VulkanTexture texture = static_cast<VulkanTextureManager *>(context.TextureManager)->GetTexture(textureHandle);
-        //
-        // for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        //     VkDescriptorImageInfo imageInfo{};
-        //     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        //     imageInfo.imageView = texture.ImageView;
-        //     imageInfo.sampler = texture.Sampler;
-        //
-        //     VulkanDescriptorSet& descriptorSet = sets[setHandle.id];
-        //
-        //     VkWriteDescriptorSet descriptorWrite{};
-        //     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        //     descriptorWrite.dstSet = descriptorSet.set[i];
-        //     descriptorWrite.dstBinding = descriptorSet.binding;
-        //     descriptorWrite.dstArrayElement = 0;
-        //     descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        //     descriptorWrite.descriptorCount = 1;
-        //     descriptorWrite.pImageInfo = &imageInfo;
-        //
-        //     std::array descriptorWrites = { descriptorWrite };
-        //
-        //     vkUpdateDescriptorSets(device.GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-        // }
+
     }
 } // Rendering

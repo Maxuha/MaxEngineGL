@@ -6,7 +6,6 @@
 #define MAXENGINE_VULKANLOGICALDEVICE_H
 #include <vulkan/vulkan_core.h>
 #include "VulkanPhysicalDevice.h"
-#include "VulkanSemaphore.h"
 #include "../ILogicalDevice.h"
 
 namespace Rendering {

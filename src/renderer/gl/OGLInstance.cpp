@@ -31,6 +31,7 @@ namespace Rendering {
             }
         }, nullptr);
 
+        // glFrontFace(GL_CW);
         glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
         glEnable(GL_FRAMEBUFFER_SRGB);
 

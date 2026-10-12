@@ -4,12 +4,12 @@
 
 #ifndef MAXENGINE_MESH_H
 #define MAXENGINE_MESH_H
-#include <span>
+
+
 #include <string>
 #include <../src/utils/Hash.cpp>
 #include "../../math/Vertex.h"
-#include "../src/renderer/domain/IBufferManager.h"
-#include "../src/renderer/IResourceSetManager.h"
+#include "../domain/buffer/BufferHandle.h"
 
 struct MeshId {
     uint64_t Id;
@@ -48,8 +48,8 @@ public:
 
     Rendering::BufferHandle vertexBuffer{};
     Rendering::BufferHandle indexBuffer{};
-    Rendering::BufferHandle modelBuffer{};
-    Rendering::ResourceSetHandle modelResourceSet{};
+
+    uint32_t indexMesh;
 
 private:
     MeshId id{};

@@ -21,7 +21,7 @@
 
 
 namespace Rendering {
-    bool SaveGLTextureToDisk(GLuint textureID, const char* filename) {
+    bool SaveGLTextureToDisk(GLuint textureID, const char *filename) {
         if (textureID == 0 || !glIsTexture(textureID)) {
             std::cerr << "Error: Invalid texture id " << textureID << "\n";
             return false;
@@ -44,13 +44,13 @@ namespace Rendering {
         }
 
         const bool isDepth =
-            internalFormat == GL_DEPTH_COMPONENT ||
-            internalFormat == GL_DEPTH_COMPONENT16 ||
-            internalFormat == GL_DEPTH_COMPONENT24 ||
-            internalFormat == GL_DEPTH_COMPONENT32 ||
-            internalFormat == GL_DEPTH_COMPONENT32F ||
-            internalFormat == GL_DEPTH24_STENCIL8 ||
-            internalFormat == GL_DEPTH32F_STENCIL8;
+                internalFormat == GL_DEPTH_COMPONENT ||
+                internalFormat == GL_DEPTH_COMPONENT16 ||
+                internalFormat == GL_DEPTH_COMPONENT24 ||
+                internalFormat == GL_DEPTH_COMPONENT32 ||
+                internalFormat == GL_DEPTH_COMPONENT32F ||
+                internalFormat == GL_DEPTH24_STENCIL8 ||
+                internalFormat == GL_DEPTH32F_STENCIL8;
 
         std::vector<unsigned char> pixels;
         int channels = 4;
@@ -66,7 +66,7 @@ namespace Rendering {
             float minDepth = std::numeric_limits<float>::max();
             float maxDepth = std::numeric_limits<float>::lowest();
 
-            for (const float value : depth) {
+            for (const float value: depth) {
                 if (!std::isfinite(value)) {
                     continue;
                 }
@@ -88,10 +88,10 @@ namespace Rendering {
             }
 
             std::cout << "Depth texture stats for " << filename
-                      << ": min=" << minDepth
-                      << ", max=" << maxDepth
-                      << ", normalized=" << (hasRange ? "yes" : "no")
-                      << "\n";
+                    << ": min=" << minDepth
+                    << ", max=" << maxDepth
+                    << ", normalized=" << (hasRange ? "yes" : "no")
+                    << "\n";
         } else {
             GLenum format = GL_RGBA;
 
@@ -114,7 +114,7 @@ namespace Rendering {
         glPixelStorei(GL_PACK_ALIGNMENT, previousPackAlignment);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        stbi_flip_vertically_on_write(true);
+        // stbi_flip_vertically_on_write(true);
 
         const int success = stbi_write_png(filename, width, height, channels, pixels.data(), width * channels);
 
@@ -127,7 +127,7 @@ namespace Rendering {
         return true;
     }
 
-    OGLRenderDevice::OGLRenderDevice(IWindow& window) {
+    OGLRenderDevice::OGLRenderDevice(IWindow &window) {
         this->window = static_cast<GLFWwindow *>(window.GetHandle());
 
         instance = new OGLInstance(window);
@@ -143,21 +143,21 @@ namespace Rendering {
 
     OGLRenderDevice::~OGLRenderDevice() = default;
 
-    CommandBuffer * OGLRenderDevice::AllocateCommandBuffer() {
-        return new CommandBuffer;
+    CommandBuffer *OGLRenderDevice::AllocateCommandBuffer(const CommandBufferType type) {
+        return new CommandBuffer(9048 * 1024, type);
     }
 
     TextureHandle OGLRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
         const auto _data = const_cast<void *>(initialData);
 
         const TextureHandle textureHandle = textureManager->CreateTexture(desc.Width, desc.Height, desc.Format, _data);
-        OGLTexture& texture = textureManager->GetTexture(textureHandle);
+        OGLTexture &texture = textureManager->GetTexture(textureHandle);
 
         if (desc.Format == TextureFormat::DEPTH) {
             GLuint fbo;
             glCreateFramebuffers(1, &fbo);
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-           // glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, texture.Id, 0);
+            // glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, texture.Id, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             texture.fbo = fbo;
         }
@@ -211,13 +211,13 @@ namespace Rendering {
             glTextureParameteri(glId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
             glTextureParameteri(glId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-            constexpr float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+            constexpr float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
             glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
             glTextureParameteri(glId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
             glTextureParameteri(glId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
-           // glTextureParameteri(glId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            // glTextureParameteri(glId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         }
 
         const auto id = TextureHandle{.Id = static_cast<uint32_t>(textures.size())};
@@ -233,15 +233,17 @@ namespace Rendering {
         return id;
     }
 
-    PipelineLayoutHandle OGLRenderDevice::CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle>& resourceSetLayouts) {
+    PipelineLayoutHandle OGLRenderDevice::CreatePipelineLayout(
+        const std::vector<ResourceSetLayoutHandle> &resourceSetLayouts) {
         OGLPipelineLayout layout;
         return {};
     }
 
-    ResourceSetLayoutHandle OGLRenderDevice::CreateResourceSetLayout(const ResourceSetLayoutDesc &resourceSetLayoutDesc) {
+    ResourceSetLayoutHandle
+    OGLRenderDevice::CreateResourceSetLayout(const ResourceSetLayoutDesc &resourceSetLayoutDesc) {
         OGLDescriptorSetLayout layout;
         layout.set_index = resourceSetLayoutDesc.set_index;
-        for (const auto binding : resourceSetLayoutDesc.bindings) {
+        for (const auto binding: resourceSetLayoutDesc.bindings) {
             OGLDescriptorSetLayoutItem item;
             item.binding_slot = binding.binding_slot;
             item.stage_flags = binding.stage_flags;
@@ -256,21 +258,23 @@ namespace Rendering {
         return descriptorSetManager->CreateDescriptorSet(layout);
     }
 
-    void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding, const TextureHandle textureHandle) {
+    void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
+                                            const TextureHandle textureHandle) {
         descriptorSetManager->BindTexture(setHandle, binding, textureHandle);
     }
 
-    void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) {
+    void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
+                                            const BufferHandle bufferHandle) {
         descriptorSetManager->BindBuffer(setHandle, binding, bufferHandle);
     }
 
-    BufferHandle OGLRenderDevice::CreateBuffer(const BufferDesc &desc, const void *data) {
-        return bufferManager->CreateBuffer(desc, data);
+    BufferHandle OGLRenderDevice::CreateBuffer(const BufferDesc &desc) {
+        return bufferManager->CreateBuffer(desc);
     }
 
     void OGLRenderDevice::UpdateBuffer(const BufferHandle id, const void *data, const int offset, const int size) {
         // TODO Check if buffer is available for update
-       // glNamedBufferSubData(buffers[id.Id], static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), data);
+        // glNamedBufferSubData(buffers[id.Id], static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), data);
 
         bufferManager->UpdateUniformBuffer(id, data, offset, size);
     }
@@ -279,8 +283,8 @@ namespace Rendering {
         glDeleteBuffers(1, &buffers[id.Id]);
     }
 
-    PipelineHandle OGLRenderDevice::CreatePipeline(const ShaderDesc &shaderDesc, const PipelineStateDesc &pipelineStateDesc) {
-
+    PipelineHandle OGLRenderDevice::CreatePipeline(const ShaderDesc &shaderDesc,
+                                                   const PipelineStateDesc &pipelineStateDesc) {
         const ShaderHandle vShaderHandle = shaderManager->CreateShader(ShaderType::Vertex, shaderDesc.vertexCode);
         const ShaderHandle fShaderHandle = shaderManager->CreateShader(ShaderType::Fragment, shaderDesc.fragmentCode);
 
@@ -288,10 +292,10 @@ namespace Rendering {
         shader.vShader = shaderManager->GetShader(vShaderHandle).handle;
         shader.fShader = shaderManager->GetShader(fShaderHandle).handle;
 
-        for (auto resource_set_layout : shaderDesc.resourceSetLayouts) {
+        for (auto resource_set_layout: shaderDesc.resourceSetLayouts) {
             OGLDescriptorSetLayout layout;
             layout.set_index = resource_set_layout.set_index;
-            for (const auto binding : resource_set_layout.bindings) {
+            for (const auto binding: resource_set_layout.bindings) {
                 OGLDescriptorSetLayoutItem item;
                 item.binding_slot = binding.binding_slot;
                 item.stage_flags = binding.stage_flags;
@@ -303,7 +307,7 @@ namespace Rendering {
 
         _graphicsShaders.push_back(shader);
 
-        const auto shaderHandle = ShaderHandle { .Id = static_cast<uint32_t>(_graphicsShaders.size() - 1) };
+        const auto shaderHandle = ShaderHandle{.Id = static_cast<uint32_t>(_graphicsShaders.size() - 1)};
 
         return pipelineManager->CreatePipeline(shader, pipelineStateDesc);
     }
@@ -313,7 +317,6 @@ namespace Rendering {
         std::vector<uint8_t> commands = commandBuffer->GetCommands();
         size_t readOffset = 0;
         size_t head = commandBuffer->GetHead();
-        GLuint lastRenderTargetTexture = 0;
 
         while (readOffset < head) {
             const GLCommandType type = *reinterpret_cast<GLCommandType *>(&commands[readOffset]);
@@ -329,8 +332,9 @@ namespace Rendering {
                     std::optional<AttachmentDescription> colorAttachment = cmd->colorAttachment;
                     std::optional<AttachmentDescription> depthAttachment = cmd->depthAttachment;
 
-                    if (depthAttachment.has_value() && !colorAttachment.has_value()) {
-                        OGLTexture texture = textureManager->GetTexture(depthAttachment->renderTarget);
+                    if (depthAttachment.has_value() && depthAttachment.value().renderTarget.has_value() && !
+                        colorAttachment.has_value()) {
+                        OGLTexture texture = textureManager->GetTexture(depthAttachment->renderTarget.value());
                         activeFBO = texture.fbo;
                     }
 
@@ -341,9 +345,11 @@ namespace Rendering {
                     glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
                     if (activeFBO != 0) {
+                        glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+
                         GLenum attachmentType = MapAttachment(depthAttachment.value().type);
-                        OGLTexture texture = textureManager->GetTexture(depthAttachment.value().renderTarget);
-                        lastRenderTargetTexture = texture.Id;
+                        OGLTexture texture = textureManager->GetTexture(depthAttachment.value().renderTarget.value());
+
                         glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, 0);
 
                         if (colorAttachment.has_value()) {
@@ -353,24 +359,30 @@ namespace Rendering {
                             glNamedFramebufferDrawBuffer(activeFBO, GL_NONE);
                             glNamedFramebufferReadBuffer(activeFBO, GL_NONE);
                         }
+                    } else {
+                        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
                     }
 
                     GLbitfield clearMask = 0;
                     if (colorAttachment.has_value() && colorAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
-                        if (colorAttachment.value().type == AttachmentType::COLOR)   clearMask |= GL_COLOR_BUFFER_BIT;
-                        if (colorAttachment.value().type == AttachmentType::DEPTH)   clearMask |= GL_DEPTH_BUFFER_BIT;
+                        if (colorAttachment.value().type == AttachmentType::COLOR) clearMask |= GL_COLOR_BUFFER_BIT;
+                        if (colorAttachment.value().type == AttachmentType::DEPTH) clearMask |= GL_DEPTH_BUFFER_BIT;
                         if (colorAttachment.value().type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
+
+                        Color clearColor = colorAttachment.value().clearColor;
+
+                        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
                     }
 
                     if (depthAttachment.has_value() && depthAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
-                        if (depthAttachment.value().type == AttachmentType::COLOR)   clearMask |= GL_COLOR_BUFFER_BIT;
-                        if (depthAttachment.value().type == AttachmentType::DEPTH)   clearMask |= GL_DEPTH_BUFFER_BIT;
+                        if (depthAttachment.value().type == AttachmentType::COLOR) clearMask |= GL_COLOR_BUFFER_BIT;
+                        if (depthAttachment.value().type == AttachmentType::DEPTH) clearMask |= GL_DEPTH_BUFFER_BIT;
                         if (depthAttachment.value().type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
+
+                        glClearDepth(depthAttachment.value().depthClearValue);
                     }
 
                     if (clearMask != 0) {
-                        glClearColor(cmd->clearColor.r, cmd->clearColor.g, cmd->clearColor.b, cmd->clearColor.a);
-                        glClearDepth(1.0f);
                         glClearStencil(0);
                         glClear(clearMask);
                     }
@@ -405,7 +417,7 @@ namespace Rendering {
                     readOffset += sizeof(GLCommand_BindBuffer);
 
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
-                    const auto buffer = bufferManager->GetBuffer(cmd->buffer);
+                    const auto& buffer = bufferManager->GetBuffer(cmd->buffer);
 
                     glVertexArrayVertexBuffer(pipeline.vao, 0,
                                               buffer.glId, 0, sizeof(Vertex));
@@ -417,7 +429,7 @@ namespace Rendering {
                     readOffset += sizeof(GLCommand_BindBuffer);
 
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
-                    const auto buffer = bufferManager->GetBuffer(cmd->buffer);
+                    const auto& buffer = bufferManager->GetBuffer(cmd->buffer);
 
                     glVertexArrayElementBuffer(pipeline.vao, buffer.glId);
                     break;
@@ -432,20 +444,7 @@ namespace Rendering {
                     const auto offset = cmd->offset;
                     const auto size = cmd->size;
 
-                    bufferManager->UpdateUniformBuffer(bufferHandle, data, offset, size);
-                    break;
-                }
-
-                case GLCommandType::UpdateUniformBuffer: {
-                    const auto *cmd = reinterpret_cast<GLCommand_UpdateBuffer *>(&commands[readOffset]);
-                    readOffset += sizeof(GLCommand_UpdateBuffer);
-
-                    const auto bufferHandle = cmd->buffer;
-                    const auto data = cmd->data;
-                    const auto offset = cmd->offset;
-                    const auto size = cmd->size;
-
-                    OGLBuffer buffer = bufferManager->GetBuffer(bufferHandle);
+                    OGLBuffer& buffer = bufferManager->GetBuffer(bufferHandle);
 
                     glNamedBufferSubData(buffer.glId, static_cast<GLintptr>(offset),
                                          static_cast<GLsizeiptr>(size), data);
@@ -458,13 +457,17 @@ namespace Rendering {
 
                     OGLResourceSet resourceSet = descriptorSetManager->GetResourceSet(cmd->resourceId);
 
-                    for (auto item : resourceSet.items) {
+                    for (auto item: resourceSet.items) {
                         //TODO Remove it
                         if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999) continue;
 
                         if (item.IsBuffer()) {
-                            OGLBuffer buffer = bufferManager->GetBuffer(item.bufferHandle);
-                            glBindBufferBase(GL_UNIFORM_BUFFER, item.binding, buffer.glId);
+                            OGLBuffer& buffer = bufferManager->GetBuffer(item.bufferHandle);
+                            if (item.binding == 2) {
+                                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, item.binding, buffer.glId);
+                            } else {
+                                glBindBufferBase(GL_UNIFORM_BUFFER, item.binding, buffer.glId);
+                            }
                         } else {
                             OGLTexture texture = textureManager->GetTexture(item.textureHandle);
                             glActiveTexture(GL_TEXTURE0 + item.binding);
@@ -489,17 +492,41 @@ namespace Rendering {
                 }
 
                 case GLCommandType::DrawIndexed: {
-                    const auto *cmd = reinterpret_cast<GLCommand_Draw *>(&commands[readOffset]);
-                    readOffset += sizeof(GLCommand_Draw);
+                    const auto *cmd = reinterpret_cast<GLCommand_DrawIndexed *>(&commands[readOffset]);
+                    readOffset += sizeof(GLCommand_DrawIndexed);
 
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
 
                     glBindVertexArray(pipeline.vao);
 
-                    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(cmd->vertexCount), GL_UNSIGNED_SHORT, nullptr);
+                      // glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(cmd->indexCount), GL_UNSIGNED_SHORT, nullptr);
+
+                    glDrawElementsInstancedBaseInstance(
+                        GL_TRIANGLES,
+                        cmd->indexCount,
+                        GL_UNSIGNED_SHORT,
+                        nullptr,
+                        1,
+                        cmd->indexMesh
+                    );
 
                     glBindVertexArray(0);
                     break;
+                }
+
+                case GLCommandType::UploadBufferData: {
+                    const auto *cmd = reinterpret_cast<GLCommand_UploadBufferData *>(&commands[readOffset]);
+                    readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
+
+                    auto bufferHandle = cmd->buffer;
+                    // auto data = cmd->data;
+                    auto data = reinterpret_cast<const uint8_t *>(cmd) + sizeof(GLCommand_UploadBufferData);
+                    auto size = cmd->size;
+                    auto offset = cmd->offset;
+
+                    OGLBuffer& buffer = bufferManager->GetBuffer(bufferHandle);
+
+                    glNamedBufferSubData(buffer.glId, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), data);
                 }
 
                 default:
@@ -507,13 +534,7 @@ namespace Rendering {
             }
         }
 
-        if (lastRenderTargetTexture != 0) {
-           // SaveGLTextureToDisk(lastRenderTargetTexture, "output_texture2.png");
-            lastRenderTargetTexture = 0;
-        }
-
         head = 0;
-        Present();
     }
 
     void OGLRenderDevice::Present() {
@@ -593,8 +614,8 @@ namespace Rendering {
 
     GLenum OGLRenderDevice::MapAttachment(const AttachmentType type) {
         switch (type) {
-            case AttachmentType::COLOR:   return GL_COLOR_ATTACHMENT0;
-            case AttachmentType::DEPTH:   return GL_DEPTH_ATTACHMENT;
+            case AttachmentType::COLOR: return GL_COLOR_ATTACHMENT0;
+            case AttachmentType::DEPTH: return GL_DEPTH_ATTACHMENT;
             case AttachmentType::STENCIL: return GL_STENCIL_ATTACHMENT;
             case AttachmentType::NONE:
             default:

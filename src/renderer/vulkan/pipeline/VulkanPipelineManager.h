@@ -4,10 +4,10 @@
 
 #ifndef MAXENGINE_VULKANPIPELINE_H
 #define MAXENGINE_VULKANPIPELINE_H
-#include "IVulkanPipelineManager.h"
+
 #include "../../IPipelineManager.h"
 #include "../shaders/VulkanShaderManager.h"
-#include "../src/renderer/RenderContext.h"
+#include "../src/renderer/domain/struct/PipelineStateDesc.h"
 
 namespace Rendering {
     struct VulkanPipeline {

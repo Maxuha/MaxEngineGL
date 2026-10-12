@@ -5,7 +5,6 @@
 #include "src/Scene.h"
 #include "src/GLFWWindowImpl.h"
 #include "src/InputController.h"
-#include "src/components/Behaviour.h"
 #include "src/gameObject/Camera.h"
 #include "src/gameObject/primitives/Cube.h"
 #include "src/components/MeshRenderer.h"
@@ -13,7 +12,6 @@
 #include "src/components/physics/collision/BoxCollider.h"
 #include "src/components/light/PointLight.h"
 #include "src/components/light/SpotLight.h"
-#include "src/game/RotationComponent.h"
 #include "src/IO/FileReader.h"
 #include "src/renderer/gl/CommandBuffer.h"
 
@@ -42,11 +40,16 @@ int main() {
     camera->GetTransform()->position = Vector3(10, 0, 10);
     camera->Start();
 
-    auto *houseModel = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
-
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = material1;
     cube1->GetComponent<Transform>()->position = Vector3(0, 4.0f, -10.0f);
+    cube1->GetComponent<Transform>()->scale = Vector3(1.0f, 1.0f, 1.0f);
+
+     auto *houseModel = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
+      auto *erika = container->Get<AssetManager>()->Import<Model>(R"(assets/models/Erika.fbx)");
+      erika->root->GetComponent<MeshRenderer>()->material = material1;
+   // auto *houseModel2 = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
+     houseModel->root->GetTransform()->position = Vector3(0, 0, 0);
 
     TextureAsset* diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
 
@@ -76,6 +79,10 @@ int main() {
 
     Rendering::Texture* plantsTexture1 = new Rendering::Texture(plantsTextureAsset1->Width, plantsTextureAsset1->Height, plantsTextureAsset1->Wrap, plantsTextureAsset1->Data);
 
+    TextureAsset* depthTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/depth.png)");
+
+    Rendering::Texture* depthTexture = new Rendering::Texture(depthTextureAsset->Width, depthTextureAsset->Height, depthTextureAsset->Wrap, depthTextureAsset->Data);
+
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
     houseModel->materials[2].SetTexture(4, *plantsTexture1);
@@ -90,8 +97,23 @@ int main() {
     houseModel->materials[4].SetProperty("material.shininess", 32.0f);
     houseModel->materials[5].SetProperty("material.shininess", 32.0f);
 
+    // houseModel2->materials[0].SetTexture(4, *houseTexture2);
+    // houseModel2->materials[1].SetTexture(4, *houseTexture1);
+    // houseModel2->materials[2].SetTexture(4, *plantsTexture1);
+    // houseModel2->materials[3].SetTexture(4, *carTexture1);
+    // houseModel2->materials[4].SetTexture(4, *plainTexture1);
+    // houseModel2->materials[5].SetTexture(4, *plantsTexture1);
+    //
+    // houseModel2->materials[0].SetProperty("material.shininess", 32.0f);
+    // houseModel2->materials[1].SetProperty("material.shininess", 32.0f);
+    // houseModel2->materials[2].SetProperty("material.shininess", 32.0f);
+    // houseModel2->materials[3].SetProperty("material.shininess", 32.0f);
+    // houseModel2->materials[4].SetProperty("material.shininess", 32.0f);
+    // houseModel2->materials[5].SetProperty("material.shininess", 32.0f);
+
     material1->SetTexture(4, *diffuseTexture);
     material1->SetTexture(5, *specularTexture);
+    // material1->SetTexture(6, *depthTexture);
     material1->SetProperty("material.shininess", 32.0f);
 
     const auto lightFactory = new LightFactory();
@@ -134,14 +156,16 @@ int main() {
     lamp2->GetComponent<PointLight>()->SetRange(10.0f);
 
     auto *scene = new Scene(camera);
-    scene->Add(cube1);
-    scene->Add(houseModel->root);
+     scene->Add(cube1);
+     // scene->Add(erika->root);
+      scene->Add(houseModel->root);
+     // scene->Add(houseModel2->root);
     scene->Add(ambientLight);
     scene->Add(sun);
-    // scene->Add(light);
-    // scene->Add(light2);
-    // scene->Add(lamp);
-    // scene->Add(lamp2);
+    scene->Add(light);
+    scene->Add(light2);
+    scene->Add(lamp);
+    scene->Add(lamp2);
 
     scene->Init();
 
@@ -159,7 +183,7 @@ int main() {
         sun->GetComponent<Light>()->Update(delta_time);
         // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
         t += delta_time * 127;
-        material1->SetProperty("material.shininess", t);
+        //material1->SetProperty("material.shininess", 32);
 
         if (t >= 256) {
             t = 16;
@@ -167,6 +191,7 @@ int main() {
 
         renderer->BeginFrame(*camera);
         renderer->Render(*scene);
+        renderer->EndFrame();
     }
 
     return 0;

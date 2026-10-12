@@ -17,7 +17,7 @@ namespace Rendering {
 
         virtual RenderPassHandle GetHandle() = 0;
 
-        virtual void Render(CommandBuffer &commandBuffer, FrameBufferHandle frameBuffer, PipelineHandle pipeline) = 0;
+        virtual void Render(CommandBuffer &commandBuffer, PipelineHandle pipeline) = 0;
     };
 } // Rendering
 

@@ -100,6 +100,23 @@ namespace Rendering {
         return seed;
     }
 
+    struct ResourceSetLayoutDescHash {
+        std::size_t operator()(const ResourceSetLayoutDesc& desc) const {
+            std::size_t hash = std::hash<uint32_t>{}(desc.set_index);
+
+            for (const auto& binding : desc.bindings) {
+                std::size_t b_hash = std::hash<uint32_t>{}(binding.binding_slot);
+                b_hash ^= std::hash<uint8_t>{}(static_cast<uint8_t>(binding.type)) + 0x9e3779b9 + (b_hash << 6) + (b_hash >> 2);
+                b_hash ^= std::hash<uint32_t>{}(binding.count) + 0x9e3779b9 + (b_hash << 6) + (b_hash >> 2);
+                b_hash ^= std::hash<uint32_t>{}(static_cast<uint32_t>(binding.stage_flags)) + 0x9e3779b9 + (b_hash << 6) + (b_hash >> 2);
+                b_hash ^= std::hash<bool>{}(binding.is_dynamic) + 0x9e3779b9 + (b_hash << 6) + (b_hash >> 2);
+
+                hash ^= b_hash + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+            }
+            return hash;
+        }
+    };
+
     struct ResourceBinding {
         std::uint32_t slot;
         std::uint32_t binding;

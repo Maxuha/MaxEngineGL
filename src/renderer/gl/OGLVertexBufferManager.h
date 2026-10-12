@@ -4,28 +4,47 @@
 
 #ifndef MAXENGINE_OGLVERTEXBUFFERMANAGER_H
 #define MAXENGINE_OGLVERTEXBUFFERMANAGER_H
-#include "../domain/IBufferManager.h"
 
 namespace Rendering {
+    struct BufferDesc;
+
     struct OGLBuffer {
-        GLuint glId;
+        GLuint glId = 0;
+
+        OGLBuffer() = default;
+
+        OGLBuffer(const OGLBuffer&) = delete;
+        OGLBuffer& operator=(const OGLBuffer&) = delete;
+
+        OGLBuffer(OGLBuffer&& other) noexcept : glId(other.glId) {
+            other.glId = 0;
+        }
+
+        OGLBuffer& operator=(OGLBuffer&& other) noexcept {
+            if (this != &other) {
+                if (glId) glDeleteBuffers(1, &glId);
+                glId = other.glId;
+                other.glId = 0;
+            }
+            return *this;
+        }
+
+        ~OGLBuffer() {
+            if (glId != 0) {
+                glDeleteBuffers(1, &glId);
+            }
+        }
     };
 
-    class OGLVertexBufferManager : public IBufferManager {
+    class OGLVertexBufferManager {
     public:
-        ~OGLVertexBufferManager() override;
+        ~OGLVertexBufferManager();
 
-        BufferHandle CreateBuffer(const BufferDesc &desc, const void *data) override;
+        BufferHandle CreateBuffer(const BufferDesc &desc);
 
-        BufferHandle CreateVertexBuffer(std::vector<Vertex> vertexes) override;
+        void UpdateUniformBuffer(BufferHandle handle, const void *data, size_t offset, size_t size);
 
-        BufferHandle CreateIndexBuffer(std::vector<uint16_t> indices) override;
-
-        BufferHandle CreateUniformBuffer(void *data, size_t size) override;
-
-        void UpdateUniformBuffer(BufferHandle handle, const void *data, size_t offset, size_t size) override;
-
-        OGLBuffer GetBuffer(BufferHandle handle) const;
+        OGLBuffer& GetBuffer(BufferHandle handle);
 
     private:
         std::vector<OGLBuffer> buffers;

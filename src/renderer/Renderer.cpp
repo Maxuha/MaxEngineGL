@@ -35,10 +35,8 @@ namespace Rendering {
         Matrix4x4 model = Matrix4x4(1.0f);
     };
 
-    Renderer::Renderer(const RenderConfig &renderConfig, IWindow &window) : litShader(renderConfig.litShader),
-                                                                            depthShader(nullptr),
-                                                                            renderDevice(nullptr),
-                                                                            commandBuffer(nullptr) {
+    Renderer::Renderer(const RenderConfig &renderConfig, IWindow &window) : depthShader(nullptr),
+                                                                            renderDevice(nullptr) {
         switch (renderConfig.api) {
             case RenderAPI::Vulkan: renderDevice = new VulkanRenderDevice(window);
                 break;
@@ -74,20 +72,23 @@ namespace Rendering {
 
         renderPasses.push_back(rasterizedRenderPass);
 
-        TextureCreateRequest request;
-        request.Format = TextureFormat::DEPTH;
-        request.Width = 2160;
-        request.Height = 1440;
-        request.MipLevels = 0;
+        TextureCreateRequest shadowTextureRequest;
+        shadowTextureRequest.Format = TextureFormat::DEPTH;
+        shadowTextureRequest.Width = 2160;
+        shadowTextureRequest.Height = 1440;
+        shadowTextureRequest.MipLevels = 0;
 
-        depthTexture = renderDevice->CreateTexture(request, nullptr);
+        shadowTexture = renderDevice->CreateTexture(shadowTextureRequest, nullptr);
+
+        const auto clearColor = Color{0.75f, 0.75f, 0.75f, 1.0f};
 
         const std::array attachments = {
             AttachmentDescription{
                 .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::STORE
+                .storeOp = AttachmentStoreOp::STORE,
+                .clearColor = clearColor
             },
             AttachmentDescription{
                 .format = depthFormat,
@@ -103,11 +104,9 @@ namespace Rendering {
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::STORE,
-                .renderTarget = depthTexture
+                .renderTarget = shadowTexture
             }
         };
-
-        const auto clearColor = Color{0.75f, 0.75f, 0.75f, 1.0f};
 
         viewport = window.GetCurrentSize();
 
@@ -121,6 +120,7 @@ namespace Rendering {
         const auto shadowRenderPass = RenderPass{
             {},
             shadowAttachments[0],
+            // {0, 0, 2048, 2048},
             viewport,
             clearColor
         };
@@ -145,15 +145,8 @@ namespace Rendering {
         binding_light.stage_flags = ShaderStageFlags::Fragment;
         binding_light.count = 1;
 
-        ResourceBindingDesc binding_shadow;
-        binding_shadow.binding_slot = 7;
-        binding_shadow.type = ResourceType::UniformBuffer;
-        binding_shadow.stage_flags = ShaderStageFlags::Vertex;
-        binding_shadow.count = 1;
-
         cameraAndLightLayout.bindings.push_back(binding_camera);
         cameraAndLightLayout.bindings.push_back(binding_light);
-        // cameraAndLightLayout.bindings.push_back(binding_shadow);
 
         cameraAndLightSetLayout = renderDevice->CreateResourceSetLayout(cameraAndLightLayout);
 
@@ -162,9 +155,10 @@ namespace Rendering {
 
         ResourceBindingDesc binding_model;
         binding_model.binding_slot = 2;
-        binding_model.type = ResourceType::UniformBuffer;
+        binding_model.type = ResourceType::StorageBuffer;
         binding_model.stage_flags = ShaderStageFlags::Vertex;
         binding_model.count = 1;
+        // binding_model.is_dynamic = true;
 
         modelSetLayoutDesc.bindings.push_back(binding_model);
 
@@ -175,6 +169,20 @@ namespace Rendering {
         resourceSetLayouts.push_back(modelSetLayout);
 
         mainPipelineLayout = renderDevice->CreatePipelineLayout(resourceSetLayouts);
+
+        BufferDesc modelBufferDesc;
+        modelBufferDesc.size = sizeof(ModelBuffer) * 2000;
+        modelBufferDesc.usage = BufferUsage::Storage;
+        modelBufferDesc.isDynamic = true;
+        // modelBufferDesc.isDynamicB = true;
+
+        // Setup model
+        modelBuffer = renderDevice->CreateBuffer(modelBufferDesc);
+        modelResourceSet = renderDevice->CreateResourceSet(modelSetLayout);
+        renderDevice->UpdateResourceSet(modelResourceSet, 2, modelBuffer);
+
+        uploadCommandBuffer = renderDevice->AllocateCommandBuffer(CommandBufferType::Transfer);
+        uploadCommandBuffer->Begin();
     }
 
     Renderer::~Renderer() = default;
@@ -182,13 +190,11 @@ namespace Rendering {
     CameraRender *Renderer::CreateCamera(float fov, float zNear, float zFar, float aspectRatio) {
         BufferDesc cameraBuffer;
         cameraBuffer.size = sizeof(CameraBuffer);
-        cameraBuffer.index = 0;
         cameraBuffer.usage = BufferUsage::Uniform;
-        cameraBuffer.set = 0;
         cameraBuffer.isDynamic = true;
 
         CameraRenderData camera;
-        camera.ViewProjectionBuffer = renderDevice->CreateBuffer(cameraBuffer, nullptr);
+        camera.ViewProjectionBuffer = renderDevice->CreateBuffer(cameraBuffer);
         camera.ResourceSet = renderDevice->CreateResourceSet(cameraAndLightSetLayout);
         renderDevice->UpdateResourceSet(camera.ResourceSet, 0, camera.ViewProjectionBuffer);
 
@@ -197,41 +203,16 @@ namespace Rendering {
         // Setup lights
         BufferDesc lightBuffer;
         lightBuffer.size = sizeof(LightData);
-        lightBuffer.index = 2;
         lightBuffer.usage = BufferUsage::Uniform;
-        lightBuffer.set = 0;
         lightBuffer.isDynamic = true;
 
-        lightRenderData.buffer = renderDevice->CreateBuffer(lightBuffer, nullptr);
+        lightRenderData.buffer = renderDevice->CreateBuffer(lightBuffer);
         lightRenderData.resourceSet = camera.ResourceSet;
         renderDevice->UpdateResourceSet(lightRenderData.resourceSet, 1, lightRenderData.buffer);
 
-        // Setup shadows
-
-        // Map
-        BufferDesc lightSpaceBuffer;
-        lightSpaceBuffer.size = sizeof(CameraBuffer);
-        lightSpaceBuffer.index = 0;
-        lightSpaceBuffer.usage = BufferUsage::Uniform;
-        lightSpaceBuffer.set = 0;
-        lightSpaceBuffer.isDynamic = true;
-
-        lightSpace.ViewProjectionBuffer = renderDevice->CreateBuffer(cameraBuffer, nullptr);
+        lightSpace.ViewProjectionBuffer = renderDevice->CreateBuffer(cameraBuffer);
         lightSpace.ResourceSet = renderDevice->CreateResourceSet(cameraAndLightSetLayout);
         renderDevice->UpdateResourceSet(lightSpace.ResourceSet, 0, lightSpace.ViewProjectionBuffer);
-
-        // Light space
-
-        BufferDesc shadowsBuffer;
-        shadowsBuffer.size = sizeof(Matrix4x4);
-        shadowsBuffer.index = 7;
-        shadowsBuffer.usage = BufferUsage::Uniform;
-        shadowsBuffer.set = 0;
-        shadowsBuffer.isDynamic = true;
-
-        // shadowRenderData.buffer = renderDevice->CreateBuffer(shadowsBuffer, nullptr);
-        // shadowRenderData.resourceSet = camera.ResourceSet;
-        // renderDevice->UpdateResourceSet(shadowRenderData.resourceSet, 7, shadowRenderData.buffer);
 
         const auto cameraRender = new CameraRender();
         cameraRender->handle = CameraHandle{.Id = cameras.size() - 1};
@@ -251,22 +232,18 @@ namespace Rendering {
 
         BufferDesc bufferDesc;
         bufferDesc.size = 32;
-        bufferDesc.binding = 3;
-        bufferDesc.set = 2;
         bufferDesc.usage = BufferUsage::Uniform;
         bufferDesc.isDynamic = true;
 
-        data.ubo = renderDevice->CreateBuffer(bufferDesc, nullptr);
-
-        const ResourceSetHandle resourceSetHandle = renderDevice->CreateResourceSet(shader.resourceSetLayout);
-        data.resourceSet = resourceSetHandle;
+        data.ubo = renderDevice->CreateBuffer(bufferDesc);
+        data.resourceSet = renderDevice->CreateResourceSet(shader.resourceSetLayout);
 
         const MaterialHandle handle{.Id = static_cast<uint32_t>(materials.size())};
 
         materials.push_back(data);
 
         BindBufferToMaterial(handle, 3, data.ubo);
-        BindTextureToMaterial(handle, 6, depthTexture);
+        BindTextureToMaterial(handle, 6, shadowTexture);
 
         return handle;
     }
@@ -290,6 +267,11 @@ namespace Rendering {
         pipelineStateDesc.ColorFormat = colorFormat;
         pipelineStateDesc.CullMode = cullMode;
 
+        // shaderDesc.resourceSetLayouts[1] = modelSetLayout;
+        //
+        // ShaderDesc desc = shaderDesc;
+        // desc.resourceSetLayouts[1] = modelSetLayout;
+
         if (shaderDesc.resourceSetLayouts.size() >= 3) {
             graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
         }
@@ -298,6 +280,39 @@ namespace Rendering {
         shaders.push_back(graphicsShader);
 
         return ShaderHandle{.Id = shaders.size() - 1};
+    }
+
+    Mesh *Renderer::CreateMesh(const std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices) {
+        BufferDesc bufferDesc;
+        bufferDesc.size = vertices.size() * sizeof(Vertex);
+        bufferDesc.usage = BufferUsage::Vertex;
+        bufferDesc.isNewApproach = true;
+
+        const BufferHandle vertexBuffer = renderDevice->CreateBuffer(bufferDesc);
+        uploadCommandBuffer->UploadBufferData(vertexBuffer, vertices.data(), 0, vertices.size() * sizeof(Vertex));
+
+        bufferDesc.size = indices.size() * sizeof(uint16_t);
+        bufferDesc.usage = BufferUsage::Index;
+
+        const BufferHandle indexBuffer = renderDevice->CreateBuffer(bufferDesc);
+        uploadCommandBuffer->UploadBufferData(indexBuffer, indices.data(), 0, indices.size() * sizeof(uint16_t));
+
+        // bufferDesc.size = sizeof(ModelBuffer);
+        // bufferDesc.usage = BufferUsage::Uniform;
+        // bufferDesc.isDynamic = true;
+        // bufferDesc.isNewApproach = false;
+        //
+        // const BufferHandle modelBuffer = renderDevice->CreateBuffer(bufferDesc);
+        // const ResourceSetHandle modelResourceSet = renderDevice->CreateResourceSet(modelSetLayout);
+        // renderDevice->UpdateResourceSet(modelResourceSet, 2, modelBuffer);
+
+        const auto mesh = new Mesh(vertices, indices);
+        mesh->vertexBuffer = vertexBuffer;
+        mesh->indexBuffer = indexBuffer;
+        // mesh->modelBuffer = modelBuffer;
+        // mesh->modelResourceSet = modelResourceSet;
+        mesh->indexMesh = indexMesh++;
+        return mesh;
     }
 
     LightHandle Renderer::CreateLight(const LightType type) {
@@ -357,39 +372,6 @@ namespace Rendering {
         renderDevice->UpdateResourceSet(material.resourceSet, slot, bufferId);
     }
 
-    Mesh *Renderer::CreateMesh(const std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices) {
-        BufferDesc bufferDesc;
-        bufferDesc.size = vertices.size() * sizeof(Vertex);
-        bufferDesc.index = 0;
-        bufferDesc.usage = BufferUsage::Vertex;
-
-        const BufferHandle vertexBuffer = renderDevice->CreateBuffer(bufferDesc, vertices.data());
-
-        bufferDesc.size = indices.size() * sizeof(uint16_t);
-        bufferDesc.index = 1;
-        bufferDesc.usage = BufferUsage::Index;
-
-        const BufferHandle indexBuffer = renderDevice->CreateBuffer(bufferDesc, indices.data());
-
-        bufferDesc.size = sizeof(ModelBuffer);
-        bufferDesc.index = 1;
-        bufferDesc.usage = BufferUsage::Uniform;
-        bufferDesc.set = 1;
-        bufferDesc.isDynamic = true;
-
-        const BufferHandle modelBuffer = renderDevice->CreateBuffer(bufferDesc, nullptr);
-
-        const ResourceSetHandle modelResourceSet = renderDevice->CreateResourceSet(modelSetLayout);
-        renderDevice->UpdateResourceSet(modelResourceSet, 2, modelBuffer);
-
-        const auto mesh = new Mesh(vertices, indices);
-        mesh->vertexBuffer = vertexBuffer;
-        mesh->indexBuffer = indexBuffer;
-        mesh->modelBuffer = modelBuffer;
-        mesh->modelResourceSet = modelResourceSet;
-        return mesh;
-    }
-
     void Renderer::BeginFrame(Camera &camera) {
         activeCamera = &camera;
 
@@ -403,30 +385,29 @@ namespace Rendering {
     }
 
     void Renderer::Render(Scene &scene) {
-        const auto cmd = renderDevice->AllocateCommandBuffer();
+        const auto cmd = renderDevice->AllocateCommandBuffer(CommandBufferType::Graphics);
 
         cmd->Begin();
 
         const std::vector<DrawCall> drawCalls = scene.GetDrawCalls();
         const std::vector<Light *> lights = scene.GetLights();
-        std::unordered_map<Material *, DrawCall> _materials;
+        std::unordered_map<Material *, DrawCall> _materialsGrouped;
 
         for (const auto drawCall: drawCalls) {
-            const auto modelBufferHandle = drawCall._mesh->modelBuffer;
             ModelBuffer modelBuffer;
             modelBuffer.model = drawCall.transform->GetWorldMatrix();
-            renderDevice->UpdateBuffer(modelBufferHandle, &modelBuffer, 0, sizeof(ModelBuffer));
-            _materials.emplace(drawCall.material, drawCall);
+            renderDevice->UpdateBuffer(this->modelBuffer, &modelBuffer, drawCall._mesh->indexMesh * sizeof(ModelBuffer), sizeof(ModelBuffer));
+            _materialsGrouped.emplace(drawCall.material, drawCall);
         }
 
-        auto keys_view = std::views::keys(_materials);
-        std::vector keys(keys_view.begin(), keys_view.end());
+        auto _materials = std::views::keys(_materialsGrouped);
+        std::vector keys(_materials.begin(), _materials.end());
 
         for (const auto material: keys) {
-            if (material->dirtyFrames > 0) {
-                cmd->UpdateUniformBuffer(materials[material->GetId().Id].ubo, material->GetBufferData().data(), 0,
+            if (material->IsDirty()) {
+                cmd->UpdateBuffer(materials[material->GetId().Id].ubo, material->GetBufferData().data(), 0,
                                          material->GetBufferData().size());
-                material->dirtyFrames--;
+                material->ClearDirty();
             }
         }
 
@@ -447,6 +428,7 @@ namespace Rendering {
 
                     const auto colorIntensity = Vector4(lightData->color.rgb(), lightData->intensity);
                     const auto direction = Vector4(light->GetGameObject()->GetTransform()->Forward(), 1);
+
                     lightRenderData.data.directionalLight.colorIntensity = colorIntensity;
                     lightRenderData.data.directionalLight.direction = direction;
                     break;
@@ -499,21 +481,23 @@ namespace Rendering {
         cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Perspective(90.0f, 2160.0f / 1440.0f, 0.1f, 100.0f);
         cameraBuffer.position = Vector4(lights[1]->GetGameObject()->GetTransform()->position, 1.0f);
 
-        Matrix4x4 pv = cameraBuffer.proj * cameraBuffer.view;
-        lightRenderData.data.directionalLight.space = pv;
+        lightRenderData.data.directionalLight.space = cameraBuffer.proj * cameraBuffer.view;
 
-        renderDevice->UpdateBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(lightRenderData.data));
+        // cmd->UpdateUniformBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(LightData));
+        // cmd->UpdateUniformBuffer(lightSpace.ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
+
+        renderDevice->UpdateBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(LightData));
         renderDevice->UpdateBuffer(lightSpace.ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
 
         cmd->BeginRenderPass(renderPassesDesc[1]);
         cmd->BindPipeline(shaders[depthShader->GetHandle().Id].pipeline);
-        cmd->BindResourceSet(lightSpace.ResourceSet, shaders[depthShader->GetHandle().Id].pipeline, 0);
+        cmd->BindResourceSet(lightSpace.ResourceSet, mainPipelineLayout, 0);
+        cmd->BindResourceSet(this->modelResourceSet, mainPipelineLayout, 1, 0);
 
         for (const auto drawCall: drawCalls) {
             cmd->BindVertexBuffer(drawCall._mesh->vertexBuffer);
             cmd->BindIndexBuffer(drawCall._mesh->indexBuffer);
-            cmd->BindResourceSet(drawCall._mesh->modelResourceSet, shaders[depthShader->GetHandle().Id].pipeline, 1);
-            cmd->DrawIndexed(drawCall._mesh->GetIndexCount());
+            cmd->DrawIndexed(drawCall._mesh->GetIndexCount(), drawCall._mesh->indexMesh);
         }
 
         cmd->EndRenderPass();
@@ -524,6 +508,8 @@ namespace Rendering {
         cameraBuffer.proj = activeCamera->GetProjection();
         cameraBuffer.position = Vector4(activeCamera->GetTransform()->position, 1.0f);
 
+        //cmd->UpdateUniformBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
+
         renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
                                    sizeof(CameraBuffer));
 
@@ -531,6 +517,7 @@ namespace Rendering {
 
         cmd->BeginRenderPass(renderPassesDesc[0]);
         cmd->BindResourceSet(cameras[activeCamera->GetHandle().Id].ResourceSet, mainPipelineLayout, 0);
+        cmd->BindResourceSet(this->modelResourceSet, mainPipelineLayout, 1, 0);
 
         const Material *lastMaterial = nullptr;
         for (const auto drawCall: drawCalls) {
@@ -545,21 +532,24 @@ namespace Rendering {
             // mesh properties
             cmd->BindVertexBuffer(drawCall._mesh->vertexBuffer);
             cmd->BindIndexBuffer(drawCall._mesh->indexBuffer);
-            cmd->BindResourceSet(drawCall._mesh->modelResourceSet,
-                                 mainPipelineLayout, 1);
-            cmd->DrawIndexed(drawCall._mesh->GetIndexCount());
+            cmd->DrawIndexed(drawCall._mesh->GetIndexCount(), drawCall._mesh->indexMesh);
         }
 
         cmd->EndRenderPass();
         cmd->End();
 
-        renderDevice->SubmitCommandBuffer(cmd);
+        if (uploadCommandBuffer != nullptr) {
+            uploadCommandBuffer->End();
+            renderDevice->SubmitCommandBuffer(uploadCommandBuffer);
+            uploadCommandBuffer = nullptr;
+        }
 
+        renderDevice->SubmitCommandBuffer(cmd);
         delete cmd;
     }
 
     void Renderer::EndFrame() {
-
+        renderDevice->Present();
     }
 
     void Renderer::SetDepthShader(Shader &shader) {

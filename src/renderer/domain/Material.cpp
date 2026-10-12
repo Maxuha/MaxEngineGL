@@ -42,8 +42,7 @@ Material::Material(const Shader *shader, const std::string &name) : name(name), 
     desc.resourceSet.bindings.push_back(resourceBinding3);
 
     id = DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMaterial(shader->GetHandle(), desc);
-
-    dirtyFrames = 3;
+    isDirty = true;
 }
 
 MaterialHandle Material::GetId() const {
@@ -62,7 +61,7 @@ void Material::ClearDirty() {
     isDirty = false;
 }
 
-void Material::SetTexture(const uint32_t slot, Rendering::Texture &texture) {
+void Material::SetTexture(const uint32_t slot, const Rendering::Texture &texture) {
     DIContainer::GetInstance().Get<Rendering::IRenderer>()->BindTextureToMaterial(*this, slot, texture);
 }
 
