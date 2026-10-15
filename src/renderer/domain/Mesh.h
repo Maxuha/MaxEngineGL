@@ -11,6 +11,33 @@
 #include "../../math/Vertex.h"
 #include "../domain/buffer/BufferHandle.h"
 
+struct MeshVertexBuffer {
+    uint32_t offset;
+    uint32_t size;
+};
+
+struct MeshIndexBuffer {
+    uint32_t offset;
+    uint32_t size;
+};
+
+struct MeshBuffer {
+    MeshVertexBuffer vertexBuffer{};
+    MeshIndexBuffer indexBuffer{};
+
+    void* vertexData;
+    void* indexData;
+};
+
+struct StaticMeshes {
+    Rendering::BufferHandle vertexBuffer;
+    Rendering::BufferHandle indexBuffer;
+
+    int32_t currentVertexOffset;
+    int32_t currentIndexOffset;
+};
+
+
 struct MeshId {
     uint64_t Id;
 
@@ -43,6 +70,7 @@ public:
 
     size_t GetIndexCount() const;
     MeshId GetId() const;
+    void SetId(MeshId id);
     std::vector<Vertex>& GetVertices();
     std::vector<uint16_t>& GetIndices();
 

@@ -78,7 +78,7 @@ namespace Rendering {
 
         /// Config
 
-        void SetDepthShader( Shader& shader);
+        void SetDepthShader( Shader& shader) override;
 
     private:
         Camera *activeCamera{};
@@ -101,6 +101,7 @@ namespace Rendering {
         std::vector<MaterialData> materials;
         std::vector<TextureData> textures;
         std::vector<GraphicsShader> shaders;
+        std::vector<MeshBuffer> meshes;
 
         VertexLayout vertexLayout;
         Rect viewport;
@@ -128,6 +129,7 @@ namespace Rendering {
         BufferHandle modelBuffer{};
         ResourceSetHandle modelResourceSet{};
         uint32_t indexMesh = 0;
+        StaticMeshes staticMeshes;
 
         CommandBuffer *uploadCommandBuffer{};
 

@@ -64,6 +64,8 @@ namespace Rendering {
             .location = 2, .format = VertexFormat::Float2, .offset = offsetof(Vertex, texCoords), .bufferIndex = 0
         });
 
+        renderDevice->CreateVao(vertexLayout);
+
         viewport = window.GetCurrentSize();
 
         const TextureFormat displayImageFormat = renderDevice->GetDisplayFormat();
@@ -181,6 +183,23 @@ namespace Rendering {
         modelResourceSet = renderDevice->CreateResourceSet(modelSetLayout);
         renderDevice->UpdateResourceSet(modelResourceSet, 2, modelBuffer);
 
+        // Setup static meshes
+
+        staticMeshes.currentVertexOffset = 0;
+        staticMeshes.currentIndexOffset = 0;
+
+        BufferDesc staticVertexBufferDesc;
+        staticVertexBufferDesc.size = sizeof(Vertex) * 100000;
+        staticVertexBufferDesc.usage = BufferUsage::Vertex;
+        staticVertexBufferDesc.isNewApproach = true;
+        staticMeshes.vertexBuffer = renderDevice->CreateBuffer(staticVertexBufferDesc);
+
+        BufferDesc staticIndexBufferDesc;
+        staticIndexBufferDesc.size = sizeof(uint16_t) * 100000;
+        staticIndexBufferDesc.usage = BufferUsage::Index;
+        staticIndexBufferDesc.isNewApproach = true;
+        staticMeshes.indexBuffer = renderDevice->CreateBuffer(staticIndexBufferDesc);
+
         uploadCommandBuffer = renderDevice->AllocateCommandBuffer(CommandBufferType::Transfer);
         uploadCommandBuffer->Begin();
     }
@@ -267,11 +286,6 @@ namespace Rendering {
         pipelineStateDesc.ColorFormat = colorFormat;
         pipelineStateDesc.CullMode = cullMode;
 
-        // shaderDesc.resourceSetLayouts[1] = modelSetLayout;
-        //
-        // ShaderDesc desc = shaderDesc;
-        // desc.resourceSetLayouts[1] = modelSetLayout;
-
         if (shaderDesc.resourceSetLayouts.size() >= 3) {
             graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
         }
@@ -283,35 +297,35 @@ namespace Rendering {
     }
 
     Mesh *Renderer::CreateMesh(const std::vector<Vertex> &vertices, const std::vector<uint16_t> &indices) {
-        BufferDesc bufferDesc;
-        bufferDesc.size = vertices.size() * sizeof(Vertex);
-        bufferDesc.usage = BufferUsage::Vertex;
-        bufferDesc.isNewApproach = true;
+        MeshBuffer meshBuffer;
 
-        const BufferHandle vertexBuffer = renderDevice->CreateBuffer(bufferDesc);
-        uploadCommandBuffer->UploadBufferData(vertexBuffer, vertices.data(), 0, vertices.size() * sizeof(Vertex));
+        meshBuffer.vertexData = malloc(vertices.size() * sizeof(Vertex));
+        meshBuffer.indexData = malloc(indices.size() * sizeof(uint16_t));
 
-        bufferDesc.size = indices.size() * sizeof(uint16_t);
-        bufferDesc.usage = BufferUsage::Index;
+        memcpy(meshBuffer.vertexData, vertices.data(), vertices.size() * sizeof(Vertex));
 
-        const BufferHandle indexBuffer = renderDevice->CreateBuffer(bufferDesc);
-        uploadCommandBuffer->UploadBufferData(indexBuffer, indices.data(), 0, indices.size() * sizeof(uint16_t));
+        uploadCommandBuffer->UploadBufferData(staticMeshes.vertexBuffer, meshBuffer.vertexData, staticMeshes.currentVertexOffset, vertices.size() * sizeof(Vertex));
 
-        // bufferDesc.size = sizeof(ModelBuffer);
-        // bufferDesc.usage = BufferUsage::Uniform;
-        // bufferDesc.isDynamic = true;
-        // bufferDesc.isNewApproach = false;
-        //
-        // const BufferHandle modelBuffer = renderDevice->CreateBuffer(bufferDesc);
-        // const ResourceSetHandle modelResourceSet = renderDevice->CreateResourceSet(modelSetLayout);
-        // renderDevice->UpdateResourceSet(modelResourceSet, 2, modelBuffer);
+        meshBuffer.vertexBuffer.offset = staticMeshes.currentVertexOffset;
+        meshBuffer.vertexBuffer.size = vertices.size() * sizeof(Vertex);
+
+        staticMeshes.currentVertexOffset += vertices.size() * sizeof(Vertex);
+
+        memcpy(meshBuffer.indexData, indices.data(), indices.size() * sizeof(uint16_t));
+
+        uploadCommandBuffer->UploadBufferData(staticMeshes.indexBuffer, meshBuffer.indexData, staticMeshes.currentIndexOffset, indices.size() * sizeof(uint16_t));
+
+        meshBuffer.indexBuffer.offset = staticMeshes.currentIndexOffset;
+        meshBuffer.indexBuffer.size = indices.size() * sizeof(uint16_t);
+
+        staticMeshes.currentIndexOffset += indices.size() * sizeof(uint16_t);
 
         const auto mesh = new Mesh(vertices, indices);
-        mesh->vertexBuffer = vertexBuffer;
-        mesh->indexBuffer = indexBuffer;
-        // mesh->modelBuffer = modelBuffer;
-        // mesh->modelResourceSet = modelResourceSet;
+        mesh->vertexBuffer = staticMeshes.vertexBuffer;
+        mesh->indexBuffer = staticMeshes.indexBuffer;
         mesh->indexMesh = indexMesh++;
+        meshes.push_back(meshBuffer);
+        mesh->SetId(MeshId { .Id = meshes.size() - 1 });
         return mesh;
     }
 
@@ -389,7 +403,7 @@ namespace Rendering {
 
         cmd->Begin();
 
-        const std::vector<DrawCall> drawCalls = scene.GetDrawCalls();
+        std::vector<DrawCall> drawCalls = scene.GetDrawCalls();
         const std::vector<Light *> lights = scene.GetLights();
         std::unordered_map<Material *, DrawCall> _materialsGrouped;
 
@@ -483,21 +497,19 @@ namespace Rendering {
 
         lightRenderData.data.directionalLight.space = cameraBuffer.proj * cameraBuffer.view;
 
-        // cmd->UpdateUniformBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(LightData));
-        // cmd->UpdateUniformBuffer(lightSpace.ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
-
         renderDevice->UpdateBuffer(lightRenderData.buffer, &lightRenderData.data, 0, sizeof(LightData));
         renderDevice->UpdateBuffer(lightSpace.ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
 
         cmd->BeginRenderPass(renderPassesDesc[1]);
         cmd->BindPipeline(shaders[depthShader->GetHandle().Id].pipeline);
         cmd->BindResourceSet(lightSpace.ResourceSet, mainPipelineLayout, 0);
-        cmd->BindResourceSet(this->modelResourceSet, mainPipelineLayout, 1, 0);
+        cmd->BindResourceSet(modelResourceSet, mainPipelineLayout, 1, 0);
+        cmd->BindVertexBuffer(staticMeshes.vertexBuffer);
+        cmd->BindIndexBuffer(staticMeshes.indexBuffer);
 
         for (const auto drawCall: drawCalls) {
-            cmd->BindVertexBuffer(drawCall._mesh->vertexBuffer);
-            cmd->BindIndexBuffer(drawCall._mesh->indexBuffer);
-            cmd->DrawIndexed(drawCall._mesh->GetIndexCount(), drawCall._mesh->indexMesh);
+            MeshBuffer meshBuffer = meshes[drawCall._mesh->GetId().Id];
+            cmd->DrawIndexed(drawCall._mesh->GetIndexCount(), meshBuffer.indexBuffer.offset / sizeof(uint16_t), meshBuffer.vertexBuffer.offset / sizeof(Vertex), drawCall._mesh->indexMesh);
         }
 
         cmd->EndRenderPass();
@@ -508,16 +520,14 @@ namespace Rendering {
         cameraBuffer.proj = activeCamera->GetProjection();
         cameraBuffer.position = Vector4(activeCamera->GetTransform()->position, 1.0f);
 
-        //cmd->UpdateUniformBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
-
-        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
-                                   sizeof(CameraBuffer));
-
-        //
+        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
 
         cmd->BeginRenderPass(renderPassesDesc[0]);
         cmd->BindResourceSet(cameras[activeCamera->GetHandle().Id].ResourceSet, mainPipelineLayout, 0);
-        cmd->BindResourceSet(this->modelResourceSet, mainPipelineLayout, 1, 0);
+
+        std::ranges::sort(drawCalls, [](const DrawCall &a, const DrawCall &b) {
+            return a.material->GetMaterialHandle().Id < b.material->GetMaterialHandle().Id;
+        });
 
         const Material *lastMaterial = nullptr;
         for (const auto drawCall: drawCalls) {
@@ -529,10 +539,8 @@ namespace Rendering {
                                      materials[lastMaterial->GetMaterialHandle().Id].pipeline, 2);
             }
 
-            // mesh properties
-            cmd->BindVertexBuffer(drawCall._mesh->vertexBuffer);
-            cmd->BindIndexBuffer(drawCall._mesh->indexBuffer);
-            cmd->DrawIndexed(drawCall._mesh->GetIndexCount(), drawCall._mesh->indexMesh);
+            MeshBuffer meshBuffer = meshes[drawCall._mesh->GetId().Id];
+            cmd->DrawIndexed(drawCall._mesh->GetIndexCount(), meshBuffer.indexBuffer.offset / sizeof(uint16_t), meshBuffer.vertexBuffer.offset / sizeof(Vertex), drawCall._mesh->indexMesh);
         }
 
         cmd->EndRenderPass();

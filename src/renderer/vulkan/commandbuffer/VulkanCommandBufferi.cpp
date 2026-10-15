@@ -262,11 +262,11 @@ namespace Rendering {
                               aspectMask, mipLevelCount, layerCount);
     }
 
-    void VulkanCommandBufferi::CopyBuffer(const VkBuffer src, const VkBuffer dst, const VkDeviceSize size) const {
+    void VulkanCommandBufferi::CopyBuffer(const VkBuffer src, const VkBuffer dst, const VkDeviceSize size, const VkDeviceSize offset) const {
         VkBufferCopy region{};
         region.size = size;
         region.srcOffset = 0;
-        region.dstOffset = 0;
+        region.dstOffset = offset;
         vkCmdCopyBuffer(commandBuffer, src, dst, 1, &region);
     }
 

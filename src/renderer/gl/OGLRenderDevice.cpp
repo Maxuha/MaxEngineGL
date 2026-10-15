@@ -131,13 +131,11 @@ namespace Rendering {
         this->window = static_cast<GLFWwindow *>(window.GetHandle());
 
         instance = new OGLInstance(window);
-
         textureManager = new OGLTextureManager();
         pipelineManager = new OGLPipelineManager();
         shaderManager = new OGLShaderManager();
         bufferManager = new OGLVertexBufferManager();
         commandPoolManager = new OGLCommandPoolManager();
-        renderPassManager = new OGLRenderPassManager();
         descriptorSetManager = new OGLDescriptorSetManager();
     }
 
@@ -145,6 +143,25 @@ namespace Rendering {
 
     CommandBuffer *OGLRenderDevice::AllocateCommandBuffer(const CommandBufferType type) {
         return new CommandBuffer(9048 * 1024, type);
+    }
+
+    void OGLRenderDevice::CreateVao(const VertexLayout layout) {
+        GLuint vao;
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+
+        for (const auto &binding : layout.bindings) {
+            const GLuint divisor = binding.stepRate == VertexStepRate::PerInstance ? 1 : 0;
+            glVertexArrayBindingDivisor(vao, binding.bufferIndex, divisor);
+        }
+
+        for (const auto &attribute : layout.attributes) {
+            glEnableVertexArrayAttrib(vao, attribute.location);
+            glVertexArrayAttribFormat(vao, attribute.location, MapVertexFormat(attribute.format), GL_FLOAT, GL_FALSE, attribute.offset);
+            glVertexArrayAttribBinding(vao, attribute.location, attribute.bufferIndex);
+        }
+
+        glBindVertexArray(0);
     }
 
     TextureHandle OGLRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
@@ -417,9 +434,9 @@ namespace Rendering {
                     readOffset += sizeof(GLCommand_BindBuffer);
 
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
-                    const auto& buffer = bufferManager->GetBuffer(cmd->buffer);
+                    const auto &buffer = bufferManager->GetBuffer(cmd->buffer);
 
-                    glVertexArrayVertexBuffer(pipeline.vao, 0,
+                    glVertexArrayVertexBuffer(1, 0,
                                               buffer.glId, 0, sizeof(Vertex));
                     break;
                 }
@@ -429,9 +446,9 @@ namespace Rendering {
                     readOffset += sizeof(GLCommand_BindBuffer);
 
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
-                    const auto& buffer = bufferManager->GetBuffer(cmd->buffer);
+                    const auto &buffer = bufferManager->GetBuffer(cmd->buffer);
 
-                    glVertexArrayElementBuffer(pipeline.vao, buffer.glId);
+                    glVertexArrayElementBuffer(1, buffer.glId);
                     break;
                 }
 
@@ -444,7 +461,7 @@ namespace Rendering {
                     const auto offset = cmd->offset;
                     const auto size = cmd->size;
 
-                    OGLBuffer& buffer = bufferManager->GetBuffer(bufferHandle);
+                    OGLBuffer &buffer = bufferManager->GetBuffer(bufferHandle);
 
                     glNamedBufferSubData(buffer.glId, static_cast<GLintptr>(offset),
                                          static_cast<GLsizeiptr>(size), data);
@@ -462,7 +479,7 @@ namespace Rendering {
                         if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999) continue;
 
                         if (item.IsBuffer()) {
-                            OGLBuffer& buffer = bufferManager->GetBuffer(item.bufferHandle);
+                            OGLBuffer &buffer = bufferManager->GetBuffer(item.bufferHandle);
                             if (item.binding == 2) {
                                 glBindBufferBase(GL_SHADER_STORAGE_BUFFER, item.binding, buffer.glId);
                             } else {
@@ -495,19 +512,38 @@ namespace Rendering {
                     const auto *cmd = reinterpret_cast<GLCommand_DrawIndexed *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_DrawIndexed);
 
+                    uint32_t indexCount = cmd->indexCount;
+                    uint32_t firstIndex = cmd->firstIndex;
+                    uint32_t vertexOffset = cmd->vertexOffset;
+                    uint32_t indexMesh = cmd->indexMesh;
+
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
 
-                    glBindVertexArray(pipeline.vao);
+                    glBindVertexArray(1);
 
-                      // glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(cmd->indexCount), GL_UNSIGNED_SHORT, nullptr);
+                    // glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(cmd->indexCount), GL_UNSIGNED_SHORT, nullptr);
 
-                    glDrawElementsInstancedBaseInstance(
+                    // glDrawElementsInstancedBaseInstance(
+                    //     GL_TRIANGLES,
+                    //     cmd->indexCount,
+                    //     GL_UNSIGNED_SHORT,
+                    //     nullptr,
+                    //     1,
+                    //     cmd->indexMesh
+                    // );
+
+                    //should be system uint16_t
+                    uintptr_t byteOffset = static_cast<uintptr_t>(firstIndex) * sizeof(uint16_t);
+                    auto glIndicesPointer = reinterpret_cast<void*>(byteOffset);
+
+                    glDrawElementsInstancedBaseVertexBaseInstance(
                         GL_TRIANGLES,
-                        cmd->indexCount,
+                        indexCount,
                         GL_UNSIGNED_SHORT,
-                        nullptr,
+                        glIndicesPointer,
                         1,
-                        cmd->indexMesh
+                        vertexOffset,
+                        indexMesh
                     );
 
                     glBindVertexArray(0);
@@ -516,17 +552,19 @@ namespace Rendering {
 
                 case GLCommandType::UploadBufferData: {
                     const auto *cmd = reinterpret_cast<GLCommand_UploadBufferData *>(&commands[readOffset]);
-                    readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
+                    // readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
+                    readOffset += sizeof(GLCommand_UploadBufferData);
 
                     auto bufferHandle = cmd->buffer;
-                    // auto data = cmd->data;
-                    auto data = reinterpret_cast<const uint8_t *>(cmd) + sizeof(GLCommand_UploadBufferData);
+                    // auto data = reinterpret_cast<const uint8_t *>(cmd) + sizeof(GLCommand_UploadBufferData);
+                    auto data = cmd->data;
                     auto size = cmd->size;
                     auto offset = cmd->offset;
 
-                    OGLBuffer& buffer = bufferManager->GetBuffer(bufferHandle);
+                    OGLBuffer &buffer = bufferManager->GetBuffer(bufferHandle);
 
-                    glNamedBufferSubData(buffer.glId, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size), data);
+                    glNamedBufferSubData(buffer.glId, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size),
+                                         data);
                 }
 
                 default:

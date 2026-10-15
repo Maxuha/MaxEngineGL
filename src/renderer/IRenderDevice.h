@@ -52,17 +52,19 @@ namespace Rendering {
 
         virtual CommandBuffer* AllocateCommandBuffer(CommandBufferType type) = 0;
 
+        virtual void CreateVao(VertexLayout layout) = 0;
+
         virtual TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) = 0;
 
         virtual PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle>& resourceSetLayouts) = 0;
 
         virtual ResourceSetLayoutHandle CreateResourceSetLayout(const ResourceSetLayoutDesc& resourceSetLayoutDesc) = 0;
 
-        virtual ResourceSetHandle CreateResourceSet(const ResourceSetLayoutHandle resourceSetLayoutHandle) = 0;
+        virtual ResourceSetHandle CreateResourceSet(ResourceSetLayoutHandle resourceSetLayoutHandle) = 0;
 
-        virtual void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const TextureHandle textureHandle) = 0;
+        virtual void UpdateResourceSet(ResourceSetHandle setHandle, uint32_t binding, TextureHandle textureHandle) = 0;
 
-        virtual void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) = 0;
+        virtual void UpdateResourceSet(ResourceSetHandle setHandle, uint32_t binding, BufferHandle bufferHandle) = 0;
 
         virtual BufferHandle CreateBuffer(const BufferDesc &desc) = 0;
 

@@ -41,6 +41,8 @@ namespace Rendering {
 
         CommandBuffer *AllocateCommandBuffer(CommandBufferType type) override;
 
+        void CreateVao(VertexLayout layout) override;
+
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
         PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle> &resourceSetLayouts) override;

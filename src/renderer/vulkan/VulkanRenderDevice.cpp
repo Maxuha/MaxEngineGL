@@ -87,7 +87,11 @@ namespace Rendering {
     CommandBuffer *VulkanRenderDevice::AllocateCommandBuffer(const CommandBufferType type = CommandBufferType::Graphics) {
         // should be allicate here
 
-        return new CommandBuffer(9048 * 1024, type);
+        return new CommandBuffer(2048 * 1024, type);
+    }
+
+    void VulkanRenderDevice::CreateVao(const VertexLayout layout) {
+
     }
 
     TextureHandle VulkanRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
@@ -506,8 +510,10 @@ namespace Rendering {
 
                     uint32_t indexCount = cmd->indexCount;
                     uint32_t indexMesh = cmd->indexMesh;
+                    uint32_t firstIndex = cmd->firstIndex;
+                    uint32_t vertexOffset = cmd->vertexOffset;
 
-                    secondaryCommandBuffer.DrawIndexed(indexCount, 1, 0, 0, indexMesh);
+                    secondaryCommandBuffer.DrawIndexed(indexCount, 1, firstIndex, vertexOffset, indexMesh);
                     break;
                 }
                 case GLCommandType::EndRenderPass: {
@@ -534,11 +540,12 @@ namespace Rendering {
                 }
                 case GLCommandType::UploadBufferData: {
                     const auto *cmd = reinterpret_cast<GLCommand_UploadBufferData *>(&commands[readOffset]);
-                    readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
+                    // readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
+                    readOffset += sizeof(GLCommand_UploadBufferData);
 
                     auto bufferHandle = cmd->buffer;
-                    // auto data = cmd->data;
-                    auto data = reinterpret_cast<const uint8_t*>(cmd) + sizeof(GLCommand_UploadBufferData);;
+                    // auto data = reinterpret_cast<const uint8_t*>(cmd) + sizeof(GLCommand_UploadBufferData);;
+                    auto data = cmd->data;
                     auto size = cmd->size;
                     auto offset = cmd->offset;
 
@@ -551,7 +558,7 @@ namespace Rendering {
                     std::memcpy(mapped, data, size);
                     vkUnmapMemory(logicalDevice->GetDevice(), staging.memory);
 
-                    mainCommandBuffer.CopyBuffer(staging.buffer, buffer.buffer, size);
+                    mainCommandBuffer.CopyBuffer(staging.buffer, buffer.buffer, size, offset);
                 }
                 default: ;
             }

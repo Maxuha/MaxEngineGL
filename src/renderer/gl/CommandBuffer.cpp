@@ -23,10 +23,12 @@ void Rendering::CommandBuffer::Draw(const uint32_t vertexCount) {
     cmd->vertexCount = vertexCount;
 }
 
-void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount, const uint32_t indexMesh) {
+void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t indexMesh) {
     auto *cmd = allocateCommand<GLCommand_DrawIndexed>(GLCommandType::DrawIndexed);
     cmd->indexCount = indexCount;
     cmd->indexMesh = indexMesh;
+    cmd->firstIndex = firstIndex;
+    cmd->vertexOffset = vertexOffset;
 }
 
 void Rendering::CommandBuffer::BeginRenderPass(const RenderPass &renderPass) {
@@ -111,10 +113,6 @@ void Rendering::CommandBuffer::UploadBufferData(const BufferHandle buffer, const
     cmd->offset = offset;
     cmd->size = size;
     cmd->data = data;
-
-    std::memcpy(&this->buffer[this->head], data, size);
-
-    head += size;
 }
 
 std::vector<uint8_t>& Rendering::CommandBuffer::GetCommands() {

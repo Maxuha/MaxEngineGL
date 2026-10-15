@@ -75,7 +75,7 @@ namespace Rendering {
                                    const uint32_t mipLevelCount,
                                    const uint32_t layerCount) const;
 
-        void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const;
+        void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size, VkDeviceSize offset) const;
 
         void PipelineBarrier(VkBuffer target) const;
 

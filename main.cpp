@@ -45,43 +45,65 @@ int main() {
     cube1->GetComponent<Transform>()->position = Vector3(0, 4.0f, -10.0f);
     cube1->GetComponent<Transform>()->scale = Vector3(1.0f, 1.0f, 1.0f);
 
-     auto *houseModel = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
-      auto *erika = container->Get<AssetManager>()->Import<Model>(R"(assets/models/Erika.fbx)");
-      erika->root->GetComponent<MeshRenderer>()->material = material1;
-   // auto *houseModel2 = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
-     houseModel->root->GetTransform()->position = Vector3(0, 0, 0);
+    auto *houseModel = container->Get<AssetManager>()->Import<Model>(
+        R"(assets/models/autumn-house/source/House_scene_01.fbx)");
+    houseModel->root->GetTransform()->position = Vector3(0, 0, 0);
+    auto *erika = container->Get<AssetManager>()->Import<Model>(R"(assets/models/Erika.fbx)");
+    erika->root->GetComponentsInChildren<MeshRenderer>()[0]->material = material1;
+    erika->root->GetTransform()->scale = Vector3(0.05, 0.05, 0.05);
+    erika->root->GetTransform()->position = Vector3(10, 2, 0);
+    // auto *houseModel2 = container->Get<AssetManager>()->Import<Model>(R"(assets/models/autumn-house/source/House_scene_01.fbx)");
 
-    TextureAsset* diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
 
-    Rendering::Texture* diffuseTexture = new Rendering::Texture(diffuseTextureAsset->Width, diffuseTextureAsset->Height, diffuseTextureAsset->Wrap, diffuseTextureAsset->Data);
+    TextureAsset *diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
 
-    TextureAsset* specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/glove/texture/wood_with_steel_specular.png)");
+    Rendering::Texture *diffuseTexture = new Rendering::Texture(diffuseTextureAsset->Width, diffuseTextureAsset->Height,
+                                                                diffuseTextureAsset->Wrap, diffuseTextureAsset->Data);
 
-    Rendering::Texture* specularTexture = new Rendering::Texture(specularTextureAsset->Width, specularTextureAsset->Height, specularTextureAsset->Wrap, specularTextureAsset->Data);
+    TextureAsset *specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/glove/texture/wood_with_steel_specular.png)");
 
-    TextureAsset* houseTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/House_texture_01_00.png)");
+    Rendering::Texture *specularTexture = new Rendering::Texture(specularTextureAsset->Width,
+                                                                 specularTextureAsset->Height,
+                                                                 specularTextureAsset->Wrap,
+                                                                 specularTextureAsset->Data);
 
-    Rendering::Texture* houseTexture1 = new Rendering::Texture(houseTextureAsset1->Width, houseTextureAsset1->Height, houseTextureAsset1->Wrap, houseTextureAsset1->Data);
+    TextureAsset *houseTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/autumn-house/textures/House_texture_01_00.png)");
 
-    TextureAsset* houseTextureAsset2 = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/House_texture_02_00.png)");
+    Rendering::Texture *houseTexture1 = new Rendering::Texture(houseTextureAsset1->Width, houseTextureAsset1->Height,
+                                                               houseTextureAsset1->Wrap, houseTextureAsset1->Data);
 
-    Rendering::Texture* houseTexture2 = new Rendering::Texture(houseTextureAsset2->Width, houseTextureAsset2->Height, houseTextureAsset2->Wrap, houseTextureAsset2->Data);
+    TextureAsset *houseTextureAsset2 = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/autumn-house/textures/House_texture_02_00.png)");
 
-    TextureAsset* carTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/Car_textures_01_01.png)");
+    Rendering::Texture *houseTexture2 = new Rendering::Texture(houseTextureAsset2->Width, houseTextureAsset2->Height,
+                                                               houseTextureAsset2->Wrap, houseTextureAsset2->Data);
 
-    Rendering::Texture* carTexture1 = new Rendering::Texture(carTextureAsset1->Width, carTextureAsset1->Height, carTextureAsset1->Wrap, carTextureAsset1->Data);
+    TextureAsset *carTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/autumn-house/textures/Car_textures_01_01.png)");
 
-    TextureAsset* plainTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/Plain_textures_01_00.png)");
+    Rendering::Texture *carTexture1 = new Rendering::Texture(carTextureAsset1->Width, carTextureAsset1->Height,
+                                                             carTextureAsset1->Wrap, carTextureAsset1->Data);
 
-    Rendering::Texture* plainTexture1 = new Rendering::Texture(plainTextureAsset1->Width, plainTextureAsset1->Height, plainTextureAsset1->Wrap, plainTextureAsset1->Data);
+    TextureAsset *plainTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/autumn-house/textures/Plain_textures_01_00.png)");
 
-    TextureAsset* plantsTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/Plants_textures_01_00.png)");
+    Rendering::Texture *plainTexture1 = new Rendering::Texture(plainTextureAsset1->Width, plainTextureAsset1->Height,
+                                                               plainTextureAsset1->Wrap, plainTextureAsset1->Data);
 
-    Rendering::Texture* plantsTexture1 = new Rendering::Texture(plantsTextureAsset1->Width, plantsTextureAsset1->Height, plantsTextureAsset1->Wrap, plantsTextureAsset1->Data);
+    TextureAsset *plantsTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/autumn-house/textures/Plants_textures_01_00.png)");
 
-    TextureAsset* depthTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(R"(assets/models/autumn-house/textures/depth.png)");
+    Rendering::Texture *plantsTexture1 = new Rendering::Texture(plantsTextureAsset1->Width, plantsTextureAsset1->Height,
+                                                                plantsTextureAsset1->Wrap, plantsTextureAsset1->Data);
 
-    Rendering::Texture* depthTexture = new Rendering::Texture(depthTextureAsset->Width, depthTextureAsset->Height, depthTextureAsset->Wrap, depthTextureAsset->Data);
+    TextureAsset *depthTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/autumn-house/textures/depth.png)");
+
+    Rendering::Texture *depthTexture = new Rendering::Texture(depthTextureAsset->Width, depthTextureAsset->Height,
+                                                              depthTextureAsset->Wrap, depthTextureAsset->Data);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
@@ -156,10 +178,10 @@ int main() {
     lamp2->GetComponent<PointLight>()->SetRange(10.0f);
 
     auto *scene = new Scene(camera);
-     scene->Add(cube1);
-     // scene->Add(erika->root);
-      scene->Add(houseModel->root);
-     // scene->Add(houseModel2->root);
+    scene->Add(cube1);
+    scene->Add(erika->root);
+    scene->Add(houseModel->root);
+    // scene->Add(houseModel2->root);
     scene->Add(ambientLight);
     scene->Add(sun);
     scene->Add(light);
@@ -196,4 +218,3 @@ int main() {
 
     return 0;
 }
-

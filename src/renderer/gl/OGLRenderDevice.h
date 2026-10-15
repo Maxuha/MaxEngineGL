@@ -38,6 +38,8 @@ namespace Rendering {
 
         CommandBuffer * AllocateCommandBuffer(CommandBufferType type) override;
 
+        void CreateVao(VertexLayout layout) override;
+
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
         PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle>& resourceSetLayouts) override;
@@ -71,9 +73,7 @@ namespace Rendering {
         OGLShaderManager* shaderManager;
         OGLPipelineManager* pipelineManager;
         OGLCommandPoolManager* commandPoolManager;
-        OGLRenderPassManager* renderPassManager;
         OGLDescriptorSetManager* descriptorSetManager;
-        OGLFrameBufferManager* frameBufferManager;
 
         IWindowContext* context = nullptr;
         GLFWwindow* window{};
@@ -109,6 +109,24 @@ namespace Rendering {
         GLenum MapFillMode(FillMode mode);
 
         GLenum MapAttachment(AttachmentType type);
+
+        GLuint MapVertexFormat(const VertexFormat format) {
+            switch (format) {
+                case VertexFormat::Float:
+                    return 1;
+                case VertexFormat::Float2:
+                    return 2;
+                case VertexFormat::Float3:
+                    return 3;
+                case VertexFormat::Float4:
+                    return 4;
+                case VertexFormat::UByte4N:
+                    return 4;
+                case VertexFormat::Int4:
+                    return 4;
+            }
+            return 1;
+        }
 
     };
 

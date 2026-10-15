@@ -20,6 +20,10 @@ MeshId Mesh::GetId() const {
     return id;
 }
 
+void Mesh::SetId(const MeshId id) {
+    this->id = id;
+}
+
 std::vector<Vertex>& Mesh::GetVertices() {
     return vertices;
 }
