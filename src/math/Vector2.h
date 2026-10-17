@@ -6,13 +6,14 @@
 #define MAXENGINE_VECTOR2_H
 
 
-
 class Vector2 {
     public:
-    float x, y;
+        float x, y;
 
+    Vector2 operator-(const Vector2 &v) const {
+        return Vector2(x - v.x, y - v.y);
+    };
 };
-
 
 
 #endif //MAXENGINE_VECTOR2_H

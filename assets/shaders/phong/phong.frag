@@ -42,12 +42,14 @@ layout (set = 2, binding = 3) uniform MaterialBlock {
 layout(set = 2, binding = 4) uniform sampler2D diffuse;
 layout(set = 2, binding = 5) uniform sampler2D specular;
 layout(set = 2, binding = 6) uniform sampler2D depthMap;
+layout(set = 2, binding = 7) uniform sampler2D normalMap;
 
 layout (location = 0) in vec3 FragPos;
 layout (location = 1) in vec3 Normal;
 layout (location = 2) in vec2 TexCoord;
 layout (location = 3) in vec3 CameraPos;
 layout (location = 4) in vec4 FragPosLightSpace;
+layout (location = 5) in mat3 TBN;
 
 layout (location = 0) out vec4 FragColor;
 
@@ -94,7 +96,11 @@ float calculateAttenuation(float distance, float range) {
 
 void main()
 {
-    vec3 norm = normalize(Normal);
+    vec3 normal = texture(normalMap, TexCoord).rgb;
+    normal = normal * 2.0 - 1.0;
+    normal = normalize(TBN * normal) ;
+//    normal = Normal;
+
     vec3 viewDir = normalize(CameraPos - FragPos);
 
     vec3 diffTex = vec3(texture(diffuse, TexCoord));
@@ -103,10 +109,10 @@ void main()
     vec3 result = light.ambientLight.color * light.ambientLight.intensity * diffTex;
 
     vec3 dirLightDir = normalize(-light.directionalLight.direction);
-    float dirShadow = DirShadowCalculation(FragPosLightSpace, norm, dirLightDir);
+    float dirShadow = DirShadowCalculation(FragPosLightSpace, normal, dirLightDir);
 
-    vec3 dirDiffuse = calculateDiffuse(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, norm, diffTex);
-    vec3 dirSpecular = calculateSpecular(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, norm, viewDir, specTex);
+    vec3 dirDiffuse = calculateDiffuse(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, normal, diffTex);
+    vec3 dirSpecular = calculateSpecular(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, normal, viewDir, specTex);
 
     result += (dirDiffuse + dirSpecular) * (dirShadow);
 
@@ -120,8 +126,8 @@ void main()
         float attenuation = calculateAttenuation(distance, light.pointLight[i].range);
         if (attenuation <= 0.0) continue;
 
-        vec3 diff = calculateDiffuse(light.pointLight[i].intensity, light.pointLight[i].color, lightDir, norm, diffTex);
-        vec3 spec = calculateSpecular(light.pointLight[i].intensity, light.pointLight[i].color, lightDir, norm, viewDir, specTex);
+        vec3 diff = calculateDiffuse(light.pointLight[i].intensity, light.pointLight[i].color, lightDir, normal, diffTex);
+        vec3 spec = calculateSpecular(light.pointLight[i].intensity, light.pointLight[i].color, lightDir, normal, viewDir, specTex);
 
         result += (diff + spec) * attenuation;
     }
@@ -148,16 +154,12 @@ void main()
         vec3 lightColor = light.spotLight[i].colorIntensity.xyz;
         float lightIntensity = light.spotLight[i].colorIntensity.w;
 
-        vec3 diff = calculateDiffuse(lightIntensity, lightColor, lightDir, norm, diffTex);
-        vec3 spec = calculateSpecular(lightIntensity, lightColor, lightDir, norm, viewDir, specTex);
+        vec3 diff = calculateDiffuse(lightIntensity, lightColor, lightDir, normal, diffTex);
+        vec3 spec = calculateSpecular(lightIntensity, lightColor, lightDir, normal, viewDir, specTex);
 
         result += (diff + spec) * (attenuation * intensity);
     }
 
-    FragColor = texture(depthMap, TexCoord);
-//    FragColor = vec4(dirShadow, dirShadow, dirShadow, 1.0);
-//    float depth = texture(depthMap, TexCoord).r;
-//    FragColor = vec4(vec3(depth), 1.0);
     FragColor = vec4(result, 1.0);
 
 }

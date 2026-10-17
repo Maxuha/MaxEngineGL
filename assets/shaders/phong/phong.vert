@@ -48,12 +48,15 @@ layout(set = 1, binding = 2) readonly buffer Model {
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in vec3 aTangent;
+layout (location = 4) in vec3 aBitangent;
 
 layout (location = 0) out vec3 FragPos;
 layout (location = 1) out vec3 Normal;
 layout (location = 2) out vec2 TexCoord;
 layout (location = 3) out vec3 CameraPos;
 layout (location = 4) out vec4 FragPosLightSpace;
+layout (location = 5) out mat3 TBN;
 
 void main()
 {
@@ -63,5 +66,22 @@ void main()
     TexCoord = aTexCoord;
     CameraPos = vec3(camera.position);
     FragPosLightSpace = light.directionalLight.space * vec4(FragPos, 1.0);
+
+
+    mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
+
+    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 B = normalize(normalMatrix * aBitangent);
+    vec3 N = normalize(normalMatrix * aNormal);
+    T = normalize(T - dot(T, N) * N);
+    B = cross(N, T);
+
+    TBN = mat3(T, B, N);
+
+//    vec3 T = normalize(vec3(modelMatrix * vec4(aTangent,   0.0)));
+//    vec3 B = normalize(vec3(modelMatrix * vec4(aBitangent, 0.0)));
+//    vec3 N = normalize(vec3(modelMatrix * vec4(aNormal,    0.0)));
+//    TBN = mat3(T, B, N);
+
     gl_Position =  camera.proj * camera.view  * vec4(FragPos, 1.0);
 }

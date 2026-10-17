@@ -16,6 +16,8 @@ public:
 
     static Mesh* CreateBox();
 
+    static Mesh* CreatePlane();
+
     static Mesh CreateLine(Vector3 direction);
 };
 

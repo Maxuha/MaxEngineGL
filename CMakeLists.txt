@@ -188,10 +188,7 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/IO/material/MaterialImporter.h
         src/renderer/RenderContext.h
         src/renderer/gl/model/OGLPipelineLayout.h
-        src/renderer/gl/managers/BufferManager.cpp
-        src/renderer/gl/managers/BufferManager.h
         src/renderer/gl/managers/BufferData.h
-        src/renderer/gl/managers/BufferManager.cpp
         src/IGraphicsContext.h
         src/IGLFWGraphicsContext.h
         src/OpenGLGLFWGraphicsContext.cpp
@@ -290,6 +287,8 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferi.cpp
         src/renderer/vulkan/commandbuffer/VulkanCommandBufferi.h
         src/renderer/domain/buffer/BufferHandle.h
+        src/gameObject/primitives/Plane.cpp
+        src/gameObject/primitives/Plane.h
 )
 
 target_include_directories(MaxEngine PRIVATE

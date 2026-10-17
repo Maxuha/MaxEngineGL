@@ -63,6 +63,12 @@ namespace Rendering {
         vertexLayout.attributes.push_back(VertexAttribute{
             .location = 2, .format = VertexFormat::Float2, .offset = offsetof(Vertex, texCoords), .bufferIndex = 0
         });
+        vertexLayout.attributes.push_back(VertexAttribute{
+            .location = 3, .format = VertexFormat::Float3, .offset = offsetof(Vertex, tangent), .bufferIndex = 0
+        });
+        vertexLayout.attributes.push_back(VertexAttribute{
+            .location = 4, .format = VertexFormat::Float3, .offset = offsetof(Vertex, bitangent), .bufferIndex = 0
+        });
 
         renderDevice->CreateVao(vertexLayout);
 
@@ -176,7 +182,6 @@ namespace Rendering {
         modelBufferDesc.size = sizeof(ModelBuffer) * 2000;
         modelBufferDesc.usage = BufferUsage::Storage;
         modelBufferDesc.isDynamic = true;
-        // modelBufferDesc.isDynamicB = true;
 
         // Setup model
         modelBuffer = renderDevice->CreateBuffer(modelBufferDesc);
@@ -189,13 +194,13 @@ namespace Rendering {
         staticMeshes.currentIndexOffset = 0;
 
         BufferDesc staticVertexBufferDesc;
-        staticVertexBufferDesc.size = sizeof(Vertex) * 100000;
+        staticVertexBufferDesc.size = sizeof(Vertex) * 1000000;
         staticVertexBufferDesc.usage = BufferUsage::Vertex;
         staticVertexBufferDesc.isNewApproach = true;
         staticMeshes.vertexBuffer = renderDevice->CreateBuffer(staticVertexBufferDesc);
 
         BufferDesc staticIndexBufferDesc;
-        staticIndexBufferDesc.size = sizeof(uint16_t) * 100000;
+        staticIndexBufferDesc.size = sizeof(uint16_t) * 1000000;
         staticIndexBufferDesc.usage = BufferUsage::Index;
         staticIndexBufferDesc.isNewApproach = true;
         staticMeshes.indexBuffer = renderDevice->CreateBuffer(staticIndexBufferDesc);

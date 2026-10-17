@@ -232,6 +232,14 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
 
     layout_2.bindings.push_back(binding_6);
 
+    ResourceBindingDesc binding_7;
+    binding_7.binding_slot = 7;
+    binding_7.type = ResourceType::SampledImage;
+    binding_7.stage_flags = ShaderStageFlags::Fragment;
+    binding_7.count = 1;
+
+    layout_2.bindings.push_back(binding_7);
+
     ResourceBindingDesc binding_5;
     binding_5.binding_slot = 3;
     binding_5.type = ResourceType::UniformBuffer;
