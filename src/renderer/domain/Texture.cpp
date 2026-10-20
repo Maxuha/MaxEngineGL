@@ -21,25 +21,19 @@ namespace Rendering {
         // id = RenderContext::GetContext()->CreateTexture(nullptr, desc);
     }
 
-    Texture::Texture(const size_t width, const size_t height, const TextureWrap wrap, void *data) {
+    Texture::Texture(const size_t width, const size_t height, const TextureWrap wrap, void *data, const TextureFormat format) {
         this->width = width;
         this->height = height;
         this->wrap = wrap;
 
-        TextureCreateRequest desc;
-        desc.Width = width;
-        desc.Height = height;
-        desc.Format = TextureFormat::SRGBA;
-        desc.MipLevels = 1;
-
         TextureCreateRequest request;
         request.Width = width;
         request.Height = height;
-        request.Format = TextureFormat::SRGBA;
+        request.Format = format;
         request.MipLevels = 1;
         request.ArraySize = width * height * 4;
 
-         id = DIContainer::GetInstance().Get<IRenderer>()->CreateTexture(data, request);
+        id = DIContainer::GetInstance().Get<IRenderer>()->CreateTexture(data, request);
     }
 
     TextureHandle Texture::GetId() const {

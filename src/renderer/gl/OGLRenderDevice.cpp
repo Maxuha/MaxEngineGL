@@ -475,6 +475,8 @@ namespace Rendering {
                     OGLResourceSet resourceSet = descriptorSetManager->GetResourceSet(cmd->resourceId);
 
                     for (auto item: resourceSet.items) {
+                        glBindTextureUnit(item.binding, 0);
+
                         //TODO Remove it
                         if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999) continue;
 
@@ -487,8 +489,7 @@ namespace Rendering {
                             }
                         } else {
                             OGLTexture texture = textureManager->GetTexture(item.textureHandle);
-                            glActiveTexture(GL_TEXTURE0 + item.binding);
-                            glBindTexture(GL_TEXTURE_2D, texture.Id);
+                            glBindTextureUnit(item.binding, texture.Id);
                         }
                     }
                     break;
@@ -632,14 +633,6 @@ namespace Rendering {
             case TextureFormat::SRGBA: return GL_SRGB_ALPHA;
         }
         return GL_RGBA;
-    }
-
-    GLenum OGLRenderDevice::MapCullMode(const CullMode mode) {
-        switch (mode) {
-            case CullMode::Front: return GL_FRONT;
-            case CullMode::Back: return GL_BACK;
-        }
-        return GL_NONE;
     }
 
     GLenum OGLRenderDevice::MapFillMode(const FillMode mode) {

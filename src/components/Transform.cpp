@@ -66,9 +66,15 @@ Matrix4x4 Transform::Othographic(const float left, const float right, const floa
     projectionMatrix.m[0][0] = 2 / (right - left);
     projectionMatrix.m[1][1] = 2 / (top - bottom);
     projectionMatrix.m[2][2] = -2 / (zFar - zNear);
+
+    projectionMatrix.m[2][2] = -1 / (zFar - zNear);
+
     projectionMatrix.m[3][0] = -(right + left) / (right - left);
     projectionMatrix.m[3][1] = -(top + bottom) / (top - bottom);
     projectionMatrix.m[3][2] = -(zFar + zNear) / (zFar - zNear);
+
+    projectionMatrix.m[3][2] = -zNear / (zFar - zNear);
+
     projectionMatrix.m[3][3] = 1;
     return projectionMatrix;
 }

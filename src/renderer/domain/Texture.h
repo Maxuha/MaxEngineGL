@@ -14,7 +14,7 @@ namespace Rendering {
 
         Texture(size_t width, size_t height);
 
-        Texture(size_t width, size_t height, TextureWrap wrap, void *data);
+        Texture(size_t width, size_t height, TextureWrap wrap, void *data, TextureFormat format = TextureFormat::SRGBA);
 
         ~Texture() = default;
 

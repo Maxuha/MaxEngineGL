@@ -20,7 +20,7 @@ struct ShaderDesc {
     std::vector<char> vertexCode;
     std::vector<char> fragmentCode;
     std::vector<Rendering::ResourceSetLayoutDesc> resourceSetLayouts;
-    Rendering::CullMode CullMode = Rendering::CullMode::Back;
+    Rendering::RenderFace RenderFace = Rendering::RenderFace::Front;
     bool IsDepthOnly = false;
 };
 

@@ -278,7 +278,7 @@ namespace Rendering {
         rasterizer.rasterizerDiscardEnable = rasterizerDesc.rasterizerDiscardEnable ? VK_TRUE : VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = rasterizerDesc.lineWidth;
-        rasterizer.cullMode = VK_CULL_MODE_NONE;
+        rasterizer.cullMode = MapRenderFace(rasterizerDesc.renderFace);
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = rasterizerDesc.depthBiasEnable ? VK_TRUE : VK_FALSE;
         rasterizer.depthBiasConstantFactor = rasterizerDesc.depthBiasConstantFactor;
@@ -561,5 +561,17 @@ namespace Rendering {
                 break;
         }
         return vkFormat;
+    }
+
+    constexpr VkCullModeFlags VulkanPipelineManager::MapRenderFace(const RenderFace face) noexcept {
+        switch (face) {
+            case RenderFace::Front:
+                return VK_CULL_MODE_BACK_BIT;
+            case RenderFace::Back:
+                return VK_CULL_MODE_FRONT_BIT;
+            case RenderFace::Both:
+                return VK_CULL_MODE_NONE;
+        }
+        return VK_CULL_MODE_NONE;
     }
 } // Rendering

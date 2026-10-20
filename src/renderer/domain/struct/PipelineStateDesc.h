@@ -14,7 +14,7 @@
 
 namespace Rendering {
 
-    enum class CullMode { Front, Back };
+    enum class RenderFace { Front, Back, Both };
     enum class FillMode { Solid, Wireframe };
     enum class FrontFace { Clockwise, CounterClockwise };
     enum class BlendMode { Opaque, AlphaBlend, Additive };
@@ -67,7 +67,7 @@ namespace Rendering {
 
     struct RasterizerDesc {
         bool cullEnable = true;
-        CullMode cullMode = CullMode::Back;
+        RenderFace renderFace = RenderFace::Front;
         FillMode fillMode = FillMode::Solid;
         FrontFace frontFace = FrontFace::Clockwise;
 
@@ -92,7 +92,6 @@ namespace Rendering {
         Rect Viewport{};
         TextureFormat ColorFormat = TextureFormat::SRGBA;
         TextureFormat DepthFormat = TextureFormat::DEPTH;
-        CullMode CullMode = CullMode::Back;
     };
 
     struct MaterialDesc {

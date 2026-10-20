@@ -105,7 +105,6 @@ namespace Rendering {
         GLenum MapTextureInternalFormat(TextureFormat format);
         GLenum MapTextureExternalFormat(TextureFormat format);
 
-        GLenum MapCullMode(CullMode mode);
         GLenum MapFillMode(FillMode mode);
 
         GLenum MapAttachment(AttachmentType type);

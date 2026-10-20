@@ -43,7 +43,7 @@ namespace Rendering {
     private:
         std::vector<OGLPipeline> pipelines;
 
-        GLenum MapCullMode(CullMode cullMode);
+        GLenum MapRenderFace(RenderFace face);
 
         GLuint MapVertexFormat(const VertexFormat format) {
             switch (format) {

@@ -66,9 +66,9 @@ namespace Rendering {
         layout.resources = shader.layouts;
 
         OGLPipeline pipeline;
-        pipeline.cullEnable = true;
+        pipeline.cullEnable = pipelineStateDesc.RasterizerState.renderFace == RenderFace::Back || pipelineStateDesc.RasterizerState.renderFace == RenderFace::Front;
         pipeline.program = program;
-        pipeline.cullMode = MapCullMode(pipelineStateDesc.CullMode);
+        pipeline.cullMode = MapRenderFace(pipelineStateDesc.RasterizerState.renderFace);
         pipeline.fillMode = GL_FILL;
         pipeline.depthTestEnable = true;
         pipeline.depthWriteEnable = true;
@@ -84,11 +84,11 @@ namespace Rendering {
         return pipelines[pipelineHandle.Id];
     }
 
-    GLenum OGLPipelineManager::MapCullMode(const CullMode cullMode) {
-        switch (cullMode) {
-            case CullMode::Front: return GL_FRONT;
-            case CullMode::Back: return GL_BACK;
-            default: return GL_NONE;
+    GLenum OGLPipelineManager::MapRenderFace(const RenderFace face) {
+        switch (face) {
+            case RenderFace::Front: return GL_FRONT;
+            case RenderFace::Back: return GL_BACK;
+            default: return GL_FRONT;
         }
         return GL_NONE;
     }

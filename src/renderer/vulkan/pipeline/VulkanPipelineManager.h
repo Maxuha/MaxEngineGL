@@ -84,6 +84,7 @@ namespace Rendering {
         // VkFormat MapImageFormat(ImageFormat imageFormat);
 
         VkFormat MapTextureFormat(TextureFormat format);
+        constexpr VkCullModeFlags MapRenderFace(RenderFace face) noexcept;
     };
 } // Rendering
 

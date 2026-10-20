@@ -265,6 +265,8 @@ namespace Rendering {
             case TextureFormat::RGBA:      return VK_FORMAT_R8G8B8A8_UNORM;
             case TextureFormat::SRGBA:     return VK_FORMAT_R8G8B8A8_SRGB;
             case TextureFormat::DEPTH:     return VK_FORMAT_D32_SFLOAT;
+            case TextureFormat::UNDEFINED:
+                break;
         }
         return VK_FORMAT_R8G8B8A8_SRGB;
     }

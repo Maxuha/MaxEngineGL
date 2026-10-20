@@ -31,7 +31,7 @@ AssimpImporter::~AssimpImporter() = default;
 
 Model *AssimpImporter::Import(const char *fileName) {
     const aiScene *scene = importer->ReadFile(
-        fileName, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph );
+        fileName, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_JoinIdenticalVertices );
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP::" << importer->GetErrorString() << std::endl;
@@ -240,6 +240,14 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
 
     layout_2.bindings.push_back(binding_7);
 
+    ResourceBindingDesc binding_8;
+    binding_7.binding_slot = 8;
+    binding_7.type = ResourceType::SampledImage;
+    binding_7.stage_flags = ShaderStageFlags::Fragment;
+    binding_7.count = 1;
+
+    layout_2.bindings.push_back(binding_8);
+
     ResourceBindingDesc binding_5;
     binding_5.binding_slot = 3;
     binding_5.type = ResourceType::UniformBuffer;
@@ -254,7 +262,7 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
     desc.resourceSetLayouts.push_back(layout_0);
     desc.resourceSetLayouts.push_back(layout_1);
     desc.resourceSetLayouts.push_back(layout_2);
-    desc.CullMode = CullMode::Front;
+    desc.RenderFace = RenderFace::Both;
 
     const auto mainShader = new Shader(vSPV, fSPV, desc);
 

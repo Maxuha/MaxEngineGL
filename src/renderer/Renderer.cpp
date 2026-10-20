@@ -275,7 +275,7 @@ namespace Rendering {
     ShaderHandle Renderer::CreateShader(const ShaderDesc &shaderDesc) {
         GraphicsShader graphicsShader;
 
-        const CullMode cullMode = shaderDesc.CullMode;
+        const RenderFace renderFace = shaderDesc.RenderFace;
         const bool isDepthOnly = shaderDesc.IsDepthOnly;
 
         auto colorFormat = TextureFormat::UNDEFINED;
@@ -289,7 +289,7 @@ namespace Rendering {
         pipelineStateDesc.Viewport = viewport;
         pipelineStateDesc.DepthFormat = depthFormat;
         pipelineStateDesc.ColorFormat = colorFormat;
-        pipelineStateDesc.CullMode = cullMode;
+        pipelineStateDesc.RasterizerState.renderFace = renderFace;
 
         if (shaderDesc.resourceSetLayouts.size() >= 3) {
             graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
@@ -498,6 +498,8 @@ namespace Rendering {
         CameraBuffer cameraBuffer;
         cameraBuffer.view = lights[1]->GetGameObject()->GetTransform()->LookAt();
         cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Perspective(90.0f, 2160.0f / 1440.0f, 0.1f, 100.0f);
+        cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Othographic(-1080.0f, 1080.0f, -720.0f, 720.0f, 0.1f, 100.0f);
+        cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Othographic(-50.0f, 50.0f, -50.0f, 50.0f, 0.1f, 100.0f);
         cameraBuffer.position = Vector4(lights[1]->GetGameObject()->GetTransform()->position, 1.0f);
 
         lightRenderData.data.directionalLight.space = cameraBuffer.proj * cameraBuffer.view;

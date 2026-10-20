@@ -31,6 +31,16 @@ Material::Material(const Shader *shader, const std::string &name) : name(name), 
     resourceBinding4.binding = 6;
     resourceBinding4.type = Rendering::ResourceType::SampledImage;
 
+    Rendering::ResourceBinding resourceBinding5{};
+    resourceBinding4.slot = 2;
+    resourceBinding4.binding = 7;
+    resourceBinding4.type = Rendering::ResourceType::SampledImage;
+
+    Rendering::ResourceBinding resourceBinding6{};
+    resourceBinding4.slot = 2;
+    resourceBinding4.binding = 8;
+    resourceBinding4.type = Rendering::ResourceType::SampledImage;
+
     Rendering::ResourceBinding resourceBinding3{};
     resourceBinding3.slot = 2;
     resourceBinding3.binding = 3;
@@ -40,6 +50,8 @@ Material::Material(const Shader *shader, const std::string &name) : name(name), 
     desc.resourceSet.bindings.push_back(resourceBinding2);
     desc.resourceSet.bindings.push_back(resourceBinding4);
     desc.resourceSet.bindings.push_back(resourceBinding3);
+    desc.resourceSet.bindings.push_back(resourceBinding5);
+    desc.resourceSet.bindings.push_back(resourceBinding6);
 
     id = DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMaterial(shader->GetHandle(), desc);
     isDirty = true;

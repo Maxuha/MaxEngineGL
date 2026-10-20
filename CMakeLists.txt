@@ -289,6 +289,8 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/domain/buffer/BufferHandle.h
         src/gameObject/primitives/Plane.cpp
         src/gameObject/primitives/Plane.h
+        src/math/Quaternion.cpp
+        src/math/Quaternion.h
 )
 
 target_include_directories(MaxEngine PRIVATE

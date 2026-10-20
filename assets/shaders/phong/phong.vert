@@ -61,27 +61,18 @@ layout (location = 5) out mat3 TBN;
 void main()
 {
     mat4 modelMatrix = model.position[gl_BaseInstance];
+    mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
     FragPos = vec3(modelMatrix * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(modelMatrix))) * aNormal;
+    Normal = normalMatrix * aNormal;
     TexCoord = aTexCoord;
     CameraPos = vec3(camera.position);
     FragPosLightSpace = light.directionalLight.space * vec4(FragPos, 1.0);
 
-
-    mat3 normalMatrix = transpose(inverse(mat3(modelMatrix)));
-
     vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
-    vec3 N = normalize(normalMatrix * aNormal);
+    vec3 N = normalize(Normal);
     T = normalize(T - dot(T, N) * N);
-    B = cross(N, T);
-
+    vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
-
-//    vec3 T = normalize(vec3(modelMatrix * vec4(aTangent,   0.0)));
-//    vec3 B = normalize(vec3(modelMatrix * vec4(aBitangent, 0.0)));
-//    vec3 N = normalize(vec3(modelMatrix * vec4(aNormal,    0.0)));
-//    TBN = mat3(T, B, N);
 
     gl_Position =  camera.proj * camera.view  * vec4(FragPos, 1.0);
 }

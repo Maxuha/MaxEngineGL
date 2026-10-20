@@ -23,11 +23,12 @@ Shader* ShaderImporter::Import(const std::string &shaderName, const std::unorder
     desc.vertexCode = vSPV;
     desc.fragmentCode = fSPV;
 
-    if (params.contains("cullMode")) {
-        const std::string cullMode = params.at("cullMode");
+    if (params.contains("renderFace")) {
+        const std::string renderFace = params.at("renderFace");
 
-        if (cullMode == "Front") desc.CullMode = Rendering::CullMode::Front;
-        if (cullMode == "Back") desc.CullMode = Rendering::CullMode::Back;
+        if (renderFace == "Front") desc.RenderFace = Rendering::RenderFace::Front;
+        if (renderFace == "Back") desc.RenderFace = Rendering::RenderFace::Back;
+        if (renderFace == "Both") desc.RenderFace = Rendering::RenderFace::Both;
     }
 
     if (params.contains("isDepthOnly")) {

@@ -29,8 +29,8 @@ int main() {
 
     AssetManager* assetManager = container->Get<AssetManager>();
 
-    auto phongShader = assetManager->Import<Shader>("phong/phong", {{"cullMode", "Front"}});
-    auto depthShader = assetManager->Import<Shader>("depth/depth", {{"cullMode", "Front"}, {"isDepthOnly", "true"}});
+    auto phongShader = assetManager->Import<Shader>("phong/phong", {{"renderFace", "Both"}});
+    auto depthShader = assetManager->Import<Shader>("depth/depth", {{"renderFace", "Front"}, {"isDepthOnly", "true"}});
 
     renderer->SetDepthShader(*depthShader);
 
@@ -49,8 +49,8 @@ int main() {
 
     const auto brickwall = Plane::BuildPlane();
     brickwall->GetComponent<MeshRenderer>()->material = material2;
-    brickwall->GetComponent<Transform>()->position = Vector3(10, 4.0f, -10.0f);
-    brickwall->GetComponent<Transform>()->rotation = Vector3(0, 90.0f, 0.0f);
+    brickwall->GetComponent<Transform>()->position = Vector3(20, 7.0f, 0.0f);
+    brickwall->GetComponent<Transform>()->rotation = Vector3(90, 90.0f, 0.0f);
     brickwall->GetComponent<Transform>()->scale = Vector3(5.0f, 5.0f, 1.0f);
 
     auto *houseModel = container->Get<AssetManager>()->Import<Model>(
@@ -74,6 +74,24 @@ int main() {
     erika->root->GetTransform()->scale = Vector3(0.05, 0.05, 0.05);
     erika->root->GetTransform()->position = Vector3(10, 2, 0);
 
+    TextureAsset *woodDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+      R"(assets/models/brickwall/wood_diffuse.png)");
+
+    Rendering::Texture *woodDiffuseTexture = new Rendering::Texture(woodDiffuseTextureAsset->Width, woodDiffuseTextureAsset->Height,
+                                                                 woodDiffuseTextureAsset->Wrap, woodDiffuseTextureAsset->Data);
+
+    TextureAsset *toyBoxDispTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+      R"(assets/models/brickwall/toy_box_disp.png)");
+
+    Rendering::Texture *toyBoxDispTexture = new Rendering::Texture(toyBoxDispTextureAsset->Width, toyBoxDispTextureAsset->Height,
+                                                                toyBoxDispTextureAsset->Wrap, toyBoxDispTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *toyBoxNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+    R"(assets/models/brickwall/toy_box_normal.png)");
+
+    Rendering::Texture *toyBoxNormalTexture = new Rendering::Texture(toyBoxNormalTextureAsset->Width, toyBoxNormalTextureAsset->Height,
+                                                                toyBoxNormalTextureAsset->Wrap, toyBoxNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
     TextureAsset *backpackDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
       R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
 
@@ -84,13 +102,13 @@ int main() {
    R"(assets/models/Survival_BackPack_2/1001_metallic.jpg)");
 
     Rendering::Texture *backpackSpecularTexture = new Rendering::Texture(backpackSpecularTextureAsset->Width, backpackSpecularTextureAsset->Height,
-                                                                backpackSpecularTextureAsset->Wrap, backpackSpecularTextureAsset->Data);
+                                                                backpackSpecularTextureAsset->Wrap, backpackSpecularTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *backpackNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
  R"(assets/models/Survival_BackPack_2/1001_normal.png)");
 
     Rendering::Texture *backpackNormalTexture = new Rendering::Texture(backpackNormalTextureAsset->Width, backpackNormalTextureAsset->Height,
-                                                                backpackNormalTextureAsset->Wrap, backpackNormalTextureAsset->Data);
+                                                                backpackNormalTextureAsset->Wrap, backpackNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *brickwallDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
        R"(assets/models/brickwall/brickwall_diffuse.jpg)");
@@ -102,13 +120,19 @@ int main() {
       R"(assets/models/brickwall/brickwall_normal.jpg)");
 
     Rendering::Texture *brickwallNormalTexture = new Rendering::Texture(brickwallNormalTextureAsset->Width, brickwallNormalTextureAsset->Height,
-                                                                brickwallNormalTextureAsset->Wrap, brickwallNormalTextureAsset->Data);
+                                                                brickwallNormalTextureAsset->Wrap, brickwallNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *brickwallHeightTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+     R"(assets/models/brickwall/brickwall_height.jpg)");
+
+    Rendering::Texture *brickwallHeightTexture = new Rendering::Texture(brickwallHeightTextureAsset->Width, brickwallHeightTextureAsset->Height,
+                                                                brickwallHeightTextureAsset->Wrap, brickwallHeightTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *defaultNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
      R"(assets/models/brickwall/default_normal.jpg)");
 
     Rendering::Texture *defaultNormalTexture = new Rendering::Texture(defaultNormalTextureAsset->Width, defaultNormalTextureAsset->Height,
-                                                                defaultNormalTextureAsset->Wrap, defaultNormalTextureAsset->Data);
+                                                                defaultNormalTextureAsset->Wrap, defaultNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
@@ -120,7 +144,7 @@ int main() {
         R"(assets/models/glove/texture/wood_with_steel_normal.jpg)");
 
     Rendering::Texture *normalTexture = new Rendering::Texture(normalTextureAsset->Width, normalTextureAsset->Height,
-                                                                normalTextureAsset->Wrap, normalTextureAsset->Data);
+                                                                normalTextureAsset->Wrap, normalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/glove/texture/wood_with_steel_specular.png)");
@@ -128,7 +152,8 @@ int main() {
     Rendering::Texture *specularTexture = new Rendering::Texture(specularTextureAsset->Width,
                                                                  specularTextureAsset->Height,
                                                                  specularTextureAsset->Wrap,
-                                                                 specularTextureAsset->Data);
+                                                                 specularTextureAsset->Data,
+                                                                 Rendering::TextureFormat::RGBA);
 
     TextureAsset *houseTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/autumn-house/textures/House_texture_01_00.png)");
@@ -183,12 +208,12 @@ int main() {
 
     material1->SetTexture(4, *diffuseTexture);
     material1->SetTexture(5, *specularTexture);
-    material1->SetTexture(7, *brickwallNormalTexture);
+    material1->SetTexture(7, *normalTexture);
     material1->SetProperty("material.shininess", 32.0f);
 
     material2->SetTexture(4, *brickwallDiffuseTexture);
-    //material2->SetTexture(5, *specularTexture);
     material2->SetTexture(7, *brickwallNormalTexture);
+    material2->SetTexture(8, *brickwallHeightTexture);
     material2->SetProperty("material.shininess", 32.0f);
 
     material3->SetTexture(4, *backpackDiffuseTexture);
@@ -245,16 +270,16 @@ int main() {
     scene->Add(cube1);
     scene->Add(erika->root);
     scene->Add(houseModel->root);
-    scene->Add(brickwall);
     scene->Add(backpackModel->root);
+    scene->Add(brickwall);
     
     scene->Add(ambientLight);
     scene->Add(sun);
-    scene->Add(light);
-    scene->Add(light2);
-    scene->Add(lamp);
-    // scene->Add(lamp2);
-    scene->Add(lamp3);
+    // scene->Add(light);
+    // scene->Add(light2);
+    // scene->Add(lamp);
+    // // scene->Add(lamp2);
+    // scene->Add(lamp3);
 
     scene->Init();
 
@@ -274,7 +299,7 @@ int main() {
         t += delta_time * 127;
         //material1->SetProperty("material.shininess", 32);
 
-        brickwall->GetComponent<Transform>()->RotateYaw(10 * delta_time);
+        // brickwall->GetComponent<Transform>()->RotateYaw(10 * delta_time);
         cube1->GetComponent<Transform>()->RotateRoll(10 * delta_time);
 
         if (t >= 256) {
