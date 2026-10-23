@@ -23,6 +23,7 @@ namespace Rendering {
         GLuint program{};
         GLboolean depthTestEnable{};
         GLboolean depthWriteEnable{};
+        GLenum depthCompareFunc{};
         GLboolean cullEnable{};
         GLenum cullMode{};
         GLenum fillMode{};
@@ -61,6 +62,20 @@ namespace Rendering {
                     return 4;
             }
             return 1;
+        }
+
+        GLenum MapDepthCompareOp(const DepthCompareOp op) {
+            switch (op) {
+                case DepthCompareOp::Never:          return GL_NEVER;
+                case DepthCompareOp::Less:           return GL_LESS;
+                case DepthCompareOp::Equal:          return GL_EQUAL;
+                case DepthCompareOp::LessOrEqual:    return GL_LEQUAL;
+                case DepthCompareOp::Greater:        return GL_GREATER;
+                case DepthCompareOp::NotEqual:       return GL_NOTEQUAL;
+                case DepthCompareOp::GreaterOrEqual: return GL_GEQUAL;
+                case DepthCompareOp::Always:         return GL_ALWAYS;
+            }
+            return GL_LEQUAL;
         }
     };
 } // Rendering

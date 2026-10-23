@@ -12,12 +12,16 @@
 #include "texture/VulkanTextureManager.h"
 #include "vertexbuffer/VulkanBufferManager.h"
 #include "vertexbuffer/VulkanStagingBufferPool.h"
-#include "../domain/buffer/BufferDesc.h"
 
 namespace Rendering {
     struct DescriptorLayout {
         VkDescriptorSetLayout layout;
         std::vector<VkDescriptorSetLayoutBinding> bindings;
+    };
+
+    struct VulkanCubemap {
+        std::vector<TextureHandle> faces;
+        TextureHandle texture;
     };
 
     class VulkanSurface;
@@ -45,6 +49,8 @@ namespace Rendering {
 
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
+        CubeMapHandle CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
+
         PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle> &resourceSetLayouts) override;
 
         ResourceSetLayoutHandle CreateResourceSetLayout(const ResourceSetLayoutDesc &resourceSetLayoutDesc) override;
@@ -54,6 +60,8 @@ namespace Rendering {
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const TextureHandle textureHandle) override;
 
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) override;
+
+        void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const CubeMapHandle cubemapHandle) override;
 
         BufferHandle CreateBuffer(const BufferDesc &desc) override;
 
@@ -98,6 +106,7 @@ namespace Rendering {
         std::vector<GraphicsVulkanShader> shaders;
         std::unordered_map<ResourceSetLayoutDesc, VkDescriptorSetLayout> descriptorSetLayouts;
         std::vector<VulkanDescriptorSet> descriptorSets;
+        std::vector<VulkanCubemap> cubemaps;
 
         TextureFormat MapVkFormat(const VkFormat format) {
             switch (format) {
@@ -134,6 +143,7 @@ namespace Rendering {
                     return VK_FORMAT_UNDEFINED;
                     break;
             }
+            return VK_FORMAT_UNDEFINED;
         }
 
         constexpr VkAttachmentLoadOp MapAttachmentLoadOp(const AttachmentLoadOp op) {

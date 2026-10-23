@@ -41,6 +41,8 @@ namespace Rendering {
 
         virtual TextureHandle CreateTexture(void *data, TextureCreateRequest& textureCreateDesc) = 0;
 
+        virtual CubeMapHandle CreateCubeMap(const TextureCreateRequest& desc, const std::vector<void*>& datas) = 0;
+
         virtual MaterialHandle CreateMaterial(const ShaderHandle shader, const MaterialDesc &materialDesc) = 0;
 
         virtual ShaderHandle CreateShader(const ShaderDesc& shaderDesc) = 0;
@@ -50,6 +52,8 @@ namespace Rendering {
         //material
 
         virtual void BindTextureToMaterial(const Material& material, uint32_t slot, const Texture& texture) = 0;
+
+        virtual void BindCubemapToMaterial(const Material& material, uint32_t slot, const Cubemap& texture) = 0;
 
         virtual void BindBufferToMaterial(MaterialHandle materialHandle, uint32_t slot, BufferHandle bufferId) = 0;
 
@@ -62,6 +66,8 @@ namespace Rendering {
         virtual void EndFrame() = 0;
 
         virtual void SetDepthShader(Shader& shader) = 0;
+
+        virtual void SetSkyboxMaterial(Material& material) = 0;
     };
 } // namespace Rendering
 

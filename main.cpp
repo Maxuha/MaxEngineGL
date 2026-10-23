@@ -14,6 +14,7 @@
 #include "src/components/light/SpotLight.h"
 #include "src/gameObject/primitives/Plane.h"
 #include "src/IO/FileReader.h"
+#include "src/renderer/domain/Cubemap.h"
 
 class MeshRenderer;
 class Camera;
@@ -31,15 +32,20 @@ int main() {
 
     auto phongShader = assetManager->Import<Shader>("phong/phong", {{"renderFace", "Both"}});
     auto depthShader = assetManager->Import<Shader>("depth/depth", {{"renderFace", "Front"}, {"isDepthOnly", "true"}});
+    auto skyboxShader = assetManager->Import<Shader>("skybox/skybox", {{"renderFace", "Both"}});
 
     renderer->SetDepthShader(*depthShader);
 
-    auto material1 = new Material(phongShader);
-    auto material2 = new Material(phongShader);
-    auto material3 = new Material(phongShader);
+    auto material1 = new Material(phongShader, 32);
+    auto material2 = new Material(phongShader, 32);
+    auto material3 = new Material(phongShader, 32);
+    auto skyboxMaterial = new Material(skyboxShader, 0);
+
+    renderer->SetSkyboxMaterial(*skyboxMaterial);
 
     auto *camera = new FPSCamera(60, 0.01, 1000, static_cast<float>(width) / static_cast<float>(height));
     camera->GetTransform()->position = Vector3(10, 0, 10);
+    camera->GetTransform()->rotation = Vector3(0, 0, 0);
     camera->Start();
 
     const auto cube1 = Cube::BuildCube();
@@ -184,6 +190,34 @@ int main() {
 
     Rendering::Texture *plantsTexture1 = new Rendering::Texture(plantsTextureAsset1->Width, plantsTextureAsset1->Height,
                                                                 plantsTextureAsset1->Wrap, plantsTextureAsset1->Data);
+
+    //skybox
+    TextureAsset *skyboxRightTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/textures/skybox/right.jpg)");
+
+
+    TextureAsset *skyboxLeftTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+       R"(assets/textures/skybox/left.jpg)");
+
+    TextureAsset *skyboxTopTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+      R"(assets/textures/skybox/top.jpg)");
+
+
+    TextureAsset *skyboxBottomTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+     R"(assets/textures/skybox/bottom.jpg)");
+
+
+    TextureAsset *skyboxFrontTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+    R"(assets/textures/skybox/front.jpg)");
+
+    TextureAsset *skyboxBackTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+  R"(assets/textures/skybox/back.jpg)");
+
+    std::vector<void*> skyboxTextures = { skyboxRightTextureAsset->Data, skyboxLeftTextureAsset->Data, skyboxTopTextureAsset->Data, skyboxBottomTextureAsset->Data, skyboxFrontTextureAsset->Data, skyboxBackTextureAsset->Data };
+
+    Rendering::Cubemap *skybox = new Rendering::Cubemap(skyboxBackTextureAsset->Width, Rendering::TextureFormat::SRGBA, skyboxTextures);
+
+    skyboxMaterial->SetCubemap(3, *skybox);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);

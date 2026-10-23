@@ -15,6 +15,11 @@ namespace Rendering {
         UNDEFINED
     };
 
+    enum class TextureType {
+        Texture2D,
+        Cube,
+    };
+
     enum class TextureWrap : std::uint8_t {
         Repeat,
         MirroredRepeat,
@@ -23,12 +28,12 @@ namespace Rendering {
     };
 
     struct TextureCreateRequest {
-
         size_t Width{};
         size_t Height{};
         size_t MipLevels{};
         size_t ArraySize{};
         TextureFormat Format{};
+        TextureType Type = TextureType::Texture2D;
     };
 
     struct TextureData {
@@ -39,6 +44,11 @@ namespace Rendering {
         TextureFormat format = TextureFormat::SRGBA;
         TextureWrap wrap = TextureWrap::Repeat;
         bool isRenderTarget = false;
+    };
+
+    struct CubeMapCreateRequest {
+        size_t Size;
+        TextureFormat Format;
     };
 }
 

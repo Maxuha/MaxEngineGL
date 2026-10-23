@@ -5,6 +5,7 @@
 #ifndef MAXENGINE_OGLDESCRIPTORSETMANAGER_H
 #define MAXENGINE_OGLDESCRIPTORSETMANAGER_H
 #include "CommandBuffer.h"
+#include "../IRenderDevice.h"
 #include "../IResourceSetManager.h"
 #include "model/OGLPipelineLayout.h"
 
@@ -15,6 +16,7 @@ namespace Rendering {
     struct OGLResourceItem {
         BufferHandle bufferHandle = BufferHandle { .Id = 9999999 };
         TextureHandle textureHandle = TextureHandle { .Id = 9999999 };
+        CubeMapHandle cubemapHandle = CubeMapHandle { .Id = 9999999 };
         uint32_t binding = 0;
 
         bool IsBuffer() const {
@@ -39,6 +41,8 @@ namespace Rendering {
         void BindBuffer(ResourceSetHandle setHandle, uint32_t slot, BufferHandle bufferHandle) override;
 
         void BindTexture(ResourceSetHandle setHandle, uint32_t slot, TextureHandle textureHandle) override;
+
+        void BindCubemap(ResourceSetHandle setHandle, uint32_t slot, CubeMapHandle cubemapHandle) override;
 
         OGLResourceSet& GetResourceSet(ResourceSetHandle setHandle);
 

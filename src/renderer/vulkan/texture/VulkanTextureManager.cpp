@@ -4,6 +4,8 @@
 
 #include "VulkanTextureManager.h"
 
+#include <iostream>
+
 #include "../../gl/model/TextureData.h"
 #include "../src/renderer/vulkan/vertexbuffer/VulkanBufferManager.h"
 #include "../vertexbuffer/VulkanStagingBufferPool.h"
@@ -51,13 +53,14 @@ namespace Rendering {
         return textureSampler;
     }
 
-    TextureHandle VulkanTextureManager::CreateTexture(const size_t width, const size_t height, const TextureFormat format, void *data) {
+    TextureHandle VulkanTextureManager::CreateTexture(const size_t width, const size_t height, const TextureFormat format, const TextureType type, void *data) {
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
 
         const VkFormat _format = MapTextureFormat(format);
         VkImageUsageFlags usageFlags;
         VkImageAspectFlags aspectFlags;
+        VkImageCreateFlags flags = 0;
 
         if (format == TextureFormat::DEPTH) {
             aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -71,6 +74,13 @@ namespace Rendering {
             usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         }
 
+        size_t layers = 1;
+
+        if (type == TextureType::Cube) {
+            layers = 6;
+            flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        }
+
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -78,14 +88,14 @@ namespace Rendering {
         imageInfo.extent.height = static_cast<uint32_t>(height);
         imageInfo.extent.depth = 1;
         imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
+        imageInfo.arrayLayers = layers;
         imageInfo.format = _format;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = usageFlags;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = 0; // Optional
+        imageInfo.flags = flags; // Optional
 
         if (vkCreateImage(device.GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image!");
@@ -107,7 +117,7 @@ namespace Rendering {
 
         VulkanTexture texture;
         texture.Image = textureImage;
-        texture.ImageView = CreateImageView(textureImage, _format, aspectFlags);
+        texture.ImageView = CreateImageView(textureImage, _format, aspectFlags, type);
         texture.Sampler = CreateSampler(device);
         texture.Width = width;
         texture.Height = height;
@@ -141,18 +151,44 @@ namespace Rendering {
         stagingBufferPool.Reset();
     }
 
+    void VulkanTextureManager::UploadData(const VkCommandBuffer cmd, const StagingAllocation &buffer, const TextureHandle handle,
+        const std::vector<void *>& data, const size_t size, const uint32_t layerCount) {
+        const VulkanTexture texture = GetTexture(handle);
+        TransitionImageLayout(cmd, texture.Image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        VkDeviceSize offset = 0;
+        for (int i = 0; i < layerCount; i++) {
+            std::memcpy(buffer.cpuMappedPointer + (i * size), data[i], size);
+            CopyBufferToImage(cmd, buffer.vkBuffer, offset, texture.Image, texture.Width, texture.Height, i);
+            offset += size;
+        }
+
+        TransitionImageLayout(cmd, texture.Image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
     VkImageView VulkanTextureManager::CreateImageView(const VkImage image, const VkFormat format,
-                                                      const VkImageAspectFlags aspectFlags) const {
+                                                      const VkImageAspectFlags aspectFlags, const TextureType type) const {
+
+        VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+        size_t layerCount = 1;
+
+        if (type == TextureType::Cube) {
+            viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+            layerCount = 6;
+        }
+
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.viewType = viewType;
         viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = aspectFlags;
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = layerCount;
 
         VkImageView imageView;
 
@@ -165,7 +201,7 @@ namespace Rendering {
 
     void VulkanTextureManager::CopyBufferToImage(const VkCommandBuffer cmd, const VkBuffer buffer,
                                                  const VkDeviceSize offset, const VkImage image, const uint32_t width,
-                                                 const uint32_t height) {
+                                                 const uint32_t height, const uint32_t layer) {
         VkBufferImageCopy region{};
         region.bufferOffset = offset;
         region.bufferRowLength = 0;
@@ -173,7 +209,7 @@ namespace Rendering {
 
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.baseArrayLayer = layer;
         region.imageSubresource.layerCount = 1;
 
         region.imageOffset = {0, 0, 0};
@@ -193,7 +229,7 @@ namespace Rendering {
         );
     }
 
-    void VulkanTextureManager::TransitionImageLayout(VkCommandBuffer cmd, const VkImage image, VkFormat format,
+    void VulkanTextureManager::TransitionImageLayout(const VkCommandBuffer cmd, const VkImage image, const VkFormat format,
                                                      const VkImageLayout oldLayout,
                                                      const VkImageLayout newLayout) {
         VkImageMemoryBarrier barrier{};
@@ -207,7 +243,7 @@ namespace Rendering {
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.layerCount = 6;
         barrier.srcAccessMask = 0; // TODO
         barrier.dstAccessMask = 0; // TODO
 

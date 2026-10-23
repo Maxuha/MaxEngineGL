@@ -32,6 +32,8 @@ namespace Rendering {
 
         void BindTexture(ResourceSetHandle setHandle, uint32_t slot, TextureHandle textureHandle) override;
 
+        void BindCubemap(ResourceSetHandle setHandle, uint32_t slot, CubeMapHandle cubemapHandle) override;
+
         VulkanDescriptorSet GetDescriptorSet(ResourceSetHandle setHandle);
 
         VkDescriptorSetLayout GetDescriptorSetLayout(ResourceSetLayoutHandle layoutHandle) const;

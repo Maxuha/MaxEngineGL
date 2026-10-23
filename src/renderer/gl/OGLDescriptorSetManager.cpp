@@ -46,6 +46,15 @@ namespace Rendering {
         item->textureHandle = textureHandle;
     }
 
+    void OGLDescriptorSetManager::BindCubemap(const ResourceSetHandle setHandle, const uint32_t slot, CubeMapHandle cubemapHandle) {
+        OGLResourceSet& resourceSet = resourceSets[setHandle.id];
+        const auto item = std::ranges::find_if(resourceSet.items, [&](const OGLResourceItem& item) { return  item.binding == slot;});
+        if (item == resourceSet.items.end()) {
+            return;
+        }
+        item->cubemapHandle = cubemapHandle;
+    }
+
     OGLResourceSet & OGLDescriptorSetManager::GetResourceSet(const ResourceSetHandle setHandle) {
         return resourceSets[setHandle.id];
     }

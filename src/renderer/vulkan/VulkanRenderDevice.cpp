@@ -74,7 +74,7 @@ namespace Rendering {
 
         const Rect rect = window.GetCurrentSize();
 
-        const TextureHandle texture = textureManager->CreateTexture(rect.width, rect.height, TextureFormat::DEPTH, nullptr);
+        const TextureHandle texture = textureManager->CreateTexture(rect.width, rect.height, TextureFormat::DEPTH, TextureType::Texture2D, nullptr);
         depthTexture = textureManager->GetTexture(texture);
 
         mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -97,7 +97,7 @@ namespace Rendering {
     TextureHandle VulkanRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
         const auto data = const_cast<void *>(initialData);
 
-        const TextureHandle textureHandle = textureManager->CreateTexture(desc.Width, desc.Height, desc.Format, data);
+        const TextureHandle textureHandle = textureManager->CreateTexture(desc.Width, desc.Height, desc.Format, desc.Type, data);
 
         if (initialData != nullptr) {
             const VkCommandBuffer uploadCmd = commandBufferManager->AllocateCommandBuffer(
@@ -109,7 +109,7 @@ namespace Rendering {
             vkBeginCommandBuffer(uploadCmd, &beginInfo);
 
             const size_t size = desc.Width * desc.Height * 4;
-            textureManager->UploadData(uploadCmd, textureHandle, data, size);
+            textureManager->UploadData(uploadCmd, textureHandle, initialData, size);
 
             vkEndCommandBuffer(uploadCmd);
 
@@ -121,6 +121,36 @@ namespace Rendering {
         }
 
         return textureHandle;
+    }
+
+    CubeMapHandle VulkanRenderDevice::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        VulkanCubemap cubemap;
+        cubemap.texture = CreateTexture(desc, nullptr);
+
+        const StagingAllocation staging = stagingBufferPool->Allocate((desc.Width * desc.Height * 4) * 6);
+
+        const VkCommandBuffer uploadCmd = commandBufferManager->AllocateCommandBuffer(
+               CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY).GetCommandBuffer();
+
+        VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(uploadCmd, &beginInfo);
+
+        const size_t size = desc.Width * desc.Height * 4;
+        textureManager->UploadData(uploadCmd, staging, cubemap.texture, datas, size, 6);
+
+        vkEndCommandBuffer(uploadCmd);
+
+        VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &uploadCmd;
+
+        vkQueueSubmit(logicalDevice->GetTransferQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+
+        cubemaps.push_back(cubemap);
+
+        return {.Id = cubemaps.size() - 1};
     }
 
     PipelineLayoutHandle VulkanRenderDevice::CreatePipelineLayout(
@@ -210,6 +240,34 @@ namespace Rendering {
             descriptorWrite.pBufferInfo = &bufferInfo;
             descriptorWrite.pImageInfo = nullptr; // Optional
             descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+            std::array descriptorWrites = {descriptorWrite};
+
+            vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
+                                   nullptr);
+        }
+    }
+
+    void VulkanRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
+        const CubeMapHandle cubemapHandle) {
+        const VulkanDescriptorSet descriptorSet = descriptorSets[setHandle.id];
+        const VulkanCubemap cubemap = cubemaps[cubemapHandle.Id];
+        const VulkanTexture texture = textureManager->GetTexture(cubemap.texture);
+
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = texture.ImageView;
+            imageInfo.sampler = texture.Sampler;
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = descriptorSet.set[i];
+            descriptorWrite.dstBinding = binding;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pImageInfo = &imageInfo;
 
             std::array descriptorWrites = {descriptorWrite};
 
@@ -322,9 +380,14 @@ namespace Rendering {
 
     void VulkanRenderDevice::UpdateBuffer(const BufferHandle id, const void *data, const int offset, const int size) {
         const uint32_t frameIndex = frameManager->GetCurrentIndexFrame();
-        const VulkanDynamicBuffer &buffer = dynamicBuffers[id.Id];
-        const auto dstMemory = static_cast<uint8_t*>(buffer.mappedPointers[frameIndex]);
-        memcpy(dstMemory + offset, data, size);
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            const VulkanDynamicBuffer &buffer = dynamicBuffers[id.Id];
+            const auto dstMemory = static_cast<uint8_t*>(buffer.mappedPointers[frameIndex]);
+            memcpy(dstMemory + offset, data, size);
+        }
+        // const VulkanDynamicBuffer &buffer = dynamicBuffers[id.Id];
+        // const auto dstMemory = static_cast<uint8_t*>(buffer.mappedPointers[frameIndex]);
+        // memcpy(dstMemory + offset, data, size);
     }
 
     void VulkanRenderDevice::DestroyBuffer(BufferHandle id) {
@@ -371,7 +434,15 @@ namespace Rendering {
 
         mainCommandBuffer.Begin();
 
+        if (commandBuffer->GetType() == CommandBufferType::Graphics) {
+            mainCommandBuffer.TransitionImageLayout(frame.ColorTexture.Image,
+                                                 VK_IMAGE_LAYOUT_UNDEFINED,
+                                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                 VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+        }
+
         VulkanCommandBufferi secondaryCommandBuffer;
+        bool colorPassEnded = false;
 
         std::vector<uint8_t> commands = commandBuffer->GetCommands();
         size_t readOffset = 0;
@@ -509,9 +580,9 @@ namespace Rendering {
                     readOffset += sizeof(GLCommand_DrawIndexed);
 
                     uint32_t indexCount = cmd->indexCount;
-                    uint32_t indexMesh = cmd->indexMesh;
                     uint32_t firstIndex = cmd->firstIndex;
                     uint32_t vertexOffset = cmd->vertexOffset;
+                    uint32_t indexMesh = cmd->indexMesh;
 
                     secondaryCommandBuffer.DrawIndexed(indexCount, 1, firstIndex, vertexOffset, indexMesh);
                     break;
@@ -526,10 +597,7 @@ namespace Rendering {
                                                              VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
                         depthImage = nullptr;
                     } else {
-                        mainCommandBuffer.TransitionImageLayout(frame.ColorTexture.Image,
-                                                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT,
-                                                             1, 1);
+                        colorPassEnded = true;
                     }
 
                     secondaryCommandBuffer.End();
@@ -562,6 +630,13 @@ namespace Rendering {
                 }
                 default: ;
             }
+        }
+
+        if (colorPassEnded) {
+            mainCommandBuffer.TransitionImageLayout(frame.ColorTexture.Image,
+                                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                                 VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
         }
 
         mainCommandBuffer.End();

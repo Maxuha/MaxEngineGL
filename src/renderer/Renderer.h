@@ -46,6 +46,8 @@ namespace Rendering {
 
         TextureHandle CreateTexture(void *data, TextureCreateRequest& textureCreateDesc) override;
 
+        CubeMapHandle CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
+
         MaterialHandle CreateMaterial(ShaderHandle shaderHandle, const MaterialDesc &materialDesc) override;
 
         ShaderHandle CreateShader(const ShaderDesc& shaderDesc) override;
@@ -61,6 +63,8 @@ namespace Rendering {
         void BindTextureToMaterial(const MaterialHandle material, uint32_t slot, const TextureHandle texture) const;
 
         void BindTextureToMaterial(const Material& material, uint32_t slot, const Texture& texture) override;
+
+        void BindCubemapToMaterial(const Material& material, uint32_t slot, const Cubemap& cubemap) override;
 
         void BindBufferToMaterial(MaterialHandle materialHandle, uint32_t slot, BufferHandle bufferId) override;
 
@@ -78,11 +82,14 @@ namespace Rendering {
 
         /// Config
 
-        void SetDepthShader( Shader& shader) override;
+        void SetDepthShader(Shader& shader) override;
+
+        void SetSkyboxMaterial(Material& material) override;
 
     private:
         Camera *activeCamera{};
         Shader* depthShader;
+        Material* skyboxMaterial;
 
         IRenderDevice *renderDevice;
         MeshManager *meshManager{};

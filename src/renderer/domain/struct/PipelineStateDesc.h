@@ -63,6 +63,7 @@ namespace Rendering {
         Color clearColor;
         float depthClearValue = 1.0f;
         std::optional<TextureHandle> renderTarget = { };
+        bool depthTestEnable = true;
     };
 
     struct RasterizerDesc {
@@ -83,11 +84,24 @@ namespace Rendering {
         bool rasterizerDiscardEnable = false;
     };
 
+    enum class DepthCompareOp : uint8_t
+    {
+        Never,
+        Less,
+        Equal,
+        LessOrEqual,
+        Greater,
+        NotEqual,
+        GreaterOrEqual,
+        Always
+    };
+
     struct PipelineStateDesc {
         VertexLayout VertexLayout;
         BlendAttachmentDesc BlendAttachmentDesc;
         DynamicStateDesc DynamicState;
         DepthStencilDesc DepthStencilState;
+        DepthCompareOp DepthCompareOp = DepthCompareOp::LessOrEqual;
         RasterizerDesc RasterizerState;
         Rect Viewport{};
         TextureFormat ColorFormat = TextureFormat::SRGBA;
@@ -96,6 +110,7 @@ namespace Rendering {
 
     struct MaterialDesc {
         ResourceSet resourceSet;
+        size_t bufferSize = 0;
     };
 
 } // Rendering

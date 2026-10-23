@@ -56,6 +56,8 @@ namespace Rendering {
 
         virtual TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) = 0;
 
+        virtual CubeMapHandle CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void*>& datas) = 0;
+
         virtual PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle>& resourceSetLayouts) = 0;
 
         virtual ResourceSetLayoutHandle CreateResourceSetLayout(const ResourceSetLayoutDesc& resourceSetLayoutDesc) = 0;
@@ -63,6 +65,8 @@ namespace Rendering {
         virtual ResourceSetHandle CreateResourceSet(ResourceSetLayoutHandle resourceSetLayoutHandle) = 0;
 
         virtual void UpdateResourceSet(ResourceSetHandle setHandle, uint32_t binding, TextureHandle textureHandle) = 0;
+
+        virtual void UpdateResourceSet(ResourceSetHandle setHandle, uint32_t binding, CubeMapHandle cubemapHandle) = 0;
 
         virtual void UpdateResourceSet(ResourceSetHandle setHandle, uint32_t binding, BufferHandle bufferHandle) = 0;
 

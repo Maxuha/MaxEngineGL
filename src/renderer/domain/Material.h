@@ -5,6 +5,7 @@
 #ifndef MAXENGINE_MATERIAL_H
 #define MAXENGINE_MATERIAL_H
 #include <any>
+#include "Cubemap.h"
 #include "Shader.h"
 #include "IGLTexture.h"
 #include "Texture.h"
@@ -24,7 +25,7 @@ class Material {
 public:
     explicit Material(MaterialHandle handle);
 
-    explicit Material(const Shader *shader, const std::string &name = "New Material");
+    explicit Material(const Shader *shader, const size_t bufferSize, const std::string &name = "New Material");
 
     virtual ~Material() = default;
 
@@ -74,7 +75,9 @@ public:
         textures[slot] = &texture;
     }
 
-    void SetTexture(const uint32_t slot, const Rendering::Texture &texture);
+    void SetTexture(const uint32_t slot, const Rendering::Texture &texture) const;
+
+    void SetCubemap(const uint32_t slot, const Rendering::Cubemap &texture) const;
 
     Rendering::IGLTexture* GetTexture(const std::string &slot) const {
         return textures.at(slot);

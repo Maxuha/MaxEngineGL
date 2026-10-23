@@ -36,6 +36,11 @@ Shader* ShaderImporter::Import(const std::string &shaderName, const std::unorder
         desc.IsDepthOnly = isDepthOnly == "true";
     }
 
+    // if (params.contains("depthCompareOp")) {
+    //     const std::string depthCompareOp = params.at("depthCompareOp");
+    //     desc. = Rendering::CompareOp::Less;
+    // }
+
     reflectShader(desc);
 
     const auto shader = new Shader(vSPV, fSPV, desc);

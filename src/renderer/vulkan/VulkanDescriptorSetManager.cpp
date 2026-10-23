@@ -165,4 +165,8 @@ namespace Rendering {
     void VulkanDescriptorSetManager::BindTexture(const ResourceSetHandle setHandle, uint32_t slot, const TextureHandle textureHandle) {
 
     }
+
+    void VulkanDescriptorSetManager::BindCubemap(ResourceSetHandle setHandle, uint32_t slot,
+        CubeMapHandle cubemapHandle) {
+    }
 } // Rendering

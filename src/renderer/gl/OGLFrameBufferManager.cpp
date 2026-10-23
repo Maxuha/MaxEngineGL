@@ -20,7 +20,7 @@ namespace Rendering {
         glCreateFramebuffers(1, &fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-        const OGLTexture tex = static_cast<OGLTextureManager*>(context->TextureManager)->GetTexture(texture);
+        const OGLTexture tex = context->TextureManager->GetTexture(texture);
 
         glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, tex.Id, 0);
 

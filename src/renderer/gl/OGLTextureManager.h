@@ -14,12 +14,12 @@ namespace Rendering {
         uint32_t fbo = 0;
     };
 
-    class OGLTextureManager : public ITextureManager {
+    class OGLTextureManager {
     public:
         explicit OGLTextureManager();
-        ~OGLTextureManager() override;
+        ~OGLTextureManager();
 
-        TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, void* data) override;
+        TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, void* data);
 
         OGLTexture& GetTexture(TextureHandle texture);
 

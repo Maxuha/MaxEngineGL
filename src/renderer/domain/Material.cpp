@@ -4,6 +4,7 @@
 
 #include "Material.h"
 
+#include "Cubemap.h"
 #include "../RenderContext.h"
 #include "../../di/DIContainer.h"
 #include "../../math/Vertex.h"
@@ -11,49 +12,14 @@
 Material::Material(const MaterialHandle handle) : id(handle), shader(nullptr) {
 }
 
-Material::Material(const Shader *shader, const std::string &name) : name(name), shader(nullptr) {
-    cpuBuffer.resize(32, 0);
+Material::Material(const Shader *shader, const size_t bufferSize, const std::string &name) : name(name), shader(nullptr) {
+    cpuBuffer.resize(bufferSize, 0);
 
     Rendering::MaterialDesc desc;
-
-    Rendering::ResourceBinding resourceBinding{};
-    resourceBinding.slot = 2;
-    resourceBinding.binding = 4;
-    resourceBinding.type = Rendering::ResourceType::SampledImage;
-
-    Rendering::ResourceBinding resourceBinding2{};
-    resourceBinding2.slot = 2;
-    resourceBinding2.binding = 5;
-    resourceBinding2.type = Rendering::ResourceType::SampledImage;
-
-    Rendering::ResourceBinding resourceBinding4{};
-    resourceBinding4.slot = 2;
-    resourceBinding4.binding = 6;
-    resourceBinding4.type = Rendering::ResourceType::SampledImage;
-
-    Rendering::ResourceBinding resourceBinding5{};
-    resourceBinding4.slot = 2;
-    resourceBinding4.binding = 7;
-    resourceBinding4.type = Rendering::ResourceType::SampledImage;
-
-    Rendering::ResourceBinding resourceBinding6{};
-    resourceBinding4.slot = 2;
-    resourceBinding4.binding = 8;
-    resourceBinding4.type = Rendering::ResourceType::SampledImage;
-
-    Rendering::ResourceBinding resourceBinding3{};
-    resourceBinding3.slot = 2;
-    resourceBinding3.binding = 3;
-    resourceBinding3.type = Rendering::ResourceType::UniformBuffer;
-
-    desc.resourceSet.bindings.push_back(resourceBinding);
-    desc.resourceSet.bindings.push_back(resourceBinding2);
-    desc.resourceSet.bindings.push_back(resourceBinding4);
-    desc.resourceSet.bindings.push_back(resourceBinding3);
-    desc.resourceSet.bindings.push_back(resourceBinding5);
-    desc.resourceSet.bindings.push_back(resourceBinding6);
+    desc.bufferSize = bufferSize;
 
     id = DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMaterial(shader->GetHandle(), desc);
+
     isDirty = true;
 }
 
@@ -73,8 +39,12 @@ void Material::ClearDirty() {
     isDirty = false;
 }
 
-void Material::SetTexture(const uint32_t slot, const Rendering::Texture &texture) {
+void Material::SetTexture(const uint32_t slot, const Rendering::Texture &texture) const {
     DIContainer::GetInstance().Get<Rendering::IRenderer>()->BindTextureToMaterial(*this, slot, texture);
+}
+
+void Material::SetCubemap(const uint32_t slot, const Rendering::Cubemap &texture) const {
+    DIContainer::GetInstance().Get<Rendering::IRenderer>()->BindCubemapToMaterial(*this, slot, texture);
 }
 
 MaterialHandle Material::GetMaterialHandle() const {

@@ -95,7 +95,7 @@ namespace Rendering {
                 .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::STORE,
+                .storeOp = AttachmentStoreOp::DONT_CARE,
                 .clearColor = clearColor
             },
             AttachmentDescription{
@@ -103,6 +103,23 @@ namespace Rendering {
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE
+            }
+        };
+
+        const std::array attachments2 = {
+            AttachmentDescription{
+                .format = displayImageFormat,
+                .type = AttachmentType::COLOR,
+                .loadOp = AttachmentLoadOp::LOAD,
+                .storeOp = AttachmentStoreOp::STORE,
+                .clearColor = clearColor,
+                .depthTestEnable = true
+            },
+            AttachmentDescription {
+                .format = depthFormat,
+                .type = AttachmentType::DEPTH,
+                .loadOp = AttachmentLoadOp::LOAD,
+                .storeOp = AttachmentStoreOp::STORE
             }
         };
 
@@ -133,8 +150,16 @@ namespace Rendering {
             clearColor
         };
 
+        const auto skyboxRenderPass = RenderPass{
+                attachments2[0],
+                attachments2[1],
+                viewport,
+                clearColor
+            };
+
         renderPassesDesc.push_back(mainRenderPass);
         renderPassesDesc.push_back(shadowRenderPass);
+        renderPassesDesc.push_back(skyboxRenderPass);
 
         // resource set layouts for cameras and lights set = 0 binding = 0 for camera, and binding = 1 for light
 
@@ -248,26 +273,35 @@ namespace Rendering {
         return renderDevice->CreateTexture(textureCreateDesc, data);
     }
 
+    CubeMapHandle Renderer::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        return renderDevice->CreateCubeMap(desc, datas);
+    }
+
     MaterialHandle Renderer::CreateMaterial(const ShaderHandle shaderHandle, const MaterialDesc &materialDesc) {
         GraphicsShader shader = shaders[shaderHandle.Id];
 
         MaterialData data;
         data.shader = shaderHandle;
 
-        BufferDesc bufferDesc;
-        bufferDesc.size = 32;
-        bufferDesc.usage = BufferUsage::Uniform;
-        bufferDesc.isDynamic = true;
+        if (materialDesc.bufferSize != 0) {
+            BufferDesc bufferDesc;
+            bufferDesc.size = materialDesc.bufferSize;
+            bufferDesc.usage = BufferUsage::Uniform;
+            bufferDesc.isDynamic = true;
 
-        data.ubo = renderDevice->CreateBuffer(bufferDesc);
+            data.ubo = renderDevice->CreateBuffer(bufferDesc);
+        }
+
         data.resourceSet = renderDevice->CreateResourceSet(shader.resourceSetLayout);
 
         const MaterialHandle handle{.Id = static_cast<uint32_t>(materials.size())};
 
         materials.push_back(data);
 
-        BindBufferToMaterial(handle, 3, data.ubo);
-        BindTextureToMaterial(handle, 6, shadowTexture);
+        if (materialDesc.bufferSize != 0) {
+            BindBufferToMaterial(handle, 3, data.ubo);
+            BindTextureToMaterial(handle, 6, shadowTexture);
+        }
 
         return handle;
     }
@@ -291,9 +325,17 @@ namespace Rendering {
         pipelineStateDesc.ColorFormat = colorFormat;
         pipelineStateDesc.RasterizerState.renderFace = renderFace;
 
-        if (shaderDesc.resourceSetLayouts.size() >= 3) {
-            graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
+        // if (shaderDesc.resourceSetLayouts.size() >= 3) {
+        //     graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
+        // }
+        const auto it = std::ranges::find_if(shaderDesc.resourceSetLayouts, [](const ResourceSetLayoutDesc& u) {
+            return u.set_index == 2;
+        });
+
+        if (it != shaderDesc.resourceSetLayouts.end()) {
+            graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(*it);
         }
+
         graphicsShader.pipeline = renderDevice->CreatePipeline(shaderDesc, pipelineStateDesc);
 
         shaders.push_back(graphicsShader);
@@ -385,6 +427,12 @@ namespace Rendering {
         renderDevice->UpdateResourceSet(materialData.resourceSet, slot, texture.GetId());
     }
 
+    void Renderer::BindCubemapToMaterial(const Material& material, const uint32_t slot,
+        const Cubemap& cubemap) {
+        const MaterialData m = materials[material.GetId().Id];
+        renderDevice->UpdateResourceSet(m.resourceSet, slot, cubemap.GetHandle());
+    }
+
     void Renderer::BindBufferToMaterial(const MaterialHandle materialHandle, const uint32_t slot,
                                         const BufferHandle bufferId) {
         const MaterialData material = materials[materialHandle.Id];
@@ -399,8 +447,8 @@ namespace Rendering {
         cameraBuffer.proj = activeCamera->GetProjection();
         cameraBuffer.position = Vector4(activeCamera->GetTransform()->position, 1.0f);
 
-        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
-                                   sizeof(CameraBuffer));
+        // renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
+        //                            sizeof(CameraBuffer));
     }
 
     void Renderer::Render(Scene &scene) {
@@ -497,8 +545,6 @@ namespace Rendering {
 
         CameraBuffer cameraBuffer;
         cameraBuffer.view = lights[1]->GetGameObject()->GetTransform()->LookAt();
-        cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Perspective(90.0f, 2160.0f / 1440.0f, 0.1f, 100.0f);
-        cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Othographic(-1080.0f, 1080.0f, -720.0f, 720.0f, 0.1f, 100.0f);
         cameraBuffer.proj = lights[1]->GetGameObject()->GetTransform()->Othographic(-50.0f, 50.0f, -50.0f, 50.0f, 0.1f, 100.0f);
         cameraBuffer.position = Vector4(lights[1]->GetGameObject()->GetTransform()->position, 1.0f);
 
@@ -551,6 +597,23 @@ namespace Rendering {
         }
 
         cmd->EndRenderPass();
+
+        //skybox
+
+        cameraBuffer.view = activeCamera->GetTransform()->LookAt();
+        cameraBuffer.proj = activeCamera->GetProjection();
+        cameraBuffer.position = Vector4(activeCamera->GetTransform()->position, 1.0f);
+
+        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0, sizeof(CameraBuffer));
+
+        cmd->BeginRenderPass(renderPassesDesc[2]);
+        cmd->BindPipeline(shaders[materials[skyboxMaterial->GetMaterialHandle().Id].shader.Id].pipeline);
+        cmd->BindResourceSet(cameras[activeCamera->GetHandle().Id].ResourceSet, mainPipelineLayout, 0);
+        cmd->BindResourceSet(materials[skyboxMaterial->GetMaterialHandle().Id].resourceSet, shaders[materials[skyboxMaterial->GetMaterialHandle().Id].shader.Id].pipeline, 2);
+        cmd->DrawIndexed(36, 0, 0, 0);
+        cmd->EndRenderPass();
+
+        // end skybox
         cmd->End();
 
         if (uploadCommandBuffer != nullptr) {
@@ -569,5 +632,9 @@ namespace Rendering {
 
     void Renderer::SetDepthShader(Shader &shader) {
         depthShader = &shader;
+    }
+
+    void Renderer::SetSkyboxMaterial(Material& material) {
+        skyboxMaterial = &material;
     }
 } // namespace Rendering

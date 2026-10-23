@@ -22,17 +22,19 @@ namespace Rendering {
         uint32_t MipLevels;
     };
 
-    class VulkanTextureManager : public ITextureManager {
+    class VulkanTextureManager {
     public:
         explicit VulkanTextureManager(VulkanLogicalDevice& device, VulkanStagingBufferPool& stagingBufferPool, VulkanCommandBufferManager& commandBufferManager);
 
-        ~VulkanTextureManager() override;
+        ~VulkanTextureManager();
 
-        TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, void *data) override;
+        TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, const TextureType type, void *data);
 
         VulkanTexture& GetTexture(TextureHandle texture);
 
         void UploadData(VkCommandBuffer cmd, TextureHandle handle, const void *data, size_t size);
+
+        void UploadData(VkCommandBuffer cmd, const StagingAllocation &buffer, TextureHandle handle, const std::vector<void *>& data, size_t size, uint32_t layerCount = 1);
 
     private:
         VulkanLogicalDevice& device;
@@ -41,8 +43,8 @@ namespace Rendering {
 
         std::vector<VulkanTexture> textures;
 
-        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
-        void CopyBufferToImage(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize offset, VkImage image, uint32_t width, uint32_t height) ;
+        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, TextureType type) const;
+        void CopyBufferToImage(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize offset, VkImage image, uint32_t width, uint32_t height, uint32_t layer = 0) ;
         void TransitionImageLayout(VkCommandBuffer cmd, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         constexpr VkFormat MapTextureFormat(TextureFormat format) const;

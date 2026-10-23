@@ -21,6 +21,7 @@ namespace Rendering {
     class IRenderPassManager;
     class VulkanSwapChain;
     class IResourceSetManager;
+    class OGLTextureManager;
 
 
     // Mediator for RenderSystem
@@ -30,7 +31,7 @@ namespace Rendering {
         IRenderPassManager* RenderPassManager;
         IPipelineManager* PipelineManager;
         IFrameBufferManager* FrameBufferManager;
-        ITextureManager* TextureManager;
+        OGLTextureManager* TextureManager;
         IShaderManager* ShaderManager;
         ICommandPoolManager* CommandPoolManager;
         ICommandBufferManager* CommandBufferManager;

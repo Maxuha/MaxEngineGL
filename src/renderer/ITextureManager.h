@@ -14,7 +14,7 @@ namespace Rendering {
     public:
         virtual ~ITextureManager() = default;
 
-        virtual TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, void* data) = 0;
+        virtual TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, size_t layers, void* data) = 0;
     };
 } // Rendering
 

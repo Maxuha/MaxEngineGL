@@ -266,7 +266,7 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
 
     const auto mainShader = new Shader(vSPV, fSPV, desc);
 
-    Material material(mainShader, mat->GetName().C_Str());
+    Material material(mainShader, 32, mat->GetName().C_Str());
 
     for (const auto key: mainShader->GetProperties() | std::views::keys) {
         auto [name, type, index, vType] = materialProperties[key];

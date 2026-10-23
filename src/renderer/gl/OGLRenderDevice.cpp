@@ -132,6 +132,7 @@ namespace Rendering {
 
         instance = new OGLInstance(window);
         textureManager = new OGLTextureManager();
+        cubeMapManager = new OGlCubeMapManager();
         pipelineManager = new OGLPipelineManager();
         shaderManager = new OGLShaderManager();
         bufferManager = new OGLVertexBufferManager();
@@ -250,6 +251,10 @@ namespace Rendering {
         return id;
     }
 
+    CubeMapHandle OGLRenderDevice::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        return cubeMapManager->CreateCubeMap(desc, datas);
+    }
+
     PipelineLayoutHandle OGLRenderDevice::CreatePipelineLayout(
         const std::vector<ResourceSetLayoutHandle> &resourceSetLayouts) {
         OGLPipelineLayout layout;
@@ -279,6 +284,12 @@ namespace Rendering {
                                             const TextureHandle textureHandle) {
         descriptorSetManager->BindTexture(setHandle, binding, textureHandle);
     }
+
+    void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
+        const CubeMapHandle cubemapHandle) {
+        descriptorSetManager->BindCubemap(setHandle, binding, cubemapHandle);
+    }
+
 
     void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
                                             const BufferHandle bufferHandle) {
@@ -383,26 +394,26 @@ namespace Rendering {
                     GLbitfield clearMask = 0;
                     if (colorAttachment.has_value() && colorAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
                         if (colorAttachment.value().type == AttachmentType::COLOR) clearMask |= GL_COLOR_BUFFER_BIT;
-                        if (colorAttachment.value().type == AttachmentType::DEPTH) clearMask |= GL_DEPTH_BUFFER_BIT;
-                        if (colorAttachment.value().type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
 
                         Color clearColor = colorAttachment.value().clearColor;
 
                         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
                     }
 
-                    if (depthAttachment.has_value() && depthAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
-                        if (depthAttachment.value().type == AttachmentType::COLOR) clearMask |= GL_COLOR_BUFFER_BIT;
-                        if (depthAttachment.value().type == AttachmentType::DEPTH) clearMask |= GL_DEPTH_BUFFER_BIT;
-                        if (depthAttachment.value().type == AttachmentType::STENCIL) clearMask |= GL_STENCIL_BUFFER_BIT;
+                    if (depthAttachment.has_value()) {
+                        if (depthAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
+                            if (depthAttachment.value().type == AttachmentType::DEPTH) clearMask |= GL_DEPTH_BUFFER_BIT;
 
-                        glClearDepth(depthAttachment.value().depthClearValue);
+                            glClearDepth(depthAttachment.value().depthClearValue);
+                        }
                     }
+
 
                     if (clearMask != 0) {
-                        glClearStencil(0);
+                        //glClearStencil(0);
                         glClear(clearMask);
                     }
+
                     break;
                 }
 
@@ -424,7 +435,8 @@ namespace Rendering {
                     glUseProgram(pipeline.program);
                     pipeline.cullEnable ? glEnable(GL_CULL_FACE) : glDisable(GL_CULL_FACE);
                     pipeline.depthTestEnable ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
-                    glDepthMask(pipeline.depthWriteEnable ? GL_TRUE : GL_FALSE);
+                    glDepthMask(pipeline.depthWriteEnable);
+                    glDepthFunc(pipeline.depthCompareFunc);
                     glCullFace(pipeline.cullMode);
                     break;
                 }
@@ -478,7 +490,13 @@ namespace Rendering {
                         glBindTextureUnit(item.binding, 0);
 
                         //TODO Remove it
-                        if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999) continue;
+                        if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999 && item.cubemapHandle.Id == 9999999) continue;
+
+                        if (item.cubemapHandle.Id != 9999999) {
+                            OGLCubeMapData cubemap = cubeMapManager->GetCubeMap(item.cubemapHandle);
+                            glBindTextureUnit(item.binding, cubemap.glId);
+                            continue;
+                        }
 
                         if (item.IsBuffer()) {
                             OGLBuffer &buffer = bufferManager->GetBuffer(item.bufferHandle);
@@ -505,7 +523,9 @@ namespace Rendering {
                     const auto *cmd = reinterpret_cast<GLCommand_Draw *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_Draw);
 
+                    glBindVertexArray(1);
                     glDrawArrays(GL_TRIANGLES, 0, cmd->vertexCount);
+                    glBindVertexArray(0);
                     break;
                 }
 

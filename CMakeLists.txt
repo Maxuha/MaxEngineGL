@@ -291,6 +291,10 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/gameObject/primitives/Plane.h
         src/math/Quaternion.cpp
         src/math/Quaternion.h
+        src/renderer/gl/OGlCubeMapManager.cpp
+        src/renderer/gl/OGlCubeMapManager.h
+        src/renderer/domain/Cubemap.cpp
+        src/renderer/domain/Cubemap.h
 )
 
 target_include_directories(MaxEngine PRIVATE

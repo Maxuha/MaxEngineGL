@@ -70,8 +70,9 @@ namespace Rendering {
         pipeline.program = program;
         pipeline.cullMode = MapRenderFace(pipelineStateDesc.RasterizerState.renderFace);
         pipeline.fillMode = GL_FILL;
-        pipeline.depthTestEnable = true;
-        pipeline.depthWriteEnable = true;
+        pipeline.depthTestEnable = pipelineStateDesc.DepthStencilState.depthTestEnable ? GL_TRUE : GL_FALSE;
+        pipeline.depthWriteEnable = pipelineStateDesc.DepthStencilState.depthWriteEnable ? GL_TRUE : GL_FALSE;
+        pipeline.depthCompareFunc = MapDepthCompareOp(pipelineStateDesc.DepthCompareOp);
         pipeline.vao = vao;
         pipeline.layout = layout;
 
