@@ -33,6 +33,7 @@ int main() {
     auto phongShader = assetManager->Import<Shader>("phong/phong", {{"renderFace", "Both"}});
     auto depthShader = assetManager->Import<Shader>("depth/depth", {{"renderFace", "Front"}, {"isDepthOnly", "true"}});
     auto skyboxShader = assetManager->Import<Shader>("skybox/skybox", {{"renderFace", "Both"}});
+    auto reflactionShader = assetManager->Import<Shader>("reflaction/reflaction", {{"renderFace", "Both"}});
 
     renderer->SetDepthShader(*depthShader);
 
@@ -40,6 +41,7 @@ int main() {
     auto material2 = new Material(phongShader, 32);
     auto material3 = new Material(phongShader, 32);
     auto skyboxMaterial = new Material(skyboxShader, 0);
+    auto reflactionMaterial = new Material(reflactionShader, 0);
 
     renderer->SetSkyboxMaterial(*skyboxMaterial);
 
@@ -52,6 +54,11 @@ int main() {
     cube1->GetComponent<MeshRenderer>()->material = material1;
     cube1->GetComponent<Transform>()->position = Vector3(0, 4.0f, -10.0f);
     cube1->GetComponent<Transform>()->scale = Vector3(1.0f, 1.0f, 1.0f);
+
+    const auto cube2 = Cube::BuildCube();
+    cube2->GetComponent<MeshRenderer>()->material = reflactionMaterial;
+    cube2->GetComponent<Transform>()->position = Vector3(5, 4.0f, -10.0f);
+    cube2->GetComponent<Transform>()->scale = Vector3(1.0f, 1.0f, 1.0f);
 
     const auto brickwall = Plane::BuildPlane();
     brickwall->GetComponent<MeshRenderer>()->material = material2;
@@ -218,6 +225,7 @@ int main() {
     Rendering::Cubemap *skybox = new Rendering::Cubemap(skyboxBackTextureAsset->Width, Rendering::TextureFormat::SRGBA, skyboxTextures);
 
     skyboxMaterial->SetCubemap(3, *skybox);
+    reflactionMaterial->SetCubemap(3, *skybox);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
@@ -302,6 +310,7 @@ int main() {
 
     auto *scene = new Scene(camera);
     scene->Add(cube1);
+    scene->Add(cube2);
     scene->Add(erika->root);
     scene->Add(houseModel->root);
     scene->Add(backpackModel->root);
