@@ -34,6 +34,7 @@ int main() {
     auto depthShader = assetManager->Import<Shader>("depth/depth", {{"renderFace", "Front"}, {"isDepthOnly", "true"}});
     auto skyboxShader = assetManager->Import<Shader>("skybox/skybox", {{"renderFace", "Both"}});
     auto reflactionShader = assetManager->Import<Shader>("reflaction/reflaction", {{"renderFace", "Both"}});
+    auto refractionShader = assetManager->Import<Shader>("refraction/refraction", {{"renderFace", "Both"}});
 
     renderer->SetDepthShader(*depthShader);
 
@@ -42,6 +43,7 @@ int main() {
     auto material3 = new Material(phongShader, 32);
     auto skyboxMaterial = new Material(skyboxShader, 0);
     auto reflactionMaterial = new Material(reflactionShader, 0);
+    auto refractionMaterial = new Material(refractionShader, 0);
 
     renderer->SetSkyboxMaterial(*skyboxMaterial);
 
@@ -76,7 +78,7 @@ int main() {
     uint32_t size = backpackModel->root->GetComponentsInChildren<MeshRenderer>().size();
 
     for (int i = 0; i < size; i++) {
-        backpackModel->root->GetComponentsInChildren<MeshRenderer>()[i]->material = material3;
+        backpackModel->root->GetComponentsInChildren<MeshRenderer>()[i]->material = refractionMaterial;
     }
 
     backpackModel->root->GetTransform()->position = Vector3(5, 5, 4);
@@ -226,6 +228,7 @@ int main() {
 
     skyboxMaterial->SetCubemap(3, *skybox);
     reflactionMaterial->SetCubemap(3, *skybox);
+    refractionMaterial->SetCubemap(3, *skybox);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
