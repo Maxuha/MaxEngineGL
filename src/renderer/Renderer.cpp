@@ -325,9 +325,6 @@ namespace Rendering {
         pipelineStateDesc.ColorFormat = colorFormat;
         pipelineStateDesc.RasterizerState.renderFace = renderFace;
 
-        // if (shaderDesc.resourceSetLayouts.size() >= 3) {
-        //     graphicsShader.resourceSetLayout = renderDevice->CreateResourceSetLayout(shaderDesc.resourceSetLayouts.at(2));
-        // }
         const auto it = std::ranges::find_if(shaderDesc.resourceSetLayouts, [](const ResourceSetLayoutDesc& u) {
             return u.set_index == 2;
         });

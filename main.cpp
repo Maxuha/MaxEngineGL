@@ -13,6 +13,7 @@
 #include "src/components/light/PointLight.h"
 #include "src/components/light/SpotLight.h"
 #include "src/gameObject/primitives/Plane.h"
+#include "src/gameObject/primitives/Sphere.h"
 #include "src/IO/FileReader.h"
 #include "src/renderer/domain/Cubemap.h"
 
@@ -35,12 +36,15 @@ int main() {
     auto skyboxShader = assetManager->Import<Shader>("skybox/skybox", {{"renderFace", "Both"}});
     auto reflactionShader = assetManager->Import<Shader>("reflaction/reflaction", {{"renderFace", "Both"}});
     auto refractionShader = assetManager->Import<Shader>("refraction/refraction", {{"renderFace", "Both"}});
+    auto pbrShader = assetManager->Import<Shader>("pbr/pbr", {{"renderFace", "Both"}});
 
     renderer->SetDepthShader(*depthShader);
 
     auto material1 = new Material(phongShader, 32);
     auto material2 = new Material(phongShader, 32);
     auto material3 = new Material(phongShader, 32);
+    auto pbrMaterial = new Material(pbrShader, 512);
+    auto rustedironMaterial = new Material(pbrShader, 512);
     auto skyboxMaterial = new Material(skyboxShader, 0);
     auto reflactionMaterial = new Material(reflactionShader, 0);
     auto refractionMaterial = new Material(refractionShader, 0);
@@ -55,12 +59,18 @@ int main() {
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = material1;
     cube1->GetComponent<Transform>()->position = Vector3(0, 4.0f, -10.0f);
-    cube1->GetComponent<Transform>()->scale = Vector3(1.0f, 1.0f, 1.0f);
 
     const auto cube2 = Cube::BuildCube();
     cube2->GetComponent<MeshRenderer>()->material = reflactionMaterial;
     cube2->GetComponent<Transform>()->position = Vector3(5, 4.0f, -10.0f);
-    cube2->GetComponent<Transform>()->scale = Vector3(1.0f, 1.0f, 1.0f);
+
+    const auto cube3 = Cube::BuildCube();
+    cube3->GetComponent<MeshRenderer>()->material = refractionMaterial;
+    cube3->GetComponent<Transform>()->position = Vector3(8, 4.0f, -10.0f);
+
+    const auto sphere = Sphere::BuildSphere();
+    sphere->GetComponent<MeshRenderer>()->material = rustedironMaterial;
+    sphere->GetComponent<Transform>()->position = Vector3(10, 4.0f, -5.0f);
 
     const auto brickwall = Plane::BuildPlane();
     brickwall->GetComponent<MeshRenderer>()->material = material2;
@@ -78,11 +88,21 @@ int main() {
     uint32_t size = backpackModel->root->GetComponentsInChildren<MeshRenderer>().size();
 
     for (int i = 0; i < size; i++) {
-        backpackModel->root->GetComponentsInChildren<MeshRenderer>()[i]->material = refractionMaterial;
+        backpackModel->root->GetComponentsInChildren<MeshRenderer>()[i]->material = pbrMaterial;
     }
 
     backpackModel->root->GetTransform()->position = Vector3(5, 5, 4);
     backpackModel->root->GetTransform()->scale = Vector3(0.01, 0.01, 0.01);
+
+    auto *backpackModel2 = container->Get<AssetManager>()->Import<Model>(
+       R"(assets/models/Survival_BackPack_2/Survival_BackPack_2.fbx)");
+
+    for (int i = 0; i < size; i++) {
+        backpackModel2->root->GetComponentsInChildren<MeshRenderer>()[i]->material = material3;
+    }
+
+    backpackModel2->root->GetTransform()->position = Vector3(10, 5, 4);
+    backpackModel2->root->GetTransform()->scale = Vector3(0.01, 0.01, 0.01);
 
     auto *erika = container->Get<AssetManager>()->Import<Model>(R"(assets/models/Erika.fbx)");
     erika->root->GetComponentsInChildren<MeshRenderer>()[0]->material = material1;
@@ -107,6 +127,30 @@ int main() {
     Rendering::Texture *toyBoxNormalTexture = new Rendering::Texture(toyBoxNormalTextureAsset->Width, toyBoxNormalTextureAsset->Height,
                                                                 toyBoxNormalTextureAsset->Wrap, toyBoxNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
+    TextureAsset *rustedironDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+      R"(assets/models/rustediron/rustediron2_basecolor.png)");
+
+    Rendering::Texture *rustedironDiffuseTexture = new Rendering::Texture(rustedironDiffuseTextureAsset->Width, rustedironDiffuseTextureAsset->Height,
+                                                                rustedironDiffuseTextureAsset->Wrap, rustedironDiffuseTextureAsset->Data);
+
+    TextureAsset *rustedironMetallicTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+  R"(assets/models/rustediron/rustediron2_metallic.png)");
+
+    Rendering::Texture *rustedironMetallicTexture = new Rendering::Texture(rustedironMetallicTextureAsset->Width, rustedironMetallicTextureAsset->Height,
+                                                                rustedironMetallicTextureAsset->Wrap, rustedironMetallicTextureAsset->Data);
+
+    TextureAsset *rustedironNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+  R"(assets/models/rustediron/rustediron2_normal.png)");
+
+    Rendering::Texture *rustedironNormalTexture = new Rendering::Texture(rustedironNormalTextureAsset->Width, rustedironNormalTextureAsset->Height,
+                                                                rustedironNormalTextureAsset->Wrap, rustedironNormalTextureAsset->Data);
+
+    TextureAsset *rustedironRoughnessTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+R"(assets/models/rustediron/rustediron2_roughness.png)");
+
+    Rendering::Texture *rustedironRoughnessTexture = new Rendering::Texture(rustedironRoughnessTextureAsset->Width, rustedironRoughnessTextureAsset->Height,
+                                                                rustedironRoughnessTextureAsset->Wrap, rustedironRoughnessTextureAsset->Data);
+
     TextureAsset *backpackDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
       R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
 
@@ -118,6 +162,18 @@ int main() {
 
     Rendering::Texture *backpackSpecularTexture = new Rendering::Texture(backpackSpecularTextureAsset->Width, backpackSpecularTextureAsset->Height,
                                                                 backpackSpecularTextureAsset->Wrap, backpackSpecularTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *backpackRougnessTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+   R"(assets/models/Survival_BackPack_2/1001_roughness.jpg)");
+
+    Rendering::Texture *backpackRougnessTexture = new Rendering::Texture(backpackRougnessTextureAsset->Width, backpackRougnessTextureAsset->Height,
+                                                                backpackRougnessTextureAsset->Wrap, backpackRougnessTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *backpackAOTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+   R"(assets/models/Survival_BackPack_2/1001_AO.jpg)");
+
+    Rendering::Texture *backpackAOTexture = new Rendering::Texture(backpackAOTextureAsset->Width, backpackAOTextureAsset->Height,
+                                                                backpackAOTextureAsset->Wrap, backpackAOTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *backpackNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
  R"(assets/models/Survival_BackPack_2/1001_normal.png)");
@@ -266,6 +322,30 @@ int main() {
     material3->SetTexture(7, *backpackNormalTexture);
     material3->SetProperty("material.shininess", 32.0f);
 
+    pbrMaterial->SetTexture(4, *backpackDiffuseTexture);
+    pbrMaterial->SetTexture(5, *backpackSpecularTexture);
+    pbrMaterial->SetTexture(7, *backpackNormalTexture);
+    // pbrMaterial->SetTexture(8, *brickwallHeightTexture);
+    pbrMaterial->SetTexture(9, *backpackDiffuseTexture);
+    pbrMaterial->SetTexture(10, *backpackSpecularTexture);
+    pbrMaterial->SetTexture(11, *backpackRougnessTexture);
+    pbrMaterial->SetTexture(12, *backpackAOTexture);
+
+    rustedironMaterial->SetTexture(4, *rustedironDiffuseTexture);
+    rustedironMaterial->SetTexture(5, *rustedironMetallicTexture);
+    rustedironMaterial->SetTexture(7, *rustedironNormalTexture);
+    // rustedironMaterial->SetTexture(8, *brickwallHeightTexture);
+    rustedironMaterial->SetTexture(9, *rustedironDiffuseTexture);
+    rustedironMaterial->SetTexture(10, *rustedironMetallicTexture);
+    rustedironMaterial->SetTexture(11, *rustedironRoughnessTexture);
+    rustedironMaterial->SetTexture(12, *backpackAOTexture);
+
+    rustedironMaterial->SetProperty("material.shininess", 32.0f);
+    rustedironMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
+    rustedironMaterial->SetProperty("material.metallic", 0.5f);
+    rustedironMaterial->SetProperty("material.roughness", 0.3f);
+    rustedironMaterial->SetProperty("material.ao", 1.0f);
+
     const auto lightFactory = new LightFactory();
 
     GameObject *ambientLight = lightFactory->SpawnAmbientLight();
@@ -275,7 +355,7 @@ int main() {
     GameObject *sun = lightFactory->SpawnDirectionalLight();
     sun->GetComponent<Transform>()->position = Vector3(0, 40.0, 0);
     sun->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
-    sun->GetComponent<Light>()->intensity = 2.0f;
+    sun->GetComponent<Light>()->intensity = 2.5f;
 
     GameObject *light = lightFactory->SpawnSpotLight();
     light->GetComponent<Transform>()->position = Vector3(0, 6, -10);
@@ -314,9 +394,12 @@ int main() {
     auto *scene = new Scene(camera);
     scene->Add(cube1);
     scene->Add(cube2);
-    scene->Add(erika->root);
+    scene->Add(cube3);
+    scene->Add(sphere);
+    // scene->Add(erika->root);
     scene->Add(houseModel->root);
     scene->Add(backpackModel->root);
+    scene->Add(backpackModel2->root);
     scene->Add(brickwall);
     
     scene->Add(ambientLight);
@@ -324,7 +407,7 @@ int main() {
     // scene->Add(light);
     // scene->Add(light2);
     // scene->Add(lamp);
-    // // scene->Add(lamp2);
+    // scene->Add(lamp2);
     // scene->Add(lamp3);
 
     scene->Init();
@@ -341,11 +424,8 @@ int main() {
         camera->Update(delta_time);
         ambientLight->GetComponent<Light>()->Update(delta_time);
         sun->GetComponent<Light>()->Update(delta_time);
-        // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
+         // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
         t += delta_time * 127;
-        //material1->SetProperty("material.shininess", 32);
-
-        // brickwall->GetComponent<Transform>()->RotateYaw(10 * delta_time);
         cube1->GetComponent<Transform>()->RotateRoll(10 * delta_time);
 
         if (t >= 256) {

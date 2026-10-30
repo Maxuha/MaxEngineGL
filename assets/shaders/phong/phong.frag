@@ -167,8 +167,9 @@ void main()
 
     //Directional
     vec3 dirLightDir = normalize(-light.directionalLight.direction);
+    vec3 halfway = normalize(dirLightDir + viewDir);
     vec3 dirDiffuse = calculateDiffuse(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, normal, diffTex);
-    vec3 dirSpecular = calculateSpecular(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, normal, viewDir, specTex);
+    vec3 dirSpecular = calculateSpecular(light.directionalLight.intensity, light.directionalLight.color, dirLightDir, normal, halfway, specTex);
     float dirShadow = dirShadowCalculation(FragPosLightSpace, normal, dirLightDir);
 
     result += (dirDiffuse + dirSpecular) * (dirShadow);

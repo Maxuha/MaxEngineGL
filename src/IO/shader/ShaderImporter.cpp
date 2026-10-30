@@ -62,14 +62,11 @@ void ShaderImporter::reflectShader(ShaderDesc& desc) {
         reflectStage(fCode, Rendering::ShaderStageFlags::Fragment, aggregatedSets);
     }
 
-    // 3. ????????? ?????????????? ?????? ? ????????? ????????? ShaderDesc
     uint32_t maxSetIndex = 0;
     for (const auto &setIndex: aggregatedSets | std::views::keys) {
         maxSetIndex = std::max(maxSetIndex, setIndex);
     }
 
-    // ???????? ?????? ??? ??? ????, ?????? ?? ?????????????,
-    // ????? ?????? ? ??????? ?????? ?????????????? set_index ? ???????!
     desc.resourceSetLayouts.resize(maxSetIndex + 1);
 
     for (auto& [setIndex, bindingsMap] : aggregatedSets) {
@@ -79,32 +76,10 @@ void ShaderImporter::reflectShader(ShaderDesc& desc) {
             layout.bindings.push_back(bindingDesc);
         }
 
-        // ????????? ???????? ?????? ????
         std::ranges::sort(layout.bindings, [](const Rendering::ResourceBindingDesc& a, const Rendering::ResourceBindingDesc& b) {
             return a.binding_slot < b.binding_slot;
         });
     }
-
-    // for (auto& [setIndex, bindingsMap] : aggregatedSets) {
-    //     Rendering::ResourceSetLayoutDesc layout;
-    //     layout.set_index = setIndex;
-    //
-    //     for (auto& [bindingSlot, bindingDesc] : bindingsMap) {
-    //         layout.bindings.push_back(bindingDesc);
-    //     }
-    //
-    //     std::ranges::sort(layout.bindings, [](const Rendering::ResourceBindingDesc& a, const Rendering::ResourceBindingDesc& b) {
-    //         return a.binding_slot < b.binding_slot;
-    //     });
-    //
-    //     desc.resourceSetLayouts.push_back(layout);
-    // }
-    //
-    // std::ranges::sort(desc.resourceSetLayouts, [](const Rendering::ResourceSetLayoutDesc& a, const Rendering::ResourceSetLayoutDesc& b) {
-    //     return a.set_index < b.set_index;
-    // });
-
-    // return desc;
 }
 
 void ShaderImporter::reflectStage(const std::vector<char> &code, const Rendering::ShaderStageFlags stage,

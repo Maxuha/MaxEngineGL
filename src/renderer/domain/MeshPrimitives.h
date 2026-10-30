@@ -18,6 +18,8 @@ public:
 
     static Mesh* CreatePlane();
 
+    static Mesh* CreateSphere(float radius);
+
     static Mesh CreateLine(Vector3 direction);
 };
 

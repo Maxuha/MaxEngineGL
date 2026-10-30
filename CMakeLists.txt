@@ -295,6 +295,8 @@ add_executable(MaxEngine main.cpp include/glad.c
         src/renderer/gl/OGlCubeMapManager.h
         src/renderer/domain/Cubemap.cpp
         src/renderer/domain/Cubemap.h
+        src/gameObject/primitives/Sphere.cpp
+        src/gameObject/primitives/Sphere.h
 )
 
 target_include_directories(MaxEngine PRIVATE

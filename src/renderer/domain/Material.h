@@ -43,6 +43,10 @@ public:
         //TODO Remove
         propertiesMeta["material.shininess"] = { 0, sizeof(float) };
         propertiesMeta["material.diffuseColor"] = { 16, sizeof(Vector4) };
+        propertiesMeta["material.albedo"] = { 32, sizeof(Vector3) };
+        propertiesMeta["material.metallic"] = { 44, sizeof(float) };
+        propertiesMeta["material.roughness"] = { 48, sizeof(float) };
+        propertiesMeta["material.ao"] = { 52, sizeof(float) };
 
         auto it = propertiesMeta.find(slot);
         if (it != propertiesMeta.end()) {

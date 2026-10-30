@@ -28,7 +28,7 @@ namespace Rendering {
         for (const auto &binding: resourceSetLayoutDesc.bindings) {
             VkDescriptorSetLayoutBinding vkBinding{};
             vkBinding.binding = binding.binding_slot;
-            vkBinding.descriptorCount = resourceSetLayoutDesc.bindings.size();
+            vkBinding.descriptorCount = 1;
 
             switch (binding.type) {
                 case ResourceType::SampledImage:

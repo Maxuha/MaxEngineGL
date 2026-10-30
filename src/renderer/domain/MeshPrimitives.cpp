@@ -183,3 +183,66 @@ Mesh *MeshPrimitives::CreatePlane() {
 
     return DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(ver, ind);
 }
+
+Mesh * MeshPrimitives::CreateSphere(const float radius) {
+    std::vector<Vertex> vertices;
+
+    const float PI = std::acos(-1.0f);
+    constexpr uint32_t sectors = 32;
+    constexpr uint32_t rings = 32;
+
+    constexpr float R = 1.0f / static_cast<float>(sectors);
+    constexpr float S = 1.0f / static_cast<float>(rings);
+
+    for (unsigned int r = 0; r <= rings; ++r) {
+        const float phi = r * PI * S;
+
+        for (unsigned int s = 0; s <= sectors; ++s) {
+            const float theta = s * 2.0f * PI * R;
+
+            float x = std::sin(phi) * std::cos(theta);
+            float y = std::cos(phi);
+            float z = std::sin(phi) * std::sin(theta);
+
+            Vertex vertex;
+
+            vertex.position = { x * radius, y * radius, z * radius };
+            vertex.normal   = { x, y, z };
+
+            vertex.texCoords = { static_cast<float>(s) * R, static_cast<float>(r) * S };
+
+            float tx = -std::sin(theta);
+            float ty = 0.0f;
+            float tz = std::cos(theta);
+            vertex.tangent = { tx, ty, tz };
+
+            vertex.bitangent.x = vertex.normal.y * vertex.tangent.z - vertex.normal.z * vertex.tangent.y;
+            vertex.bitangent.y = vertex.normal.z * vertex.tangent.x - vertex.normal.x * vertex.tangent.z;
+            vertex.bitangent.z = vertex.normal.x * vertex.tangent.y - vertex.normal.y * vertex.tangent.x;
+
+            vertices.push_back(vertex);
+        }
+    }
+
+    std::vector<uint16_t> indices;
+    indices.reserve(24);
+
+    for (unsigned int r = 0; r < rings; ++r) {
+        for (unsigned int s = 0; s < sectors; ++s) {
+            const int curRow = r * (sectors + 1);
+            const int nextRow = (r + 1) * (sectors + 1);
+
+            indices.push_back(curRow + s);
+            indices.push_back(nextRow + s);
+            indices.push_back(nextRow + s + 1);
+
+            indices.push_back(curRow + s);
+            indices.push_back(nextRow + s + 1);
+            indices.push_back(curRow + s + 1);
+        }
+    }
+
+    Mesh *mesh = DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateMesh(vertices, indices);
+
+    return mesh;
+}
