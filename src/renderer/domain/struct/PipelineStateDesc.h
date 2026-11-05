@@ -11,6 +11,7 @@
 #include "../../../math/Rect.h"
 #include "../../gl/model/TextureData.h"
 #include "../src/math/Color.h"
+#include "../Cubemap.h"
 
 namespace Rendering {
 
@@ -63,7 +64,7 @@ namespace Rendering {
         Color clearColor;
         float depthClearValue = 1.0f;
         std::optional<TextureHandle> renderTarget = { };
-        bool depthTestEnable = true;
+        std::optional<CubeMapHandle> renderCubeMap = { };
     };
 
     struct RasterizerDesc {

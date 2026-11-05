@@ -74,5 +74,5 @@ void main()
     vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
 
-    gl_Position =  camera.proj * camera.view  * vec4(FragPos, 1.0);
+    gl_Position = camera.proj * camera.view  * vec4(FragPos, 1.0);
 }

@@ -10,6 +10,7 @@
 namespace Rendering {
     struct OGLCubeMapData {
         GLuint glId = 0;
+        GLuint fbo = 0;
     };
 
     class OGlCubeMapManager {

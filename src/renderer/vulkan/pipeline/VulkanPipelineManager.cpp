@@ -279,7 +279,7 @@ namespace Rendering {
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = rasterizerDesc.lineWidth;
         rasterizer.cullMode = MapRenderFace(rasterizerDesc.renderFace);
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
         rasterizer.depthBiasEnable = rasterizerDesc.depthBiasEnable ? VK_TRUE : VK_FALSE;
         rasterizer.depthBiasConstantFactor = rasterizerDesc.depthBiasConstantFactor;
         rasterizer.depthBiasClamp = rasterizerDesc.depthBiasClamp;

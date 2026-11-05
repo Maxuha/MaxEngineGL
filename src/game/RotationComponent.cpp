@@ -15,7 +15,7 @@ namespace Game {
     void RotationComponent::Update(const float delta_time) {
         Behaviour::Update(delta_time);
 
-        GetGameObject()->GetComponent<Transform>()->RotateRoll(delta_time * 360);
+        //GetGameObject()->GetComponent<Transform>()->RotateRoll(delta_time * 360);
     }
 
     RotationComponent::~RotationComponent() {

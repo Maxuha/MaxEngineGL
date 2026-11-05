@@ -11,8 +11,11 @@ FPSCamera::FPSCamera(const float fov, const float zNear, const float zFar, const
 
 void FPSCamera::Start() {
     Camera::Start();
-   // const auto controller = DIContainer::GetInstance().Get<InputController>();
-    //controller->AddKeyListener(this);
+    const auto controller = DIContainer::GetInstance().Get<InputController>();
+
+    Vector2 vector2 = controller->GetCursorPos();
+
+    directionRot = Vector3(vector2.x, vector2.y, directionRot.z);
 }
 
 void FPSCamera::Update(const float delta_time) {
@@ -31,10 +34,10 @@ void FPSCamera::Update(const float delta_time) {
         direction -= cameraTransform->Forward();
     }
     if (controller->GetKeyDown(GLFW_KEY_A)) {
-        direction -= cameraTransform->Right();
+       direction = -cameraTransform->Right();
     }
     if (controller->GetKeyDown(GLFW_KEY_D)) {
-        direction += cameraTransform->Right();
+        direction = cameraTransform->Right();
     }
 
     //
@@ -51,18 +54,19 @@ void FPSCamera::Update(const float delta_time) {
             cameraTransform->Translate(direction * cameraSpeed * delta_time);
         }
 
-    // double x, y;
-    //
-     Vector2 vector2 = controller->GetCursorPos();
-    //
+    Vector2 vector2 = controller->GetCursorPos();
+
     directionRot = Vector3(vector2.x - directionRot.x,vector2.y - directionRot.y, directionRot.z);
 
-    const float Yaw = -directionRot.x * delta_time * 30;
-    const float Pitch = -directionRot.y * delta_time * 30;
+    const float Yaw = directionRot.x * delta_time * 30;
+    const float Pitch = directionRot.y * delta_time * 30;
 
     if (Yaw != 0 || Pitch != 0) {
-        cameraTransform->RotateYaw(Yaw);
-        cameraTransform->RotatePitch(Pitch);
+        const Quaternion qYaw = Quaternion().FromAxisAngle(Vector3::Up().x, Vector3::Up().y, Vector3::Up().z, Yaw);
+         const Quaternion qPitch = Quaternion().FromAxisAngle(cameraTransform->Right().x, cameraTransform->Right().y, cameraTransform->Right().z, Pitch);
+
+        cameraTransform->rotation =  qYaw * qPitch * cameraTransform->rotation ;
+        cameraTransform->rotation = cameraTransform->rotation.Normalized();
     }
 
     directionRot = Vector3(vector2.x, vector2.y, directionRot.z);

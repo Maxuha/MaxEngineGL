@@ -5,8 +5,6 @@
 #ifndef MAXENGINE_VECTOR_H
 #define MAXENGINE_VECTOR_H
 
-#include <glm/glm.hpp>
-
 class Vector4;
 
 class Vector3 {
@@ -14,8 +12,6 @@ public:
     Vector3();
 
     Vector3(float x, float y, float z);
-
-    Vector3(Vector4 vec);
 
     float x{}, y{}, z{};
 
@@ -51,6 +47,8 @@ public:
         return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
     }
 
+    friend std::ostream & operator<<(std::ostream &os, const Vector3 &vector);
+
     float Length(const Vector3 &v) const;
 
     Vector3 Normalize();
@@ -59,14 +57,6 @@ public:
 
     static float DotProduct(const Vector3 &a, const Vector3 &b);
 
-    template <typename T>
-    T Convert() {
-        auto result = glm::vec3();
-        result.x = x;
-        result.y = y;
-        result.z = z;
-        return result;
-    }
 };
 
 

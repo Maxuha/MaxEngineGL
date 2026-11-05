@@ -63,6 +63,8 @@ namespace Rendering {
 
         virtual void Render(Scene &scene) = 0;
 
+        virtual void Bake(DrawCall& drawCall) = 0;
+
         virtual void EndFrame() = 0;
 
         virtual void SetDepthShader(Shader& shader) = 0;

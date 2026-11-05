@@ -17,9 +17,6 @@ Vector3::Vector3(const float x, const float y, const float z) {
     this->z = z;
 }
 
-Vector3::Vector3(const Vector4 vec) : Vector3(vec.x, vec.y, vec.z) {
-}
-
 Vector3 Vector3::Zero() {
     return Vector3(0.0f, 0.0f, 0.0f);
 }
@@ -86,6 +83,11 @@ Vector3 Vector3::operator/=(const Vector3 &v) {
     y /= v.y;
     z /= v.z;
     return *this;
+}
+
+std::ostream & operator<<(std::ostream &os, const Vector3 &vector) {
+    os << "(" << vector.x << ";" << vector.y << ";" << vector.z << ")";
+    return os;
 }
 
 float Vector3::Length(const Vector3 &v) const {

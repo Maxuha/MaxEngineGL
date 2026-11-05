@@ -8,10 +8,18 @@ Quaternion::Quaternion() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
 
 Quaternion::Quaternion(const float x, const float y, const float z, const float w) : x(x), y(y), z(z), w(w) {}
 
-Quaternion Quaternion::FromAxisAngle(float ax, float ay, float az, float angleRadians) {
-    float halfAngle = angleRadians * 0.5f;
-    float sinHalf = std::sin(halfAngle);
-    return Quaternion(ax * sinHalf, ay * sinHalf, az * sinHalf, std::cos(halfAngle));
+Quaternion Quaternion::FromAxisAngle(const float ax, const float ay, const float az, const float angle) {
+    const float halfAngle = angle * (Pi / 180) * 0.5f;
+    const float sinHalf = std::sin(halfAngle);
+    return Quaternion(ax * sinHalf, ay * sinHalf, az * sinHalf, std::cos(halfAngle)).Normalized();
+}
+
+Quaternion Quaternion::FromEulerAngles(const float pitch, const float yaw, const float roll) {
+    const Quaternion qYaw   = FromAxisAngle(0.0f, 1.0f, 0.0f, yaw);
+    const Quaternion qPitch = FromAxisAngle(1.0f, 0.0f, 0.0f, pitch);
+    const Quaternion qRoll  = FromAxisAngle(0.0f, 0.0f, 1.0f, roll);
+
+    return (qYaw * qPitch * qRoll).Normalized();
 }
 
 Quaternion Quaternion::operator+(const Quaternion& q) const {
@@ -81,13 +89,41 @@ Quaternion Quaternion::Slerp(const Quaternion& start, const Quaternion& end, con
     return (q1 * s0) + (q2 * s1);
 }
 
-void Quaternion::ToMatrix4x4(float* m) const {
-    float xx = x * x; float yy = y * y; float zz = z * z;
-    float xy = x * y; float xz = x * z; float yz = y * z;
-    float wx = w * x; float wy = w * y; float wz = w * z;
+Matrix4x4 Quaternion::ToMatrix4x4() const {
+    float xx = x * x;   float xy = x * y;   float xz = x * z;
+    float yy = y * y;   float yz = y * z;   float zz = z * z;
+    float wx = w * x;   float wy = w * y;   float wz = w * z;
 
-    m[0]  = 1.0f - 2.0f * (yy + zz); m[1]  = 2.0f * (xy - wz);        m[2]  = 2.0f * (xz + wy);        m[3]  = 0.0f;
-    m[4]  = 2.0f * (xy + wz);        m[5]  = 1.0f - 2.0f * (xx + zz); m[6]  = 2.0f * (yz - wx);        m[7]  = 0.0f;
-    m[8]  = 2.0f * (xz - wy);        m[9]  = 2.0f * (yz + wx);        m[10] = 1.0f - 2.0f * (xx + yy); m[11] = 0.0f;
-    m[12] = 0.0f;                    m[13] = 0.0f;                    m[14] = 0.0f;                    m[15] = 1.0f;
+    Matrix4x4 m;
+
+    m.m[0][0] = 1.0f - 2.0f * (yy + zz);
+    m.m[0][1] = 2.0f * (xy + wz);
+    m.m[0][2] = 2.0f * (xz - wy);
+    m.m[0][3] = 0.0f;
+
+    m.m[1][0] = 2.0f * (xy - wz);
+    m.m[1][1] = 1.0f - 2.0f * (xx + zz);
+    m.m[1][2] = 2.0f * (yz + wx);
+    m.m[1][3] = 0.0f;
+
+    m.m[2][0] = 2.0f * (xz + wy);
+    m.m[2][1] = 2.0f * (yz - wx);
+    m.m[2][2] = 1.0f - 2.0f * (xx + yy);
+    m.m[2][3] = 0.0f;
+
+    m.m[3][0] = 0.0f;
+    m.m[3][1] = 0.0f;
+    m.m[3][2] = 0.0f;
+    m.m[3][3] = 1.0f;
+
+    return m;
+}
+
+Quaternion Quaternion::Identity() {
+    return Quaternion(0, 0, 0, 1);
+}
+
+std::ostream & operator<<(std::ostream &os, const Quaternion &q) {
+    os << "Quaternion(" << q.x << ", " << q.y << ", " << q.z << ", " << q.w << ")";
+    return os;
 }

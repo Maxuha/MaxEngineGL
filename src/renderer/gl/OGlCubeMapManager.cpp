@@ -25,7 +25,7 @@ namespace Rendering {
         glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTextureParameteri(texture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < datas.size(); ++i) {
             if (datas[i]) {
                 glTextureSubImage3D(
                     texture,
@@ -39,7 +39,10 @@ namespace Rendering {
             }
         }
 
-        cubeMaps.push_back( {.glId = texture} );
+        GLuint fbo;
+        glCreateFramebuffers(1, &fbo);
+
+        cubeMaps.push_back( {.glId = texture, .fbo = fbo} );
 
         return { .Id = cubeMaps.size() - 1 };
     }

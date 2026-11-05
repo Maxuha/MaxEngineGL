@@ -26,7 +26,7 @@ private:
     float zFar;
     float aspectRatio;
 
-    Matrix4x4 projection = Matrix4x4(1);
+    Matrix4x4 projection = Matrix4x4::Identity();
 };
 
 

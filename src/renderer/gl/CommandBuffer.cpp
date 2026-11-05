@@ -23,12 +23,13 @@ void Rendering::CommandBuffer::Draw(const uint32_t vertexCount) {
     cmd->vertexCount = vertexCount;
 }
 
-void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t indexMesh) {
+void Rendering::CommandBuffer::DrawIndexed(const uint32_t indexCount, const uint32_t firstIndex, const uint32_t vertexOffset, const uint32_t indexMesh, const uint32_t instanceCount) {
     auto *cmd = allocateCommand<GLCommand_DrawIndexed>(GLCommandType::DrawIndexed);
     cmd->indexCount = indexCount;
     cmd->indexMesh = indexMesh;
     cmd->firstIndex = firstIndex;
     cmd->vertexOffset = vertexOffset;
+    cmd->instanceCount = instanceCount;
 }
 
 void Rendering::CommandBuffer::BeginRenderPass(const RenderPass &renderPass) {

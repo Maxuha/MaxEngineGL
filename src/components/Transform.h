@@ -4,9 +4,10 @@
 
 #ifndef MAXENGINE_TRANSFORM_H
 #define MAXENGINE_TRANSFORM_H
-#include <iostream>
+
 #include "Component.h"
 #include "../math/Matrix4x4.h"
+#include "../math/Quaternion.h"
 #include "../math/Vector3.h"
 
 class Transform : public Component {
@@ -14,7 +15,7 @@ public:
     explicit Transform() = default;
 
     Vector3 position = Vector3::Zero();
-    Vector3 rotation = Vector3::Zero();
+    Quaternion rotation = Quaternion::Identity();
     Vector3 scale = Vector3::One();
 
     Transform *parent = nullptr;

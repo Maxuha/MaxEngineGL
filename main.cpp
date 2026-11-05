@@ -16,6 +16,8 @@
 #include "src/gameObject/primitives/Sphere.h"
 #include "src/IO/FileReader.h"
 #include "src/renderer/domain/Cubemap.h"
+#include "src/renderer/DrawCall.h"
+#include <iostream>
 
 class MeshRenderer;
 class Camera;
@@ -37,6 +39,7 @@ int main() {
     auto reflactionShader = assetManager->Import<Shader>("reflaction/reflaction", {{"renderFace", "Both"}});
     auto refractionShader = assetManager->Import<Shader>("refraction/refraction", {{"renderFace", "Both"}});
     auto pbrShader = assetManager->Import<Shader>("pbr/pbr", {{"renderFace", "Both"}});
+    auto envShader = assetManager->Import<Shader>("env/env", {{"renderFace", "Both"}});
 
     renderer->SetDepthShader(*depthShader);
 
@@ -48,39 +51,45 @@ int main() {
     auto skyboxMaterial = new Material(skyboxShader, 0);
     auto reflactionMaterial = new Material(reflactionShader, 0);
     auto refractionMaterial = new Material(refractionShader, 0);
+    auto envMaterial = new Material(envShader, 512, "Env Material");
 
     renderer->SetSkyboxMaterial(*skyboxMaterial);
 
     auto *camera = new FPSCamera(60, 0.01, 1000, static_cast<float>(width) / static_cast<float>(height));
-    camera->GetTransform()->position = Vector3(10, 0, 10);
-    camera->GetTransform()->rotation = Vector3(0, 0, 0);
+    camera->GetTransform()->position = Vector3(0, 0, 0);
+    camera->GetTransform()->rotation = Quaternion::Identity();
     camera->Start();
 
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = material1;
-    cube1->GetComponent<Transform>()->position = Vector3(0, 4.0f, -10.0f);
+    cube1->GetComponent<Transform>()->position = Vector3(-1.0f, 4.0f, 8.0f);
 
     const auto cube2 = Cube::BuildCube();
     cube2->GetComponent<MeshRenderer>()->material = reflactionMaterial;
-    cube2->GetComponent<Transform>()->position = Vector3(5, 4.0f, -10.0f);
+    cube2->GetComponent<Transform>()->position = Vector3(3, 4.0f, 8.0f);
 
     const auto cube3 = Cube::BuildCube();
     cube3->GetComponent<MeshRenderer>()->material = refractionMaterial;
-    cube3->GetComponent<Transform>()->position = Vector3(8, 4.0f, -10.0f);
+    cube3->GetComponent<Transform>()->position = Vector3(7, 4.0f, 8.0f);
+
+    const auto envCube = Cube::BuildCube();
+    envCube->GetComponent<MeshRenderer>()->material = envMaterial;
+    envCube->GetComponent<Transform>()->position = Vector3(0.0f, 0.0f, 0.0f);
 
     const auto sphere = Sphere::BuildSphere();
     sphere->GetComponent<MeshRenderer>()->material = rustedironMaterial;
-    sphere->GetComponent<Transform>()->position = Vector3(10, 4.0f, -5.0f);
+    sphere->GetComponent<Transform>()->position = Vector3(8, 4.0f, 5.0f);
 
     const auto brickwall = Plane::BuildPlane();
     brickwall->GetComponent<MeshRenderer>()->material = material2;
     brickwall->GetComponent<Transform>()->position = Vector3(20, 7.0f, 0.0f);
-    brickwall->GetComponent<Transform>()->rotation = Vector3(90, 90.0f, 0.0f);
+    brickwall->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(90.0f, 0.0f, 0.0f);
     brickwall->GetComponent<Transform>()->scale = Vector3(5.0f, 5.0f, 1.0f);
 
     auto *houseModel = container->Get<AssetManager>()->Import<Model>(
         R"(assets/models/autumn-house/source/House_scene_01.fbx)");
     houseModel->root->GetTransform()->position = Vector3(0, 0, 0);
+    houseModel->root->GetTransform()->rotation = Quaternion::Identity();
 
     auto *backpackModel = container->Get<AssetManager>()->Import<Model>(
         R"(assets/models/Survival_BackPack_2/Survival_BackPack_2.fbx)");
@@ -91,7 +100,8 @@ int main() {
         backpackModel->root->GetComponentsInChildren<MeshRenderer>()[i]->material = pbrMaterial;
     }
 
-    backpackModel->root->GetTransform()->position = Vector3(5, 5, 4);
+    backpackModel->root->GetTransform()->position = Vector3(5, 5, -8);
+    backpackModel->root->GetTransform()->rotation = Quaternion::Identity();
     backpackModel->root->GetTransform()->scale = Vector3(0.01, 0.01, 0.01);
 
     auto *backpackModel2 = container->Get<AssetManager>()->Import<Model>(
@@ -101,7 +111,8 @@ int main() {
         backpackModel2->root->GetComponentsInChildren<MeshRenderer>()[i]->material = material3;
     }
 
-    backpackModel2->root->GetTransform()->position = Vector3(10, 5, 4);
+    backpackModel2->root->GetTransform()->position = Vector3(10, 5, -8);
+    backpackModel2->root->GetTransform()->rotation = Quaternion::Identity();
     backpackModel2->root->GetTransform()->scale = Vector3(0.01, 0.01, 0.01);
 
     auto *erika = container->Get<AssetManager>()->Import<Model>(R"(assets/models/Erika.fbx)");
@@ -285,6 +296,7 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     skyboxMaterial->SetCubemap(3, *skybox);
     reflactionMaterial->SetCubemap(3, *skybox);
     refractionMaterial->SetCubemap(3, *skybox);
+    envMaterial->SetCubemap(1, *skybox);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
@@ -330,6 +342,13 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     pbrMaterial->SetTexture(10, *backpackSpecularTexture);
     pbrMaterial->SetTexture(11, *backpackRougnessTexture);
     pbrMaterial->SetTexture(12, *backpackAOTexture);
+    pbrMaterial->SetCubemap(13, *skybox);
+
+    pbrMaterial->SetProperty("material.shininess", 32.0f);
+    pbrMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
+    pbrMaterial->SetProperty("material.metallic", 1.0f);
+    pbrMaterial->SetProperty("material.roughness", 0.3f);
+    pbrMaterial->SetProperty("material.ao", 1.0f);
 
     rustedironMaterial->SetTexture(4, *rustedironDiffuseTexture);
     rustedironMaterial->SetTexture(5, *rustedironMetallicTexture);
@@ -339,6 +358,7 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     rustedironMaterial->SetTexture(10, *rustedironMetallicTexture);
     rustedironMaterial->SetTexture(11, *rustedironRoughnessTexture);
     rustedironMaterial->SetTexture(12, *backpackAOTexture);
+    rustedironMaterial->SetCubemap(13, *skybox);
 
     rustedironMaterial->SetProperty("material.shininess", 32.0f);
     rustedironMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
@@ -354,12 +374,12 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
 
     GameObject *sun = lightFactory->SpawnDirectionalLight();
     sun->GetComponent<Transform>()->position = Vector3(0, 40.0, 0);
-    sun->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+    sun->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(90, 0, 0);
     sun->GetComponent<Light>()->intensity = 2.5f;
 
     GameObject *light = lightFactory->SpawnSpotLight();
     light->GetComponent<Transform>()->position = Vector3(0, 6, -10);
-    light->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+    light->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(90, 0, 0);
     light->GetComponent<SpotLight>()->intensity = 4.0f;
     light->GetComponent<SpotLight>()->SetInnerAngle(3.0f);
     light->GetComponent<SpotLight>()->SetOuterAngle(10.0f);
@@ -367,7 +387,7 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
 
     GameObject *light2 = lightFactory->SpawnSpotLight();
     light2->GetComponent<Transform>()->position = Vector3(-1, 6, 10);
-    light2->GetComponent<Transform>()->rotation = Vector3(90, 0, 0);
+    light2->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(90, 0, 0);
     light2->GetComponent<SpotLight>()->intensity = 4.0f;
     light2->GetComponent<SpotLight>()->SetInnerAngle(3.0f);
     light2->GetComponent<SpotLight>()->SetOuterAngle(10.0f);
@@ -375,30 +395,35 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
 
     GameObject *lamp = lightFactory->SpawnPointLight();
     lamp->GetComponent<Transform>()->position = Vector3(0, 2, 0);
-    lamp->GetComponent<Transform>()->rotation = Vector3(0, 0, 0);
+    lamp->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(0, 0, 0);
     lamp->GetComponent<PointLight>()->intensity = 4.0f;
     lamp->GetComponent<PointLight>()->SetRange(10.0f);
 
     GameObject *lamp2 = lightFactory->SpawnPointLight();
     lamp2->GetComponent<Transform>()->position = Vector3(0, 6, -10);
-    lamp2->GetComponent<Transform>()->rotation = Vector3(0, 0, 0);
+    lamp2->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(0, 0, 0);
     lamp2->GetComponent<PointLight>()->intensity = 4.0f;
     lamp2->GetComponent<PointLight>()->SetRange(10.0f);
 
     GameObject *lamp3 = lightFactory->SpawnPointLight();
     lamp3->GetComponent<Transform>()->position = Vector3(5, 7, 4);
-    lamp3->GetComponent<Transform>()->rotation = Vector3(0, 0, 0);
+    lamp3->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(0, 0, 0);
     lamp3->GetComponent<PointLight>()->intensity = 4.0f;
     lamp3->GetComponent<PointLight>()->SetRange(10.0f);
 
+    Rendering::DrawCall draw_call = Rendering::DrawCall { ._mesh = envCube->GetComponent<MeshRenderer>()->mesh.get(), .material = envCube->GetComponent<MeshRenderer>()->material , .transform = envCube->GetTransform()};
+
+     renderer->Bake(draw_call);
+
     auto *scene = new Scene(camera);
+    //  scene->Add(envCube);
     scene->Add(cube1);
-    scene->Add(cube2);
-    scene->Add(cube3);
-    scene->Add(sphere);
-    // scene->Add(erika->root);
-    scene->Add(houseModel->root);
-    scene->Add(backpackModel->root);
+     scene->Add(cube2);
+     scene->Add(cube3);
+      scene->Add(sphere);
+     // scene->Add(erika->root);
+     scene->Add(houseModel->root);
+     scene->Add(backpackModel->root);
     scene->Add(backpackModel2->root);
     scene->Add(brickwall);
     
@@ -418,23 +443,29 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
 
     float t = 16;
 
+    float angle = 0;
+
+    // backpackModel->root->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(180, 0, 0);
+
     while (container->Get<IWindow>()->IsOpen()) {
         controller->Update();
         delta_time = container->Get<IWindow>()->GetDeltaTime();
         camera->Update(delta_time);
         ambientLight->GetComponent<Light>()->Update(delta_time);
-        sun->GetComponent<Light>()->Update(delta_time);
-         // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
-        t += delta_time * 127;
-        cube1->GetComponent<Transform>()->RotateRoll(10 * delta_time);
 
-        if (t >= 256) {
-            t = 16;
-        }
+         // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
+
+        backpackModel->root->GetComponent<Transform>()->rotation = backpackModel->root->GetComponent<Transform>()->rotation * Quaternion::FromAxisAngle(Vector3::Up().x, Vector3::Up().y, Vector3::Up().z, 10 * delta_time);
+        cube1->GetComponent<Transform>()->rotation = Quaternion::FromAxisAngle(cube1->GetComponent<Transform>()->Right().x, cube1->GetComponent<Transform>()->Right().y, cube1->GetComponent<Transform>()->Right().z, angle);
+        sphere->GetComponent<Transform>()->rotation = Quaternion::FromAxisAngle(sphere->GetComponent<Transform>()->Up().x, sphere->GetComponent<Transform>()->Up().y, sphere->GetComponent<Transform>()->Up().z, angle);
+        sphere->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(0, angle, 0);
+        angle += 30 * delta_time;
 
         renderer->BeginFrame(*camera);
         renderer->Render(*scene);
         renderer->EndFrame();
+
+        std::cout << "Position: " << camera->GetComponent<Transform>()->position << std::endl;
     }
 
     return 0;

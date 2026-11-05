@@ -67,6 +67,8 @@ float dirShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
 
     projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
+    projCoords.y = 1 - projCoords.y;
+
     if (projCoords.z > 1.0 || projCoords.z < 0.0 ||
         projCoords.x < 0.0 || projCoords.x > 1.0 ||
         projCoords.y < 0.0 || projCoords.y > 1.0) {

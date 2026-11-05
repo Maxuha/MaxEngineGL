@@ -66,6 +66,7 @@ namespace Rendering {
         uint32_t indexMesh;
         uint32_t firstIndex;
         int32_t vertexOffset;
+        uint8_t instanceCount;
     };
 
     struct GLCommand_BindBuffer {
@@ -122,7 +123,7 @@ namespace Rendering {
 
         void Draw(uint32_t vertexCount);
 
-        void DrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t indexMesh);
+        void DrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t indexMesh, uint32_t instanceCount = 1);
 
         void BeginRenderPass(const RenderPass &renderPass);
 

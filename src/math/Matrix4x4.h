@@ -12,25 +12,22 @@
 #include "Vector3.h"
 #include "Vector4.h"
 
-class Matrix4x4 {
+// Column-major
+class alignas(16) Matrix4x4 {
 public:
     Matrix4x4();
-    Matrix4x4(float value);
 
-    template <typename T>
-    T Convert() {
-        auto result = glm::mat4();
+    explicit Matrix4x4(const glm::mat4& mat) {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                result[i][j] = m[i][j];
+                m[i][j] = mat[i][j];
             }
         }
-        return result;
     }
 
     float m[4][4]{};
 
-    Matrix4x4 Identity();
+    static Matrix4x4 Identity();
 
     Vector4 GetColumn(int column) const;
 
@@ -48,6 +45,12 @@ public:
     Matrix3x3 Minor(int column, int row) const;
     float Determinant() const;
 
+    static Matrix4x4 LookAt(Vector3 eye, Vector3 target, Vector3 up);
+
+    static Matrix4x4 Perspective(float fov, float aspectRatio, float zNear, float zFar);
+
+    static Matrix4x4 Orthographic(float left, float right, float bottom, float top, float zNear, float zFar);
+
     Matrix4x4 operator*(const Matrix4x4& m1) const;
     Vector4 operator*(const Vector4& v1) const;
     Vector3 operator*(const Vector3& v1) const;
@@ -57,7 +60,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat) {
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-                os << std::setw(10) << mat.m[i][j] << " ";
+                os << std::setw(10) << mat.m[j][i] << " ";
             }
             os << "\n";
         }

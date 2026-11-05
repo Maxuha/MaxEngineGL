@@ -31,7 +31,7 @@ AssimpImporter::~AssimpImporter() = default;
 
 Model *AssimpImporter::Import(const char *fileName) {
     const aiScene *scene = importer->ReadFile(
-        fileName, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_JoinIdenticalVertices );
+        fileName, aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_JoinIdenticalVertices );
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cout << "ERROR::ASSIMP::" << importer->GetErrorString() << std::endl;
@@ -51,7 +51,7 @@ Model *AssimpImporter::Import(const char *fileName) {
     auto *root = new GameObject(scene->mRootNode->mName.C_Str());
     auto *rootTransform = root->GetComponent<Transform>();
     rootTransform->position = Vector3::Zero();
-    rootTransform->rotation = Vector3::Zero();
+    rootTransform->rotation = Quaternion::Identity();
     rootTransform->scale = Vector3::One();
 
     model->root = root;
@@ -73,7 +73,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
     auto *main = new GameObject(node->mName.C_Str());
     auto *mainTransform = main->GetComponent<Transform>();
     mainTransform->position = Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
-    mainTransform->rotation = Vector3(euler.x, euler.y, euler.z);
+    mainTransform->rotation = Quaternion::FromEulerAngles(euler.x, euler.y, euler.z);
     mainTransform->scale = Vector3(aiScale.x, aiScale.y, aiScale.z);
     auto *parentTransform = parent ? parent->GetTransform() : nullptr;
     mainTransform->SetParent(parentTransform);
@@ -98,7 +98,7 @@ void AssimpImporter::ProcessNode(const aiNode *node, const aiScene *scene, GameO
         auto* child = new GameObject(mesh->mName.C_Str());
         auto* childTransformComponent = child->GetComponent<Transform>();
         childTransformComponent->position = Vector3::Zero();
-        childTransformComponent->rotation = Vector3::Zero();
+        childTransformComponent->rotation = Quaternion::Identity();
         childTransformComponent->scale = Vector3::One();
         mainTransform->AddChild(childTransformComponent);
         childTransformComponent->SetParent(mainTransform);

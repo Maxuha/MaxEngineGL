@@ -53,6 +53,7 @@ layout(set = 2, binding = 9) uniform sampler2D albedoMap;
 layout(set = 2, binding = 10) uniform sampler2D metallicMap;
 layout(set = 2, binding = 11) uniform sampler2D roughnessMap;
 layout(set = 2, binding = 12) uniform sampler2D aoMap;
+layout(set = 2, binding = 13) uniform samplerCube irradianceMap;
 
 layout (location = 0) in vec3 FragPos;
 layout (location = 1) in vec3 Normal;
@@ -107,6 +108,11 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
 float dirShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
@@ -230,7 +236,7 @@ void main()
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(normal, H, roughness);
     float G   = GeometrySmith(normal, viewDir, dirLightDir, roughness);
-    vec3 F    = fresnelSchlick(clamp(dot(H, viewDir), 0.0, 1.0), F0);
+    vec3 F    = fresnelSchlickRoughness(clamp(dot(H, viewDir), 0.0, 1.0), F0, roughness);
 
     vec3 numerator    = NDF * G * F;
     float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, dirLightDir), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
@@ -254,7 +260,11 @@ void main()
 
     // ambient lighting (note that the next IBL tutorial will replace
     // this ambient lighting with environment lighting).
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 irradiance = texture(irradianceMap, normal).rgb;
+    vec3 diffuse = irradiance * albedo;
+
+//    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 ambient = (kD * diffuse) * ao;
 
     vec3 color = ambient + Lo;
 

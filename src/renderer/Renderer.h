@@ -76,6 +76,8 @@ namespace Rendering {
 
         void Render(Scene &scene) override;
 
+        void Bake(DrawCall &drawCall) override;
+
         void EndFrame() override;
 
         /// End Render
@@ -100,6 +102,7 @@ namespace Rendering {
 
         BufferHandle cameraBufferId{};
         BufferHandle depthBuffer{};
+        BufferHandle envBoxBuffer{};
 
         std::vector<IRenderPass*> renderPasses;
         std::vector<RenderPass> renderPassesDesc;
@@ -139,6 +142,8 @@ namespace Rendering {
         StaticMeshes staticMeshes;
 
         CommandBuffer *uploadCommandBuffer{};
+
+        CubeMapHandle envCubeMap;
 
     };
 } // namespace Rendering

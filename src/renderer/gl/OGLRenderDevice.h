@@ -105,7 +105,6 @@ namespace Rendering {
 
         std::vector<OGLGraphicsShader> _graphicsShaders;
 
-        void SetupVertexLayoutForPSO(GLuint vao, const VertexLayout& layout);
         GLint MapGLComponents(VertexFormat format);
 
         GLenum MapTextureInternalFormat(TextureFormat format);
@@ -132,6 +131,8 @@ namespace Rendering {
             }
             return 1;
         }
+
+
 
     };
 
