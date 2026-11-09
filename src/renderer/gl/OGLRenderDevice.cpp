@@ -27,7 +27,7 @@ namespace Rendering {
             return false;
         }
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
+         glBindTexture(GL_TEXTURE_2D, textureID);
 
         GLint width = 0;
         GLint height = 0;
@@ -181,14 +181,14 @@ namespace Rendering {
         const TextureHandle textureHandle = textureManager->CreateTexture(desc.Width, desc.Height, desc.Format, _data);
         OGLTexture &texture = textureManager->GetTexture(textureHandle);
 
-        if (desc.Format == TextureFormat::DEPTH) {
+       // if (desc.Format == TextureFormat::DEPTH) {
             GLuint fbo;
             glCreateFramebuffers(1, &fbo);
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             // glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, texture.Id, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             texture.fbo = fbo;
-        }
+       // }
 
         return textureHandle;
 
@@ -365,6 +365,7 @@ namespace Rendering {
 
                     std::optional<AttachmentDescription> colorAttachment = cmd->colorAttachment;
                     std::optional<AttachmentDescription> depthAttachment = cmd->depthAttachment;
+                    uint32_t mipLevel = cmd->mipLevel;
 
                     if (colorAttachment.has_value()) {
                         AttachmentDescription _colorAttachment = cmd->colorAttachment.value();
@@ -375,7 +376,7 @@ namespace Rendering {
                             OGLTexture texture = textureManager->GetTexture(renderTarget);
                             activeFBO = texture.fbo;
 
-                            glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, 0);
+                            glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, mipLevel);
                         }
 
                         if (_colorAttachment.renderCubeMap.has_value()) {
@@ -383,7 +384,7 @@ namespace Rendering {
                             OGLCubeMapData cubeMap = cubeMapManager->GetCubeMap(renderTarget);
                             activeFBO = cubeMap.fbo;
 
-                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.glId, 0);
+                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.glId, mipLevel);
                         }
                     }
 
@@ -396,7 +397,7 @@ namespace Rendering {
                             OGLTexture texture = textureManager->GetTexture(renderTarget);
                             activeFBO = texture.fbo;
 
-                            glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, 0);
+                            glNamedFramebufferTexture(activeFBO, attachmentType, texture.Id, mipLevel);
                         }
 
                         if (_depthAttachment.renderCubeMap.has_value()) {
@@ -404,7 +405,7 @@ namespace Rendering {
                             OGLCubeMapData cubeMap = cubeMapManager->GetCubeMap(renderTarget);
                             activeFBO = cubeMap.fbo;
 
-                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.glId, 0);
+                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.glId, mipLevel);
                         }
                     }
 
@@ -415,21 +416,14 @@ namespace Rendering {
                     glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
                     if (activeFBO != 0) {
-                        //glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
                         if (colorAttachment.has_value()) {
                             GLenum attachmentType = MapAttachment(colorAttachment.value().type);
                             glNamedFramebufferDrawBuffer(activeFBO, attachmentType);
                             glNamedFramebufferReadBuffer(activeFBO, attachmentType);
                         }
-
-                        // if (depthAttachment.has_value()) {
-                        //     GLenum attachmentType = MapAttachment(depthAttachment.value().type);
-                        //     glNamedFramebufferDrawBuffer(activeFBO, attachmentType);
-                        //     glNamedFramebufferReadBuffer(activeFBO, attachmentType);
-                        // }
-                    } else {
-                        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
                     }
+
+                    glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
 
                     GLbitfield clearMask = 0;
                     if (colorAttachment.has_value() && colorAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
@@ -442,8 +436,6 @@ namespace Rendering {
                       if (!colorAttachment.value().renderCubeMap.has_value()) {
                             glClearNamedFramebufferfv(activeFBO, GL_COLOR, 0, rgba);
                       }
-                        // glClearNamedFramebufferfv(activeFBO, GL_COLOR, 0, rgba);
-                        // glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
                     }
 
                     if (depthAttachment.has_value()) {
@@ -453,12 +445,8 @@ namespace Rendering {
                            if (!colorAttachment.has_value() || !colorAttachment.value().renderCubeMap.has_value()) {
                                 glClearNamedFramebufferfv(activeFBO, GL_DEPTH, 0, &depthAttachment.value().depthClearValue);
                         }
-                            // glClearNamedFramebufferfv(activeFBO, GL_DEPTH, 0, &depthAttachment.value().depthClearValue);
-
-                            // glClearDepth(depthAttachment.value().depthClearValue);
                         }
                     }
-
 
                     if (clearMask != 0) {
                         //glClearStencil(0);
@@ -653,6 +641,7 @@ namespace Rendering {
 
     void OGLRenderDevice::Present() {
         glfwSwapBuffers(window);
+        // SaveGLTextureToDisk(4, "test.png");
     }
 
     TextureFormat OGLRenderDevice::GetDisplayFormat() {

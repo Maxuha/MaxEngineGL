@@ -63,7 +63,7 @@ namespace Rendering {
 
         virtual void Render(Scene &scene) = 0;
 
-        virtual void Bake(DrawCall& drawCall) = 0;
+        virtual void Bake(DrawCall& irredianceDrawCall, DrawCall &prefilterDrawCall, DrawCall &brdf) = 0;
 
         virtual void EndFrame() = 0;
 

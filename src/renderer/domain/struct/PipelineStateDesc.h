@@ -65,6 +65,7 @@ namespace Rendering {
         float depthClearValue = 1.0f;
         std::optional<TextureHandle> renderTarget = { };
         std::optional<CubeMapHandle> renderCubeMap = { };
+        uint32_t mipLevel = 0;
     };
 
     struct RasterizerDesc {

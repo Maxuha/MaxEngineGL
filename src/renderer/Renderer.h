@@ -27,6 +27,8 @@ namespace Rendering {
 
         Rect viewport = Rect{0, 0, 2160, 1440};
         Color clearColor = Color{0.5f, 0.5f, 0.5f, 1.0f};
+
+        uint32_t mipLevel = 0;
     };
 
     struct GraphicsShader {
@@ -76,7 +78,7 @@ namespace Rendering {
 
         void Render(Scene &scene) override;
 
-        void Bake(DrawCall &drawCall) override;
+        void Bake(DrawCall &irredianceDrawCall, DrawCall &prefilterDrawCall, DrawCall &brdf) override;
 
         void EndFrame() override;
 
@@ -136,6 +138,10 @@ namespace Rendering {
         ResourceSetLayoutHandle modelSetLayout{};
         PipelineLayoutHandle mainPipelineLayout{};
 
+        ResourceSetLayoutHandle cameraBoxLayout{};
+        ResourceSetHandle cameraBoxResourceSet{};
+        BufferHandle cameraBoxBuffer{};
+
         BufferHandle modelBuffer{};
         ResourceSetHandle modelResourceSet{};
         uint32_t indexMesh = 0;
@@ -143,7 +149,9 @@ namespace Rendering {
 
         CommandBuffer *uploadCommandBuffer{};
 
-        CubeMapHandle envCubeMap;
+        CubeMapHandle irradianceCubeMap;
+        CubeMapHandle prefilterCubeMap;
+        TextureHandle brdfTexture;
 
     };
 } // namespace Rendering

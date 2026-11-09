@@ -37,6 +37,7 @@ void Rendering::CommandBuffer::BeginRenderPass(const RenderPass &renderPass) {
     cmd->colorAttachment = renderPass.colorAttachment;
     cmd->depthAttachment = renderPass.depthAttachment;
     cmd->viewport = renderPass.viewport;
+    cmd->mipLevel = renderPass.mipLevel;
 }
 
 void Rendering::CommandBuffer::EndRenderPass() {

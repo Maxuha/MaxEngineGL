@@ -14,7 +14,9 @@ namespace Rendering {
         request.Height = size;
         request.Format = format;
         request.MipLevels = 1;
-        request.ArraySize = size * size * 4;
+        request.Wrap = TextureWrap::Clamp;
+        request.Filter = TextureFilter::Bilinear;
+        request.useMipMaps = false;
         request.Type = TextureType::Cube;
         handle = DIContainer::GetInstance().Get<IRenderer>()->CreateCubeMap(request, data);
     }

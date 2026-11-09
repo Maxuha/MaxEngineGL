@@ -96,13 +96,6 @@ namespace Rendering {
 
         CommandBuffer* commandBuffer{};
 
-        std::unordered_map<TextureWrap, GLint> textureWrapMap = {
-            {TextureWrap::Repeat, GL_REPEAT },
-            {TextureWrap::ClampToEdge, GL_CLAMP_TO_EDGE },
-            {TextureWrap::MirroredRepeat, GL_MIRRORED_REPEAT },
-            {TextureWrap::ClampToBorder, GL_CLAMP_TO_BORDER }
-        };
-
         std::vector<OGLGraphicsShader> _graphicsShaders;
 
         GLint MapGLComponents(VertexFormat format);

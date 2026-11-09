@@ -39,7 +39,9 @@ int main() {
     auto reflactionShader = assetManager->Import<Shader>("reflaction/reflaction", {{"renderFace", "Both"}});
     auto refractionShader = assetManager->Import<Shader>("refraction/refraction", {{"renderFace", "Both"}});
     auto pbrShader = assetManager->Import<Shader>("pbr/pbr", {{"renderFace", "Both"}});
-    auto envShader = assetManager->Import<Shader>("env/env", {{"renderFace", "Both"}});
+    auto envShader = assetManager->Import<Shader>("irradiance/irradiance", {{"renderFace", "Both"}});
+    auto prefilterShader = assetManager->Import<Shader>("prefilter/prefilter", {{"renderFace", "Both"}});
+    auto brdfShader = assetManager->Import<Shader>("brdf/brdf", {{"renderFace", "Both"}});
 
     renderer->SetDepthShader(*depthShader);
 
@@ -52,6 +54,8 @@ int main() {
     auto reflactionMaterial = new Material(reflactionShader, 0);
     auto refractionMaterial = new Material(refractionShader, 0);
     auto envMaterial = new Material(envShader, 512, "Env Material");
+    auto prefilterMaterial = new Material(prefilterShader, 512, "Prefilter Material");
+    auto brdfMaterial = new Material(brdfShader, 512, "BRDF Material");
 
     renderer->SetSkyboxMaterial(*skyboxMaterial);
 
@@ -59,6 +63,14 @@ int main() {
     camera->GetTransform()->position = Vector3(0, 0, 0);
     camera->GetTransform()->rotation = Quaternion::Identity();
     camera->Start();
+
+    const auto envCube = Cube::BuildCube();
+    envCube->GetComponent<MeshRenderer>()->material = envMaterial;
+    envCube->GetComponent<Transform>()->position = Vector3(0.0f, 0.0f, 0.0f);
+
+    const auto brdfPlane = Plane::BuildPlane();
+    brdfPlane->GetComponent<MeshRenderer>()->material = brdfMaterial;
+    brdfPlane->GetComponent<Transform>()->position = Vector3(0.0f, 0.0f, 0.0f);
 
     const auto cube1 = Cube::BuildCube();
     cube1->GetComponent<MeshRenderer>()->material = material1;
@@ -72,9 +84,9 @@ int main() {
     cube3->GetComponent<MeshRenderer>()->material = refractionMaterial;
     cube3->GetComponent<Transform>()->position = Vector3(7, 4.0f, 8.0f);
 
-    const auto envCube = Cube::BuildCube();
-    envCube->GetComponent<MeshRenderer>()->material = envMaterial;
-    envCube->GetComponent<Transform>()->position = Vector3(0.0f, 0.0f, 0.0f);
+    const auto prefilterCube = Cube::BuildCube();
+    prefilterCube->GetComponent<MeshRenderer>()->material = prefilterMaterial;
+    prefilterCube->GetComponent<Transform>()->position = Vector3(0.0f, 0.0f, 0.0f);
 
     const auto sphere = Sphere::BuildSphere();
     sphere->GetComponent<MeshRenderer>()->material = rustedironMaterial;
@@ -297,6 +309,8 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     reflactionMaterial->SetCubemap(3, *skybox);
     refractionMaterial->SetCubemap(3, *skybox);
     envMaterial->SetCubemap(1, *skybox);
+    prefilterMaterial->SetCubemap(1, *skybox);
+    // prefilterMaterial->SetProperty("roughness", 0.1f);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
@@ -343,11 +357,13 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     pbrMaterial->SetTexture(11, *backpackRougnessTexture);
     pbrMaterial->SetTexture(12, *backpackAOTexture);
     pbrMaterial->SetCubemap(13, *skybox);
+    pbrMaterial->SetCubemap(14, *skybox);
+    pbrMaterial->SetTexture(15, *backpackDiffuseTexture);
 
     pbrMaterial->SetProperty("material.shininess", 32.0f);
     pbrMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
     pbrMaterial->SetProperty("material.metallic", 1.0f);
-    pbrMaterial->SetProperty("material.roughness", 0.3f);
+    pbrMaterial->SetProperty("material.roughness", 1.0f);
     pbrMaterial->SetProperty("material.ao", 1.0f);
 
     rustedironMaterial->SetTexture(4, *rustedironDiffuseTexture);
@@ -412,18 +428,19 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     lamp3->GetComponent<PointLight>()->SetRange(10.0f);
 
     Rendering::DrawCall draw_call = Rendering::DrawCall { ._mesh = envCube->GetComponent<MeshRenderer>()->mesh.get(), .material = envCube->GetComponent<MeshRenderer>()->material , .transform = envCube->GetTransform()};
+    Rendering::DrawCall prefilter_draw_call = Rendering::DrawCall { ._mesh = prefilterCube->GetComponent<MeshRenderer>()->mesh.get(), .material = prefilterCube->GetComponent<MeshRenderer>()->material , .transform = prefilterCube->GetTransform()};
+    Rendering::DrawCall brdf_draw_call = Rendering::DrawCall { ._mesh = brdfPlane->GetComponent<MeshRenderer>()->mesh.get(), .material = brdfPlane->GetComponent<MeshRenderer>()->material , .transform = brdfPlane->GetTransform()};
 
-     renderer->Bake(draw_call);
+    renderer->Bake(draw_call, prefilter_draw_call, brdf_draw_call);
 
     auto *scene = new Scene(camera);
-    //  scene->Add(envCube);
     scene->Add(cube1);
-     scene->Add(cube2);
-     scene->Add(cube3);
-      scene->Add(sphere);
+    scene->Add(cube2);
+    scene->Add(cube3);
+    scene->Add(sphere);
      // scene->Add(erika->root);
-     scene->Add(houseModel->root);
-     scene->Add(backpackModel->root);
+    scene->Add(houseModel->root);
+    scene->Add(backpackModel->root);
     scene->Add(backpackModel2->root);
     scene->Add(brickwall);
     
@@ -444,8 +461,6 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     float t = 16;
 
     float angle = 0;
-
-    // backpackModel->root->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(180, 0, 0);
 
     while (container->Get<IWindow>()->IsOpen()) {
         controller->Update();

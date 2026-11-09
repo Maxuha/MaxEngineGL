@@ -43,6 +43,4 @@ layout (set = 0, binding = 1, std140) uniform LightsBlock {
 void main()
 {
     FragColor = texture(skybox, TexCoords);
-//    FragColor = vec4(TexCoords, 1);
- //   FragColor = vec4(normalize(TexCoords) * 0.5 + 0.5, 1.0);
 }

@@ -22,18 +22,26 @@ namespace Rendering {
 
     enum class TextureWrap : std::uint8_t {
         Repeat,
-        MirroredRepeat,
-        ClampToEdge,
-        ClampToBorder
+        Clamp,
+        Mirror,
+        MirrorOnce,
+    };
+
+    enum class TextureFilter : std::uint8_t {
+        Point,
+        Bilinear,
+        Trilinear,
     };
 
     struct TextureCreateRequest {
         size_t Width{};
         size_t Height{};
-        size_t MipLevels{};
-        size_t ArraySize{};
-        TextureFormat Format{};
+        TextureFormat Format = TextureFormat::RGB;
+        TextureWrap Wrap = TextureWrap::Repeat;
+        TextureFilter Filter = TextureFilter::Bilinear;
         TextureType Type = TextureType::Texture2D;
+        bool useMipMaps = false;
+        size_t MipLevels = 1;
     };
 
     struct TextureData {

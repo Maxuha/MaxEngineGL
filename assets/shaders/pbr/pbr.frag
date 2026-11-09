@@ -54,6 +54,8 @@ layout(set = 2, binding = 10) uniform sampler2D metallicMap;
 layout(set = 2, binding = 11) uniform sampler2D roughnessMap;
 layout(set = 2, binding = 12) uniform sampler2D aoMap;
 layout(set = 2, binding = 13) uniform samplerCube irradianceMap;
+layout(set = 2, binding = 14) uniform samplerCube prefilterMap;
+layout(set = 2, binding = 15) uniform sampler2D brdfLUT;
 
 layout (location = 0) in vec3 FragPos;
 layout (location = 1) in vec3 Normal;
@@ -216,11 +218,14 @@ void main()
     vec3 albedo     = texture(albedoMap, TexCoord).rgb;
     float metallic  = texture(metallicMap, TexCoord).r;
     float roughness = texture(roughnessMap, TexCoord).r;
+    roughness = roughness * material.roughness;
     float ao        = texture(aoMap, TexCoord).r;
 
     vec3 normal = texture(normalMap, TexCoord).rgb;
     normal = normal * 2.0 - 1.0;
     normal = normalize(TBN * normal);
+
+    vec3 R = reflect(-viewDir, normal);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -263,14 +268,17 @@ void main()
     vec3 irradiance = texture(irradianceMap, normal).rgb;
     vec3 diffuse = irradiance * albedo;
 
-//    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 ambient = (kD * diffuse) * ao;
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 brdf = texture(brdfLUT, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
+   // vec3 specularIndirect = prefilteredColor;
+    vec3 specularIndirect = prefilteredColor * (F * brdf.x + brdf.y);
+
+    vec3 ambient = (kD * diffuse + specularIndirect) * ao;
 
     vec3 color = ambient + Lo;
 
     FragColor = vec4(color, 1.0);
-//    FragColor = vec4(texture(aoMap, TexCoord).rgb, 1.0);
-//    FragColor = vec4(material.ao, material.ao, material.ao, 1.0);
 
     // Point
 //    for (int i = 0; i < 8; i++) {

@@ -34,6 +34,7 @@ namespace Rendering {
         glFrontFace(GL_CW);
         glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
         glEnable(GL_FRAMEBUFFER_SRGB);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);

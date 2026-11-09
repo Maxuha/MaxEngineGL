@@ -46,6 +46,43 @@ namespace Rendering {
             }
             return GL_RGBA;
         }
+
+        static constexpr GLenum MapTextureWrap(const TextureWrap wrap) {
+            switch (wrap) {
+                case TextureWrap::Repeat:     return GL_REPEAT;
+                case TextureWrap::Clamp:      return GL_CLAMP_TO_EDGE;
+                case TextureWrap::Mirror:     return GL_MIRRORED_REPEAT;
+                case TextureWrap::MirrorOnce: return GL_MIRROR_CLAMP_TO_EDGE;
+                default:                      return GL_REPEAT;
+            }
+        }
+
+        static constexpr GLenum MapTextureMinFilter(const TextureFilter filter) {
+            switch (filter) {
+                case TextureFilter::Point:     return GL_NEAREST_MIPMAP_NEAREST;
+                case TextureFilter::Bilinear:
+                case TextureFilter::Trilinear: return GL_LINEAR;
+                default:                       return GL_LINEAR;
+            }
+        }
+
+        static constexpr GLenum MapTextureMipmapMinFilter(const TextureFilter filter) {
+            switch (filter) {
+                case TextureFilter::Point:     return GL_NEAREST;
+                case TextureFilter::Bilinear:  return GL_LINEAR_MIPMAP_NEAREST;
+                case TextureFilter::Trilinear: return GL_LINEAR_MIPMAP_LINEAR;
+                default:                       return GL_LINEAR_MIPMAP_LINEAR;
+            }
+        }
+
+        static constexpr int MapTextureMagFilter(const TextureFilter filter) {
+            switch (filter) {
+                case TextureFilter::Point:     return GL_NEAREST;
+                case TextureFilter::Bilinear:
+                case TextureFilter::Trilinear: return GL_LINEAR;
+                default:                       return GL_LINEAR;
+            }
+        }
     };
 } // Rendering
 

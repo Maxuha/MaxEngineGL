@@ -2,7 +2,7 @@
 
 #extension GL_ARB_shader_viewport_layer_array : require
 
-layout(set = 2, binding = 3) uniform Camera {
+layout(set = 0, binding = 0) uniform Camera {
     mat4 proj;
     mat4 view[6];
 } camera;

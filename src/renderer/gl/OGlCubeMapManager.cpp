@@ -4,8 +4,6 @@
 
 #include "OGlCubeMapManager.h"
 
-#include <format>
-
 namespace Rendering {
     OGlCubeMapManager::OGlCubeMapManager() {
     }
@@ -14,16 +12,31 @@ namespace Rendering {
     }
 
     CubeMapHandle OGlCubeMapManager::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        const GLenum wrap = MapTextureWrap(desc.Wrap);
+        const GLenum magFilter = MapTextureMagFilter(desc.Filter);
+        GLenum minFilter;
+        const bool useMipMaps = desc.useMipMaps;
+
+        if (useMipMaps) {
+            minFilter = MapTextureMipmapMinFilter(desc.Filter);
+        } else {
+            minFilter = MapTextureMinFilter(desc.Filter);
+        }
+
         GLuint texture;
         glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &texture);
 
-        glTextureStorage2D(texture, 1, MapTextureInternalFormat(desc.Format), desc.Width, desc.Height);
+        glTextureParameteri(texture, GL_TEXTURE_WRAP_S, wrap);
+        glTextureParameteri(texture, GL_TEXTURE_WRAP_T, wrap);
+        glTextureParameteri(texture, GL_TEXTURE_WRAP_R, wrap);
+        glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, minFilter);
+        glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, magFilter);
 
-        glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(texture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureStorage2D(texture, desc.MipLevels, MapTextureInternalFormat(desc.Format), desc.Width, desc.Height);
+
+        if (useMipMaps) {
+            glGenerateTextureMipmap(texture);
+        }
 
         for (int i = 0; i < datas.size(); ++i) {
             if (datas[i]) {

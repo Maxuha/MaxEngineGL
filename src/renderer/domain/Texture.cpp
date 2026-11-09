@@ -31,7 +31,6 @@ namespace Rendering {
         request.Height = height;
         request.Format = format;
         request.MipLevels = 1;
-        request.ArraySize = width * height * 4;
 
         id = DIContainer::GetInstance().Get<IRenderer>()->CreateTexture(data, request);
     }
@@ -53,6 +52,6 @@ namespace Rendering {
     }
 
     TextureWrap Texture::GetWrap() {
-        return TextureWrap::ClampToBorder;
+        return TextureWrap::Clamp;
     }
 } // Rendering

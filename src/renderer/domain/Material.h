@@ -47,6 +47,7 @@ public:
         propertiesMeta["material.metallic"] = { 44, sizeof(float) };
         propertiesMeta["material.roughness"] = { 48, sizeof(float) };
         propertiesMeta["material.ao"] = { 52, sizeof(float) };
+        propertiesMeta["roughness"] = { 0, sizeof(float) };
 
         auto it = propertiesMeta.find(slot);
         if (it != propertiesMeta.end()) {

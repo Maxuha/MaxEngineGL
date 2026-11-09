@@ -47,6 +47,7 @@ namespace Rendering {
         std::optional<AttachmentDescription> colorAttachment{};
         std::optional<AttachmentDescription> depthAttachment{};
         Rect viewport{};
+        uint32_t mipLevel{};
     };
 
     struct GLCommand_EndRenderPass {
