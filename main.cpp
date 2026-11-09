@@ -310,7 +310,6 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     refractionMaterial->SetCubemap(3, *skybox);
     envMaterial->SetCubemap(1, *skybox);
     prefilterMaterial->SetCubemap(1, *skybox);
-    // prefilterMaterial->SetProperty("roughness", 0.1f);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
@@ -375,6 +374,8 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     rustedironMaterial->SetTexture(11, *rustedironRoughnessTexture);
     rustedironMaterial->SetTexture(12, *backpackAOTexture);
     rustedironMaterial->SetCubemap(13, *skybox);
+    rustedironMaterial->SetCubemap(14, *skybox);
+    rustedironMaterial->SetTexture(15, *backpackDiffuseTexture);
 
     rustedironMaterial->SetProperty("material.shininess", 32.0f);
     rustedironMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));

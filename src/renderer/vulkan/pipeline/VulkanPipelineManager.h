@@ -85,6 +85,8 @@ namespace Rendering {
 
         VkFormat MapTextureFormat(TextureFormat format);
         constexpr VkCullModeFlags MapRenderFace(RenderFace face) noexcept;
+
+        VkVertexInputRate MapVertexInputRate(VertexStepRate vertexStepRate);
     };
 } // Rendering
 

@@ -9,6 +9,7 @@
 #include "../../gl/model/TextureData.h"
 #include "../src/renderer/vulkan/vertexbuffer/VulkanBufferManager.h"
 #include "../vertexbuffer/VulkanStagingBufferPool.h"
+#include "../src/renderer/vulkan/VulkanLogicalDevice.h"
 
 
 namespace Rendering {
@@ -53,26 +54,22 @@ namespace Rendering {
         return textureSampler;
     }
 
-    TextureHandle VulkanTextureManager::CreateTexture(const size_t width, const size_t height, const TextureFormat format, const TextureType type, void *data) {
+    TextureHandle VulkanTextureManager::CreateTexture(const TextureCreateRequest &request) {
+        const VkFormat format = MapTextureFormat(request.Format);
+        VkImageAspectFlags aspectFlags = MapImageAspectFlags(request.Format);
+        VkImageUsageFlags usageFlags = MapImageUsageFlags(request.Format);
+        const TextureType type = request.Type;
+        const size_t width = request.Width;
+        const size_t height = request.Height;
+        const size_t mipLevels = request.MipLevels;
+        const TextureWrap wrap = request.Wrap;
+        const TextureFilter filter = request.Filter;
+        const bool useMipMaps = request.useMipMaps;
+
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
 
-        const VkFormat _format = MapTextureFormat(format);
-        VkImageUsageFlags usageFlags;
-        VkImageAspectFlags aspectFlags;
         VkImageCreateFlags flags = 0;
-
-        if (format == TextureFormat::DEPTH) {
-            aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-        } else {
-            aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
-
-        if (format == TextureFormat::DEPTH) {
-            usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        } else {
-            usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
 
         size_t layers = 1;
 
@@ -87,9 +84,9 @@ namespace Rendering {
         imageInfo.extent.width = static_cast<uint32_t>(width);
         imageInfo.extent.height = static_cast<uint32_t>(height);
         imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
+        imageInfo.mipLevels = mipLevels;
         imageInfo.arrayLayers = layers;
-        imageInfo.format = _format;
+        imageInfo.format = format;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = usageFlags;
@@ -117,11 +114,13 @@ namespace Rendering {
 
         VulkanTexture texture;
         texture.Image = textureImage;
-        texture.ImageView = CreateImageView(textureImage, _format, aspectFlags, type);
+        texture.ImageView = CreateImageView(textureImage, format, aspectFlags, type);
         texture.Sampler = CreateSampler(device);
         texture.Width = width;
         texture.Height = height;
         texture.MipLevels = 1;
+        texture.Format = format;
+        texture.Type = type;
 
         textures.push_back(texture);
 
@@ -305,5 +304,29 @@ namespace Rendering {
                 break;
         }
         return VK_FORMAT_R8G8B8A8_SRGB;
+    }
+
+    constexpr VkImageAspectFlags VulkanTextureManager::MapImageAspectFlags(const TextureFormat format) const {
+        switch (format) {
+            case TextureFormat::RGB:       return VK_IMAGE_ASPECT_COLOR_BIT;
+            case TextureFormat::RGBA:      return VK_IMAGE_ASPECT_COLOR_BIT;
+            case TextureFormat::SRGBA:     return VK_IMAGE_ASPECT_COLOR_BIT;
+            case TextureFormat::DEPTH:     return VK_IMAGE_ASPECT_DEPTH_BIT;
+            case TextureFormat::UNDEFINED:
+                break;
+        }
+        return VK_IMAGE_ASPECT_NONE;
+    }
+
+    constexpr VkImageUsageFlags VulkanTextureManager::MapImageUsageFlags(const TextureFormat format) const {
+        switch (format) {
+            case TextureFormat::RGB:       return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            case TextureFormat::RGBA:      return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            case TextureFormat::SRGBA:     return VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            case TextureFormat::DEPTH:     return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            case TextureFormat::UNDEFINED:
+                break;
+        }
+        return VK_IMAGE_USAGE_SAMPLED_BIT;
     }
 } // Rendering

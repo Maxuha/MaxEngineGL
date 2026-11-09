@@ -60,9 +60,11 @@ void Rendering::CommandBuffer::BindMaterial(const MaterialHandle &material) {
     cmd->material = material;
 }
 
-void Rendering::CommandBuffer::BindVertexBuffer(const BufferHandle &buffer) {
+void Rendering::CommandBuffer::BindVertexBuffer(const BufferHandle& buffer, const uint32_t bindingIndex, const uint32_t stride) {
     auto *cmd = allocateCommand<GLCommand_BindBuffer>(GLCommandType::BindVertexBuffer);
     cmd->buffer = buffer;
+    cmd->bindingIndex = bindingIndex;
+    cmd->stride = stride;
 }
 
 void Rendering::CommandBuffer::BindIndexBuffer(const BufferHandle &buffer) {

@@ -10,6 +10,7 @@
 #include "texture/VulkanTextureManager.h"
 
 namespace Rendering {
+    class ILogicalDevice;
     class VulkanLogicalDevice;
     class VulkanPhysicalDevice;
     class VulkanSurface;

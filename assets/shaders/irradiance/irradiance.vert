@@ -15,8 +15,6 @@ layout (location = 0) out vec3 FragPos;
 void main()
 {
     gl_Layer = in_InstanceID;
-
     FragPos = aPos;
     gl_Position = camera.proj * camera.view[in_InstanceID]  * vec4(FragPos, 1.0);
-
 }

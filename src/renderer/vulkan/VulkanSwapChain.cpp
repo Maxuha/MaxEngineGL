@@ -134,7 +134,7 @@ namespace Rendering {
                     throw std::runtime_error("failed to create image views!");
                 }
 
-            ColorTextures.push_back(VulkanTexture { .Image = images[i], .ImageView = image_views[i] });
+            ColorTextures.push_back(VulkanTexture { .Image = images[i], .ImageView = image_views[i], .Format = GetImageFormat() });
         }
     }
 

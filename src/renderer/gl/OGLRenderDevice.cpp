@@ -139,15 +139,14 @@ namespace Rendering {
         commandPoolManager = new OGLCommandPoolManager();
         descriptorSetManager = new OGLDescriptorSetManager();
 
-
-        std::vector<int> customInstanceIDs(10000);
-        for(int i = 0; i < 10000; i++) {
-            customInstanceIDs[i] = i;
-        }
-
-        GLuint instanceID_VBO;
-        glCreateBuffers(1, &instanceID_VBO);
-        glNamedBufferData(instanceID_VBO, customInstanceIDs.size() * sizeof(int), customInstanceIDs.data(), GL_STATIC_DRAW);
+        // std::vector<int> customInstanceIDs(10000);
+        // for(int i = 0; i < 10000; i++) {
+        //     customInstanceIDs[i] = i;
+        // }
+        //
+        // GLuint instanceID_VBO;
+        // glCreateBuffers(1, &instanceID_VBO);
+        // glNamedBufferData(instanceID_VBO, customInstanceIDs.size() * sizeof(int), customInstanceIDs.data(), GL_STATIC_DRAW);
     }
 
     OGLRenderDevice::~OGLRenderDevice() = default;
@@ -486,12 +485,11 @@ namespace Rendering {
 
                     const auto pipeline = pipelineManager->GetPipeline(currentPipeline);
                     const auto &buffer = bufferManager->GetBuffer(cmd->buffer);
+                    const auto bindingIndex = cmd->bindingIndex;
+                    const auto stride = cmd->stride;
 
-                    glVertexArrayVertexBuffer(1, 0,
-                                              buffer.glId, 0, sizeof(Vertex));
-
-                    glVertexArrayVertexBuffer(1, 1,
-                                              1, 0, sizeof(int));
+                    glVertexArrayVertexBuffer(1, bindingIndex,
+                                              buffer.glId, 0, stride);
                     break;
                 }
 

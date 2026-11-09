@@ -5,6 +5,7 @@
 #include "VulkanBufferManager.h"
 #include "../VulkanFrameManager.h"
 #include "../../domain/buffer/BufferDesc.h"
+#include "../src/renderer/vulkan/VulkanLogicalDevice.h"
 
 
 namespace Rendering {

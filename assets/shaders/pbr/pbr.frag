@@ -271,12 +271,13 @@ void main()
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefilteredColor = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
     vec2 brdf = texture(brdfLUT, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
-   // vec3 specularIndirect = prefilteredColor;
     vec3 specularIndirect = prefilteredColor * (F * brdf.x + brdf.y);
 
     vec3 ambient = (kD * diffuse + specularIndirect) * ao;
 
     vec3 color = ambient + Lo;
+
+    vec3 t = texture(irradianceMap, vec3(TexCoord, 0.0)).rgb;
 
     FragColor = vec4(color, 1.0);
 

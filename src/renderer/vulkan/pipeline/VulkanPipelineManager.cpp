@@ -50,8 +50,7 @@ namespace Rendering {
             const auto &binding = pipelineStateDesc.VertexLayout.bindings[i];
             bindingDescriptions[i].binding = binding.bufferIndex;
             bindingDescriptions[i].stride = binding.stride;
-            //TODO Add input rate mapping
-            bindingDescriptions[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            bindingDescriptions[i].inputRate = MapVertexInputRate(binding.stepRate);
         }
 
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
@@ -71,6 +70,8 @@ namespace Rendering {
         vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data(); // Optional
         vertexInputInfo.vertexAttributeDescriptionCount = attributeDescriptions.size();
         vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
+
+        //VkPipelineVertexInputStateCreateInfo vertexInputInfo = CreateVertexInputState(pipelineStateDesc.VertexLayout);
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -204,15 +205,14 @@ namespace Rendering {
 
     VkFormat VulkanPipelineManager::MapVertexFormat(const VertexFormat format) {
         switch (format) {
+            case VertexFormat::Float:
+                return VK_FORMAT_R32_SFLOAT;
             case VertexFormat::Float2:
                 return VK_FORMAT_R32G32_SFLOAT;
-                break;
             case VertexFormat::Float3:
                 return VK_FORMAT_R32G32B32_SFLOAT;
-                break;
             case VertexFormat::Float4:
                 return VK_FORMAT_R32G32B32A32_SFLOAT;
-                break;
             default:
                 return VK_FORMAT_UNDEFINED;
         }
@@ -226,8 +226,7 @@ namespace Rendering {
             const auto &binding = layout.bindings[i];
             bindingDescriptionsVec[i].binding = binding.bufferIndex;
             bindingDescriptionsVec[i].stride = binding.stride;
-            //TODO Add input rate mapping
-            bindingDescriptionsVec[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            bindingDescriptionsVec[i].inputRate = MapVertexInputRate(binding.stepRate);
         }
 
         std::vector<VkVertexInputAttributeDescription> attributeDescriptionsVec;
@@ -244,9 +243,9 @@ namespace Rendering {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = bindingDescriptionsVec.size();
-        vertexInputInfo.pVertexBindingDescriptions = bindingDescriptionsVec.data(); // Optional
+        vertexInputInfo.pVertexBindingDescriptions = bindingDescriptionsVec.data();
         vertexInputInfo.vertexAttributeDescriptionCount = attributeDescriptionsVec.size();
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptionsVec.data(); // Optional
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptionsVec.data();
         return vertexInputInfo;
     }
 
@@ -561,6 +560,20 @@ namespace Rendering {
                 break;
         }
         return vkFormat;
+    }
+
+    VkVertexInputRate VulkanPipelineManager::MapVertexInputRate(const VertexStepRate vertexStepRate) {
+        switch (vertexStepRate) {
+            case VertexStepRate::PerVertex: {
+                return VK_VERTEX_INPUT_RATE_VERTEX;
+            }
+            case VertexStepRate::PerInstance: {
+                return VK_VERTEX_INPUT_RATE_INSTANCE;
+            }
+            default: {
+                throw std::runtime_error("Unsupported vertex step rate!");
+            }
+        }
     }
 
     constexpr VkCullModeFlags VulkanPipelineManager::MapRenderFace(const RenderFace face) noexcept {

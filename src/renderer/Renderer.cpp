@@ -104,14 +104,12 @@ namespace Rendering {
 
         const std::array attachments = {
             AttachmentDescription{
-                .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE,
                 .clearColor = clearColor
             },
             AttachmentDescription{
-                .format = depthFormat,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE
@@ -120,14 +118,12 @@ namespace Rendering {
 
         const std::array skyboxAttachments = {
             AttachmentDescription{
-                .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::LOAD,
                 .storeOp = AttachmentStoreOp::STORE,
                 .clearColor = clearColor,
             },
             AttachmentDescription{
-                .format = depthFormat,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::LOAD,
                 .storeOp = AttachmentStoreOp::STORE
@@ -145,7 +141,6 @@ namespace Rendering {
 
         const std::array envAttachments = {
             AttachmentDescription{
-                .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE,
@@ -153,7 +148,6 @@ namespace Rendering {
                 .renderCubeMap = irradianceCubeMap
             },
             AttachmentDescription{
-                .format = depthFormat,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE
@@ -172,7 +166,6 @@ namespace Rendering {
 
         const std::array brdfAttachments = {
             AttachmentDescription{
-                .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE,
@@ -180,7 +173,6 @@ namespace Rendering {
                 .renderTarget = brdfTexture
             },
             AttachmentDescription{
-                .format = depthFormat,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE
@@ -189,7 +181,6 @@ namespace Rendering {
 
         const std::array<AttachmentDescription, 2> shadowAttachments = {
             AttachmentDescription{
-                .format = depthFormat,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::STORE,
@@ -246,7 +237,6 @@ namespace Rendering {
 
         const std::array prefilterAttachments = {
             AttachmentDescription{
-                .format = displayImageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE,
@@ -254,7 +244,6 @@ namespace Rendering {
                 .renderCubeMap = prefilterCubeMap
             },
             AttachmentDescription{
-                .format = depthFormat,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE
@@ -316,7 +305,6 @@ namespace Rendering {
         binding_model.type = ResourceType::StorageBuffer;
         binding_model.stage_flags = ShaderStageFlags::Vertex;
         binding_model.count = 1;
-        // binding_model.is_dynamic = true;
 
         modelSetLayoutDesc.bindings.push_back(binding_model);
 
@@ -375,6 +363,18 @@ namespace Rendering {
         staticIndexBufferDesc.usage = BufferUsage::Index;
         staticIndexBufferDesc.isNewApproach = true;
         staticMeshes.indexBuffer = renderDevice->CreateBuffer(staticIndexBufferDesc);
+
+        std::vector<int> customInstanceIDs(10000);
+        for(int i = 0; i < 10000; i++) {
+            customInstanceIDs[i] = i;
+        }
+
+        BufferDesc customInstanceDesc;
+        customInstanceDesc.size = customInstanceIDs.size() * sizeof(int);
+        customInstanceDesc.usage = BufferUsage::Vertex;
+        customInstanceDesc.isNewApproach = true;
+        instanceBuffer = renderDevice->CreateBuffer(customInstanceDesc);
+       // renderDevice->UpdateBuffer(instanceBuffer, customInstanceIDs.data(), 0, customInstanceIDs.size() * sizeof(int));
 
         uploadCommandBuffer = renderDevice->AllocateCommandBuffer(CommandBufferType::Transfer);
         uploadCommandBuffer->Begin();
@@ -589,7 +589,7 @@ namespace Rendering {
             return;
         }
         if (slot == 3) {
-            renderDevice->UpdateResourceSet(m.resourceSet, slot, prefilterCubeMap);
+            renderDevice->UpdateResourceSet(m.resourceSet, slot, irradianceCubeMap);
             return;
         }
         renderDevice->UpdateResourceSet(m.resourceSet, slot, cubemap.GetHandle());
@@ -713,7 +713,7 @@ namespace Rendering {
         cmd->BindPipeline(shaders[depthShader->GetHandle().Id].pipeline);
         cmd->BindResourceSet(lightSpace.ResourceSet, mainPipelineLayout, 0);
         cmd->BindResourceSet(modelResourceSet, mainPipelineLayout, 1, 0);
-        cmd->BindVertexBuffer(staticMeshes.vertexBuffer);
+        cmd->BindVertexBuffer(staticMeshes.vertexBuffer, 0, sizeof(Vertex));
         cmd->BindIndexBuffer(staticMeshes.indexBuffer);
 
         for (const auto drawCall: drawCalls) {
@@ -823,7 +823,8 @@ namespace Rendering {
                             shaders[materials[irredianceDrawCall.material->GetId().Id].shader.Id].pipeline, 0);
         cmd->BindResourceSet(materials[irredianceDrawCall.material->GetId().Id].resourceSet,
                              shaders[materials[irredianceDrawCall.material->GetId().Id].shader.Id].pipeline, 2);
-        cmd->BindVertexBuffer(staticMeshes.vertexBuffer);
+        cmd->BindVertexBuffer(staticMeshes.vertexBuffer, 0, sizeof(Vertex));
+        cmd->BindVertexBuffer(instanceBuffer, 1, sizeof(int));
         cmd->BindIndexBuffer(staticMeshes.indexBuffer);
         cmd->DrawIndexed(36, 0, 0, 0, 6);
         cmd->EndRenderPass();
@@ -851,6 +852,11 @@ namespace Rendering {
         cmd->End();
 
         if (uploadCommandBuffer != nullptr) {
+            std::vector<int> customInstanceIDs(10000);
+            for(int i = 0; i < 10000; i++) {
+                customInstanceIDs[i] = i;
+            }
+            uploadCommandBuffer->UploadBufferData(instanceBuffer, customInstanceIDs.data(), 0, customInstanceIDs.size() * sizeof(int));
             uploadCommandBuffer->End();
             renderDevice->SubmitCommandBuffer(uploadCommandBuffer);
             uploadCommandBuffer = nullptr;

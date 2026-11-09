@@ -72,6 +72,8 @@ namespace Rendering {
 
     struct GLCommand_BindBuffer {
         BufferHandle buffer;
+        uint32_t bindingIndex;
+        uint32_t stride;
     };
 
     struct GLCommand_BindMaterial {
@@ -136,7 +138,7 @@ namespace Rendering {
 
         void BindMaterial(const MaterialHandle& material);
 
-        void BindVertexBuffer(const BufferHandle& buffer);
+        void BindVertexBuffer(const BufferHandle& buffer, const uint32_t bindingIndex, const uint32_t stride);
 
         void BindIndexBuffer(const BufferHandle& buffer);
 

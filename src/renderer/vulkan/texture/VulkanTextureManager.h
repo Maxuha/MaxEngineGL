@@ -7,7 +7,6 @@
 #include <vulkan/vulkan_core.h>
 
 #include "../../ITextureManager.h"
-#include "../src/renderer/vulkan/VulkanLogicalDevice.h"
 #include "../commandbuffer/VulkanCommandBufferManager.h"
 #include "../vertexbuffer/VulkanStagingBufferPool.h"
 
@@ -20,6 +19,8 @@ namespace Rendering {
         uint32_t Width;
         uint32_t Height;
         uint32_t MipLevels;
+        VkFormat Format;
+        TextureType Type;
     };
 
     class VulkanTextureManager {
@@ -28,7 +29,7 @@ namespace Rendering {
 
         ~VulkanTextureManager();
 
-        TextureHandle CreateTexture(size_t width, size_t height, TextureFormat format, const TextureType type, void *data);
+        TextureHandle CreateTexture(const TextureCreateRequest &request);
 
         VulkanTexture& GetTexture(TextureHandle texture);
 
@@ -48,6 +49,8 @@ namespace Rendering {
         void TransitionImageLayout(VkCommandBuffer cmd, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         constexpr VkFormat MapTextureFormat(TextureFormat format) const;
+        constexpr VkImageAspectFlags MapImageAspectFlags(TextureFormat format) const;
+        constexpr VkImageUsageFlags MapImageUsageFlags(TextureFormat format) const;
     };
 } // Rendering
 

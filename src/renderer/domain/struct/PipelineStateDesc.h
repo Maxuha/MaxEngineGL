@@ -57,15 +57,14 @@ namespace Rendering {
     };
 
     struct AttachmentDescription {
-        TextureFormat format = TextureFormat::SRGBA;
+        // TextureFormat format = TextureFormat::SRGBA;
         AttachmentType type = AttachmentType::NONE;
         AttachmentLoadOp loadOp = AttachmentLoadOp::DONT_CARE;
         AttachmentStoreOp storeOp = AttachmentStoreOp::DONT_CARE;
-        Color clearColor;
+        Color clearColor = Color::White();
         float depthClearValue = 1.0f;
         std::optional<TextureHandle> renderTarget = { };
         std::optional<CubeMapHandle> renderCubeMap = { };
-        uint32_t mipLevel = 0;
     };
 
     struct RasterizerDesc {

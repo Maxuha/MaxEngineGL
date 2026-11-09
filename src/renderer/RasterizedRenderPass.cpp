@@ -10,13 +10,11 @@ namespace Rendering {
     RasterizedRenderPass::RasterizedRenderPass(const TextureFormat imageFormat) : renderPassManager(nullptr) {
         std::vector attachments = {
             AttachmentDescription{
-                .format = imageFormat,
                 .type = AttachmentType::COLOR,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::STORE
             },
             AttachmentDescription {
-                .format = TextureFormat::DEPTH,
                 .type = AttachmentType::DEPTH,
                 .loadOp = AttachmentLoadOp::CLEAR,
                 .storeOp = AttachmentStoreOp::DONT_CARE

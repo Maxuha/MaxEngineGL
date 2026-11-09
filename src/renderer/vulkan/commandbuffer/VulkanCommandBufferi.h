@@ -10,10 +10,10 @@
 
 #include "../../../math/Rect.h"
 #include "../../domain/struct/PipelineStateDesc.h"
-#include "../../gl/CommandBuffer.h"
 #include "../vertexbuffer/VulkanBufferManager.h"
 
 namespace Rendering {
+    struct VulkanTexture;
     enum class CommandPoolType;
     struct VulkanDynamicBuffer;
     struct VulkanPipeline;
@@ -42,8 +42,8 @@ namespace Rendering {
             Rect viewport,
             std::optional<AttachmentDescription> color,
             std::optional<AttachmentDescription> depth,
-            VkImageView colorTexture,
-            VkImageView depthTexture
+            VulkanTexture& colorTexture,
+            VulkanTexture& depthTexture
             );
 
         void BindPipeline(const VulkanPipeline &pipeline) const;
@@ -52,7 +52,7 @@ namespace Rendering {
 
         void BindIndexBuffer(const VulkanDynamicBuffer &buffer) const;
 
-        void BindVertexBuffer(const VulkanBuffer &buffer) const;
+        void BindVertexBuffer(const VulkanBuffer &buffer, const uint32_t bindingIndex, const uint32_t stride) const;
 
         void BindIndexBuffer(const VulkanBuffer &buffer) const;
 

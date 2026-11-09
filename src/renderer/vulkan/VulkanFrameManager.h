@@ -5,7 +5,6 @@
 #ifndef MAXENGINE_FRAMEMANAGER_H
 #define MAXENGINE_FRAMEMANAGER_H
 #include "VulkanSwapChain.h"
-#include "../src/renderer/vulkan/VulkanRenderPassManager.h"
 
 namespace Rendering {
     class ILogicalDevice;
@@ -17,12 +16,6 @@ namespace Rendering {
         VkSemaphore ImageAvailableSemaphoreVk;
         VkSemaphore RenderFinishedSemaphoreVk;
         VkFence InFlightVk;
-
-        // VulkanFrame(const VulkanFrame&) = delete;
-        // VulkanFrame& operator=(const VulkanFrame&) = delete;
-        //
-        // VulkanFrame(VulkanFrame&&) noexcept = default;
-        // VulkanFrame& operator=(VulkanFrame&&) noexcept = default;
 
     };
 

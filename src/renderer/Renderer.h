@@ -153,6 +153,8 @@ namespace Rendering {
         CubeMapHandle prefilterCubeMap;
         TextureHandle brdfTexture;
 
+        BufferHandle instanceBuffer{};
+
     };
 } // namespace Rendering
 

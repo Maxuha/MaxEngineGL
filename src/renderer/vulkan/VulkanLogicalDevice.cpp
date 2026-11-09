@@ -28,6 +28,10 @@ namespace Rendering {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(physicalDevice.GetPhysicalDevice(), &deviceProperties);
 
+        std::cout << deviceProperties.deviceName << std::endl;
+        std::cout << deviceProperties.driverVersion << std::endl;
+        std::cout << deviceProperties.apiVersion << std::endl;
+
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceFeatures(physicalDevice.GetPhysicalDevice(), &deviceFeatures);
 
@@ -45,9 +49,14 @@ namespace Rendering {
         features11.pNext = nullptr;
         features11.shaderDrawParameters = VK_TRUE;
 
+        VkPhysicalDeviceVulkan12Features features12{};
+        features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        features12.shaderOutputLayer = VK_TRUE;
+        features12.pNext = &features11;
+
         VkPhysicalDeviceVulkan13Features features13{};
         features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-        features13.pNext = &features11;
+        features13.pNext = &features12;
         features13.dynamicRendering = VK_TRUE;
         features13.synchronization2 = VK_TRUE;
 
@@ -159,7 +168,6 @@ namespace Rendering {
         vkGetImageMemoryRequirements(device, image, &memoryRequirements);
         return memoryRequirements;
     }
-
 
     Result VulkanLogicalDevice::ToResult(const VkResult result) {
         return Result(result == VK_SUCCESS);

@@ -16,6 +16,8 @@ public:
     float r, g, b, a;
 
     Vector3 rgb() const;
+
+    static Color White();
 };
 
 

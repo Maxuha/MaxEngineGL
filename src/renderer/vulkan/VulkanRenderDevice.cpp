@@ -74,7 +74,13 @@ namespace Rendering {
 
         const Rect rect = window.GetCurrentSize();
 
-        const TextureHandle texture = textureManager->CreateTexture(rect.width, rect.height, TextureFormat::DEPTH, TextureType::Texture2D, nullptr);
+        TextureCreateRequest depthTextureDesc;
+        depthTextureDesc.Width = rect.width;
+        depthTextureDesc.Height = rect.height;
+        depthTextureDesc.Format = TextureFormat::DEPTH;
+        depthTextureDesc.Type = TextureType::Cube;
+
+        const TextureHandle texture = textureManager->CreateTexture(depthTextureDesc);
         depthTexture = textureManager->GetTexture(texture);
 
         mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -97,7 +103,7 @@ namespace Rendering {
     TextureHandle VulkanRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
         const auto data = const_cast<void *>(initialData);
 
-        const TextureHandle textureHandle = textureManager->CreateTexture(desc.Width, desc.Height, desc.Format, desc.Type, data);
+        const TextureHandle textureHandle = textureManager->CreateTexture(desc);
 
         if (initialData != nullptr) {
             const VkCommandBuffer uploadCmd = commandBufferManager->AllocateCommandBuffer(
@@ -127,6 +133,12 @@ namespace Rendering {
         VulkanCubemap cubemap;
         cubemap.texture = CreateTexture(desc, nullptr);
 
+        cubemaps.push_back(cubemap);
+
+        const CubeMapHandle handle = {.Id = cubemaps.size() - 1};
+
+        if (datas.size() != 6) return handle;
+
         const StagingAllocation staging = stagingBufferPool->Allocate((desc.Width * desc.Height * 4) * 6);
 
         const VkCommandBuffer uploadCmd = commandBufferManager->AllocateCommandBuffer(
@@ -148,9 +160,7 @@ namespace Rendering {
 
         vkQueueSubmit(logicalDevice->GetTransferQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 
-        cubemaps.push_back(cubemap);
-
-        return {.Id = cubemaps.size() - 1};
+        return handle;
     }
 
     PipelineLayoutHandle VulkanRenderDevice::CreatePipelineLayout(
@@ -415,7 +425,7 @@ namespace Rendering {
 
         const auto shaderHandle = ShaderHandle{.Id = shaders.size() - 1};
         const GraphicsVulkanShader shader = shaders[shaderHandle.Id];
-        return pipelineManager->CreatePipeline(shader, pipelineStateDesc);;
+        return pipelineManager->CreatePipeline(shader, pipelineStateDesc);
     }
 
     void VulkanRenderDevice::SubmitCommandBuffer(CommandBuffer *commandBuffer) {
@@ -449,6 +459,7 @@ namespace Rendering {
         const size_t head = commandBuffer->GetHead();
 
         VkImage depthImage = nullptr;
+        VulkanTexture colorTexture;
 
         while (readOffset < head) {
             const GLCommandType type = *reinterpret_cast<GLCommandType *>(&commands[readOffset]);
@@ -467,10 +478,22 @@ namespace Rendering {
                     VkFormat depthFormat;
                     uint32_t colorCount = 0;
 
+                    colorTexture = frame.ColorTexture;
+
                     if (colorAttachmentDescription.has_value()) {
                         AttachmentDescription attachmentDescription = colorAttachmentDescription.value();
-                        colorFormat = MapVkFormat(attachmentDescription.format);
+                        colorFormat = colorTexture.Format;
                         colorCount = 1;
+
+                        if (attachmentDescription.renderCubeMap.has_value()) {
+                            CubeMapHandle cubeMapHandle = attachmentDescription.renderCubeMap.value();
+                            VulkanTexture colorTarget = textureManager->GetTexture(cubemaps[cubeMapHandle.Id].texture);
+                            colorTexture = colorTarget;
+
+                            mainCommandBuffer.TransitionImageLayout(colorTexture.Image, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                               VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+                        }
                     }
 
                     VkImageView depthImageView;
@@ -485,10 +508,10 @@ namespace Rendering {
                         if (renderTargetOpt.has_value()) {
                             TextureHandle renderTarget = renderTargetOpt.value();
                             const auto &depthTex = textureManager->GetTexture(renderTarget);
+                            depthTexture = depthTex;
                             depthImageView = depthTex.ImageView;
                             depthImage = depthTex.Image;
-
-                            depthFormat = MapVkFormat(attachmentDescription.format);
+                            depthFormat = depthTex.Format;
 
                             mainCommandBuffer.TransitionImageLayout(depthImage, VK_IMAGE_LAYOUT_UNDEFINED,
                                                                  VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
@@ -496,7 +519,7 @@ namespace Rendering {
                         }
                     }
 
-                    mainCommandBuffer.BeginRenderPass(viewport, colorAttachmentDescription, depthAttachmentDescription, frame.ColorTexture.ImageView, depthImageView);
+                    mainCommandBuffer.BeginRenderPass(viewport, colorAttachmentDescription, depthAttachmentDescription, colorTexture, depthTexture);
                     secondaryCommandBuffer.Begin(colorCount, colorFormat, depthFormat);
                     break;
                 }
@@ -532,10 +555,11 @@ namespace Rendering {
                     const auto *cmd = reinterpret_cast<GLCommand_BindBuffer *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_BindBuffer);
 
-                    BufferHandle bufferHandle = cmd->buffer;
-                    VulkanBuffer &buffer = buffers[bufferHandle.Id];
+                    VulkanBuffer &buffer = buffers[cmd->buffer.Id];
+                    uint32_t bindingIndex = cmd->bindingIndex;
+                    uint32_t stride = cmd->stride;
 
-                    secondaryCommandBuffer.BindVertexBuffer(buffer);
+                    secondaryCommandBuffer.BindVertexBuffer(buffer, bindingIndex, stride);
                     break;
                 }
                 case GLCommandType::BindIndexBuffer: {
@@ -583,8 +607,9 @@ namespace Rendering {
                     uint32_t firstIndex = cmd->firstIndex;
                     uint32_t vertexOffset = cmd->vertexOffset;
                     uint32_t indexMesh = cmd->indexMesh;
+                    uint32_t instanceCount = cmd->instanceCount;
 
-                    secondaryCommandBuffer.DrawIndexed(indexCount, 1, firstIndex, vertexOffset, indexMesh);
+                    secondaryCommandBuffer.DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, indexMesh);
                     break;
                 }
                 case GLCommandType::EndRenderPass: {
@@ -608,11 +633,9 @@ namespace Rendering {
                 }
                 case GLCommandType::UploadBufferData: {
                     const auto *cmd = reinterpret_cast<GLCommand_UploadBufferData *>(&commands[readOffset]);
-                    // readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
                     readOffset += sizeof(GLCommand_UploadBufferData);
 
                     auto bufferHandle = cmd->buffer;
-                    // auto data = reinterpret_cast<const uint8_t*>(cmd) + sizeof(GLCommand_UploadBufferData);;
                     auto data = cmd->data;
                     auto size = cmd->size;
                     auto offset = cmd->offset;
@@ -633,7 +656,7 @@ namespace Rendering {
         }
 
         if (colorPassEnded) {
-            mainCommandBuffer.TransitionImageLayout(frame.ColorTexture.Image,
+            mainCommandBuffer.TransitionImageLayout(colorTexture.Image,
                                                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                                                  VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);

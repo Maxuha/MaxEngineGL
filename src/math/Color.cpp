@@ -18,3 +18,7 @@ Color::Color(const float r, const float g, const float b, const float a = 1.0f) 
 Vector3 Color::rgb() const {
     return {r, g, b};
 }
+
+Color Color::White() {
+    return Color(1.0f, 1.0f, 1.0f);
+}

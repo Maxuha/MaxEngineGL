@@ -6,18 +6,20 @@
 
 #include "../pipeline/VulkanPipelineManager.h"
 #include "../src/renderer/vulkan/vertexbuffer/VulkanBufferManager.h"
+#include "../src/renderer/vulkan/texture/VulkanTextureManager.h"
 
 namespace Rendering {
     VulkanCommandBufferi::VulkanCommandBufferi() {
     }
 
-    VulkanCommandBufferi::VulkanCommandBufferi(const VkCommandBuffer commandBuffer, const CommandPoolType type) : commandBuffer(commandBuffer), type(type) {
+    VulkanCommandBufferi::VulkanCommandBufferi(const VkCommandBuffer commandBuffer,
+                                               const CommandPoolType type) : commandBuffer(commandBuffer), type(type) {
         assert(commandBuffer != VK_NULL_HANDLE);
         vkResetCommandBuffer(commandBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     }
 
     VulkanCommandBufferi::~VulkanCommandBufferi() {
-       // vkEndCommandBuffer(commandBuffer);
+        // vkEndCommandBuffer(commandBuffer);
     }
 
     void VulkanCommandBufferi::Begin() const {
@@ -46,16 +48,16 @@ namespace Rendering {
     }
 
     void VulkanCommandBufferi::BeginRenderPass(const Rect viewport, std::optional<AttachmentDescription> color,
-                                               std::optional<AttachmentDescription> depth, VkImageView colorTexture,
-                                               VkImageView depthTexture) {
-
+                                               std::optional<AttachmentDescription> depth, VulkanTexture &colorTexture,
+                                               VulkanTexture &depthTexture) {
         std::vector<VkRenderingAttachmentInfo> colorAttachments;
         VkRenderingAttachmentInfo depthAttachment;
 
         if (color.has_value()) {
             AttachmentDescription attachmentDescription = color.value();
 
-            VkRenderingAttachmentInfo colorAttachment = CreateAttachmentInfo(attachmentDescription, colorTexture);
+            VkRenderingAttachmentInfo colorAttachment = CreateAttachmentInfo(
+                attachmentDescription, colorTexture.ImageView);
 
             colorAttachments.push_back(colorAttachment);
         }
@@ -63,14 +65,23 @@ namespace Rendering {
         if (depth.has_value()) {
             AttachmentDescription attachmentDescription = depth.value();
 
-            depthAttachment = CreateAttachmentInfo(attachmentDescription, depthTexture);
+            depthAttachment = CreateAttachmentInfo(attachmentDescription, depthTexture.ImageView);
+        }
+
+        uint32_t layerCount = 1;
+
+        if (colorTexture.Type == TextureType::Cube) {
+            layerCount = 6;
         }
 
         VkRenderingInfo renderingInfo{};
         renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
         renderingInfo.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
-        renderingInfo.renderArea = {static_cast<int32_t>(viewport.x), static_cast<int32_t>(viewport.y), static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height)};
-        renderingInfo.layerCount = 1;
+        renderingInfo.renderArea = {
+            static_cast<int32_t>(viewport.x), static_cast<int32_t>(viewport.y), static_cast<uint32_t>(viewport.width),
+            static_cast<uint32_t>(viewport.height)
+        };
+        renderingInfo.layerCount = layerCount;
         renderingInfo.colorAttachmentCount = colorAttachments.size();
         renderingInfo.pColorAttachments = colorAttachments.data();
         renderingInfo.pDepthAttachment = &depthAttachment;
@@ -97,10 +108,10 @@ namespace Rendering {
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT16);
     }
 
-    void VulkanCommandBufferi::BindVertexBuffer(const VulkanBuffer &buffer) const {
+    void VulkanCommandBufferi::BindVertexBuffer(const VulkanBuffer &buffer, const uint32_t bindingIndex, const uint32_t stride) const {
         const VkBuffer vertexBuffers[] = {buffer.buffer};
         constexpr VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(commandBuffer, bindingIndex, 1, vertexBuffers, offsets);
     }
 
     void VulkanCommandBufferi::BindIndexBuffer(const VulkanBuffer &buffer) const {
@@ -109,27 +120,18 @@ namespace Rendering {
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, offset, VK_INDEX_TYPE_UINT16);
     }
 
-    void VulkanCommandBufferi::BindDescriptorSets(const VkDescriptorSet descriptorSets, const VkPipelineLayout layout, const uint32_t index, const uint32_t* currentOffset) const {
-        uint32_t dynamicOffsetCount = 0;
-
-        // if (currentOffset != nullptr || *currentOffset != 0) {
-        //     dynamicOffsetCount = 1;
-        // }
-
-        if (index == 1) {
-            dynamicOffsetCount = 1;
-        }
-
+    void VulkanCommandBufferi::BindDescriptorSets(const VkDescriptorSet descriptorSets, const VkPipelineLayout layout,
+                                                  const uint32_t index, const uint32_t *currentOffset) const {
         vkCmdBindDescriptorSets(
-                 commandBuffer,
-                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                 layout,
-                 index,
-                 1,
-                 &descriptorSets,
-                 0,
-                 nullptr
-             );
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            layout,
+            index,
+            1,
+            &descriptorSets,
+            0,
+            nullptr
+        );
     }
 
     void VulkanCommandBufferi::EndRenderPass() const {
@@ -150,7 +152,8 @@ namespace Rendering {
     }
 
     void VulkanCommandBufferi::DrawIndexed(const uint32_t indexCount, const uint32_t instanceCount,
-        const uint32_t firstIndex, const int32_t vertexOffset, const uint32_t firstInstance) const {
+                                           const uint32_t firstIndex, const int32_t vertexOffset,
+                                           const uint32_t firstInstance) const {
         vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
@@ -166,9 +169,9 @@ namespace Rendering {
         // --- Source masks (What to wait for) ---
         switch (oldLayout) {
             case VK_IMAGE_LAYOUT_UNDEFINED:
-            //    srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+                //    srcStageMask = VK_PIPELINE_STAGE_2_NONE;
                 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-               // srcAccessMask = VK_ACCESS_2_NONE;
+                // srcAccessMask = VK_ACCESS_2_NONE;
                 srcAccessMask = srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;;
                 break;
 
@@ -262,7 +265,8 @@ namespace Rendering {
                               aspectMask, mipLevelCount, layerCount);
     }
 
-    void VulkanCommandBufferi::CopyBuffer(const VkBuffer src, const VkBuffer dst, const VkDeviceSize size, const VkDeviceSize offset) const {
+    void VulkanCommandBufferi::CopyBuffer(const VkBuffer src, const VkBuffer dst, const VkDeviceSize size,
+                                          const VkDeviceSize offset) const {
         VkBufferCopy region{};
         region.size = size;
         region.srcOffset = 0;
@@ -338,5 +342,4 @@ namespace Rendering {
         // Record the pipeline barrier command
         vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
     }
-
 } // Rendering

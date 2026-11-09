@@ -20,7 +20,6 @@ namespace Rendering {
     };
 
     struct VulkanCubemap {
-        std::vector<TextureHandle> faces;
         TextureHandle texture;
     };
 
