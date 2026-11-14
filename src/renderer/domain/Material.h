@@ -5,7 +5,6 @@
 #ifndef MAXENGINE_MATERIAL_H
 #define MAXENGINE_MATERIAL_H
 #include <any>
-#include "Cubemap.h"
 #include "Shader.h"
 #include "IGLTexture.h"
 #include "Texture.h"
@@ -81,8 +80,6 @@ public:
     }
 
     void SetTexture(const uint32_t slot, const Rendering::Texture &texture) const;
-
-    void SetCubemap(const uint32_t slot, const Rendering::Cubemap &texture) const;
 
     Rendering::IGLTexture* GetTexture(const std::string &slot) const {
         return textures.at(slot);

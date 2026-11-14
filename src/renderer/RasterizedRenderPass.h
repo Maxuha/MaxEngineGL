@@ -23,7 +23,7 @@ namespace Rendering {
         IRenderPassManager *renderPassManager;
         RenderPassHandle renderPass;
         Rect viewport;
-        Color clearColor;
+        ::Color clearColor;
     };
 } // Rendering
 

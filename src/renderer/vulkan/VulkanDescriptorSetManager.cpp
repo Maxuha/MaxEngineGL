@@ -28,7 +28,7 @@ namespace Rendering {
         for (const auto &binding: resourceSetLayoutDesc.bindings) {
             VkDescriptorSetLayoutBinding vkBinding{};
             vkBinding.binding = binding.binding_slot;
-            vkBinding.descriptorCount = 1;
+            vkBinding.descriptorCount = binding.count;
 
             switch (binding.type) {
                 case ResourceType::SampledImage:
@@ -120,6 +120,11 @@ namespace Rendering {
     }
 
     VkDescriptorPool VulkanDescriptorSetManager::AllocateDescriptorPool() {
+        // if ((currentIndex + 3) > pools.size() * maxIndexPerPool) {
+        //     CreateDescriptorPool(maxIndexPerPool);
+        //     currentIndex = (pools.size() - 1) * maxIndexPerPool;
+        // }
+
         if (currentIndex % maxIndexPerPool == 0) {
             CreateDescriptorPool(maxIndexPerPool);
         }
@@ -164,9 +169,5 @@ namespace Rendering {
 
     void VulkanDescriptorSetManager::BindTexture(const ResourceSetHandle setHandle, uint32_t slot, const TextureHandle textureHandle) {
 
-    }
-
-    void VulkanDescriptorSetManager::BindCubemap(ResourceSetHandle setHandle, uint32_t slot,
-        CubeMapHandle cubemapHandle) {
     }
 } // Rendering

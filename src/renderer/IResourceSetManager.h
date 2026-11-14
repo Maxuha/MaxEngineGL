@@ -23,8 +23,6 @@ namespace Rendering {
         virtual void BindBuffer(ResourceSetHandle setHandle, uint32_t slot, BufferHandle bufferHandle) = 0;
 
         virtual void BindTexture(ResourceSetHandle setHandle, uint32_t slot, TextureHandle textureHandle) = 0;
-
-        virtual void BindCubemap(ResourceSetHandle setHandle, uint32_t slot, CubeMapHandle cubemapHandle) = 0;
     };
 } // Rendering
 

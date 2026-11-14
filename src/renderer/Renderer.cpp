@@ -96,11 +96,10 @@ namespace Rendering {
         shadowTextureRequest.Format = TextureFormat::DEPTH;
         shadowTextureRequest.Width = 2160;
         shadowTextureRequest.Height = 1440;
-        shadowTextureRequest.MipLevels = 0;
 
         shadowTexture = renderDevice->CreateTexture(shadowTextureRequest, nullptr);
 
-        const auto clearColor = Color{0.75f, 0.75f, 0.75f, 1.0f};
+        const auto clearColor = ::Color{0.75f, 0.75f, 0.75f, 1.0f};
 
         const std::array attachments = {
             AttachmentDescription{
@@ -130,55 +129,6 @@ namespace Rendering {
             }
         };
 
-        TextureCreateRequest envCubeMapRequest;
-        envCubeMapRequest.Width = 32;
-        envCubeMapRequest.Height = 32;
-        envCubeMapRequest.Type = TextureType::Cube;
-        envCubeMapRequest.Filter = TextureFilter::Bilinear;
-        envCubeMapRequest.Wrap = TextureWrap::Clamp;
-        envCubeMapRequest.Format = TextureFormat::RGBA;
-        irradianceCubeMap = Renderer::CreateCubeMap(envCubeMapRequest, {});
-
-        const std::array envAttachments = {
-            AttachmentDescription{
-                .type = AttachmentType::COLOR,
-                .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::DONT_CARE,
-                .clearColor = clearColor,
-                .renderCubeMap = irradianceCubeMap
-            },
-            AttachmentDescription{
-                .type = AttachmentType::DEPTH,
-                .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::DONT_CARE
-            }
-        };
-
-        TextureCreateRequest brdfTextureRequest;
-        brdfTextureRequest.Width = 512;
-        brdfTextureRequest.Height = 512;
-        brdfTextureRequest.MipLevels = 0;
-        brdfTextureRequest.Type = TextureType::Texture2D;
-        brdfTextureRequest.Filter = TextureFilter::Bilinear;
-        brdfTextureRequest.Wrap = TextureWrap::Clamp;
-        brdfTextureRequest.Format = TextureFormat::RGBA;
-        brdfTexture = renderDevice->CreateTexture(brdfTextureRequest, nullptr);
-
-        const std::array brdfAttachments = {
-            AttachmentDescription{
-                .type = AttachmentType::COLOR,
-                .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::DONT_CARE,
-                .clearColor = clearColor,
-                .renderTarget = brdfTexture
-            },
-            AttachmentDescription{
-                .type = AttachmentType::DEPTH,
-                .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::DONT_CARE
-            }
-        };
-
         const std::array<AttachmentDescription, 2> shadowAttachments = {
             AttachmentDescription{
                 .type = AttachmentType::DEPTH,
@@ -193,87 +143,25 @@ namespace Rendering {
         const auto mainRenderPass = RenderPass{
             attachments[0],
             attachments[1],
-            viewport,
-            clearColor
+            viewport
         };
 
         const auto shadowRenderPass = RenderPass{
             {},
             shadowAttachments[0],
             // {0, 0, 2048, 2048},
-            viewport,
-            clearColor
+            viewport
         };
 
         const auto skyboxRenderPass = RenderPass{
             skyboxAttachments[0],
             skyboxAttachments[1],
-            viewport,
-            clearColor
-        };
-
-        const auto envRenderPass = RenderPass{
-            envAttachments[0],
-            envAttachments[1],
-            {0, 0, 32, 32},
-            clearColor
+            viewport
         };
 
         renderPassesDesc.push_back(mainRenderPass);
         renderPassesDesc.push_back(shadowRenderPass);
         renderPassesDesc.push_back(skyboxRenderPass);
-        renderPassesDesc.push_back(envRenderPass);
-
-        TextureCreateRequest prefilterCubeMapRequest;
-        prefilterCubeMapRequest.Width = 128;
-        prefilterCubeMapRequest.Height = 128;
-        prefilterCubeMapRequest.MipLevels = 4;
-        prefilterCubeMapRequest.useMipMaps = true;
-        prefilterCubeMapRequest.Type = TextureType::Cube;
-        prefilterCubeMapRequest.Filter = TextureFilter::Trilinear;
-        prefilterCubeMapRequest.Wrap = TextureWrap::Clamp;
-        prefilterCubeMapRequest.Format = TextureFormat::RGBA;
-        prefilterCubeMap = Renderer::CreateCubeMap(prefilterCubeMapRequest, {});
-
-        const std::array prefilterAttachments = {
-            AttachmentDescription{
-                .type = AttachmentType::COLOR,
-                .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::DONT_CARE,
-                .clearColor = clearColor,
-                .renderCubeMap = prefilterCubeMap
-            },
-            AttachmentDescription{
-                .type = AttachmentType::DEPTH,
-                .loadOp = AttachmentLoadOp::CLEAR,
-                .storeOp = AttachmentStoreOp::DONT_CARE
-            }
-        };
-
-        unsigned int maxMipLevels = 4;
-        for (int mip = 0; mip < maxMipLevels; mip++) {
-            unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-            unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-
-            const auto prefilterRenderPass = RenderPass{
-                prefilterAttachments[0],
-                prefilterAttachments[1],
-                {0, 0, static_cast<float>(mipWidth) , static_cast<float>(mipHeight) },
-                clearColor,
-                static_cast<uint32_t>(mip)
-            };
-
-            renderPassesDesc.push_back(prefilterRenderPass);
-        }
-
-        const auto brdfRenderPass = RenderPass{
-            brdfAttachments[0],
-            brdfAttachments[1],
-            {0, 0, 512 , 512 },
-            clearColor
-        };
-
-        renderPassesDesc.push_back(brdfRenderPass);
 
         // resource set layouts for cameras and lights set = 0 binding = 0 for camera, and binding = 1 for light
 
@@ -365,7 +253,7 @@ namespace Rendering {
         staticMeshes.indexBuffer = renderDevice->CreateBuffer(staticIndexBufferDesc);
 
         std::vector<int> customInstanceIDs(10000);
-        for(int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10000; i++) {
             customInstanceIDs[i] = i;
         }
 
@@ -374,7 +262,6 @@ namespace Rendering {
         customInstanceDesc.usage = BufferUsage::Vertex;
         customInstanceDesc.isNewApproach = true;
         instanceBuffer = renderDevice->CreateBuffer(customInstanceDesc);
-       // renderDevice->UpdateBuffer(instanceBuffer, customInstanceIDs.data(), 0, customInstanceIDs.size() * sizeof(int));
 
         uploadCommandBuffer = renderDevice->AllocateCommandBuffer(CommandBufferType::Transfer);
         uploadCommandBuffer->Begin();
@@ -415,12 +302,12 @@ namespace Rendering {
         return cameraRender;
     }
 
-    TextureHandle Renderer::CreateTexture(void *data, TextureCreateRequest &textureCreateDesc) {
-        return renderDevice->CreateTexture(textureCreateDesc, data);
+    TextureHandle Renderer::CreateTexture(TextureCreateRequest &desc, void *data) {
+        return renderDevice->CreateTexture(desc, data);
     }
 
-    CubeMapHandle Renderer::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
-        return renderDevice->CreateCubeMap(desc, datas);
+    TextureHandle Renderer::CreateTexture(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        return renderDevice->CreateTexture(desc, datas);
     }
 
     MaterialHandle Renderer::CreateMaterial(const ShaderHandle shaderHandle, const MaterialDesc &materialDesc) {
@@ -495,7 +382,7 @@ namespace Rendering {
         memcpy(meshBuffer.vertexData, vertices.data(), vertices.size() * sizeof(Vertex));
 
         uploadCommandBuffer->UploadBufferData(staticMeshes.vertexBuffer, meshBuffer.vertexData,
-                                              staticMeshes.currentVertexOffset, vertices.size() * sizeof(Vertex));
+                                              staticMeshes.currentVertexOffset, vertices.size() * sizeof(Vertex), true);
 
         meshBuffer.vertexBuffer.offset = staticMeshes.currentVertexOffset;
         meshBuffer.vertexBuffer.size = vertices.size() * sizeof(Vertex);
@@ -505,7 +392,7 @@ namespace Rendering {
         memcpy(meshBuffer.indexData, indices.data(), indices.size() * sizeof(uint16_t));
 
         uploadCommandBuffer->UploadBufferData(staticMeshes.indexBuffer, meshBuffer.indexData,
-                                              staticMeshes.currentIndexOffset, indices.size() * sizeof(uint16_t));
+                                              staticMeshes.currentIndexOffset, indices.size() * sizeof(uint16_t), true);
 
         meshBuffer.indexBuffer.offset = staticMeshes.currentIndexOffset;
         meshBuffer.indexBuffer.size = indices.size() * sizeof(uint16_t);
@@ -570,29 +457,7 @@ namespace Rendering {
 
     void Renderer::BindTextureToMaterial(const Material &material, const uint32_t slot, const Texture &texture) {
         const MaterialData materialData = materials[material.GetId().Id];
-        if (slot == 15) {
-            renderDevice->UpdateResourceSet(materialData.resourceSet, slot, brdfTexture);
-            return;
-        }
         renderDevice->UpdateResourceSet(materialData.resourceSet, slot, texture.GetId());
-    }
-
-    void Renderer::BindCubemapToMaterial(const Material &material, const uint32_t slot,
-                                         const Cubemap &cubemap) {
-        const MaterialData m = materials[material.GetId().Id];
-        if (slot == 13) {
-            renderDevice->UpdateResourceSet(m.resourceSet, slot, irradianceCubeMap);
-            return;
-        }
-        if (slot == 14) {
-            renderDevice->UpdateResourceSet(m.resourceSet, slot, prefilterCubeMap);
-            return;
-        }
-        if (slot == 3) {
-            renderDevice->UpdateResourceSet(m.resourceSet, slot, irradianceCubeMap);
-            return;
-        }
-        renderDevice->UpdateResourceSet(m.resourceSet, slot, cubemap.GetHandle());
     }
 
     void Renderer::BindBufferToMaterial(const MaterialHandle materialHandle, const uint32_t slot,
@@ -730,8 +595,8 @@ namespace Rendering {
         cameraBuffer.proj = activeCamera->GetProjection();
         cameraBuffer.position = Vector4(activeCamera->GetTransform()->position, 1.0f);
 
-        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
-                                   sizeof(CameraBuffer));
+        cmd->UploadBufferData(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
+                              sizeof(CameraBuffer));
 
         cmd->BeginRenderPass(renderPassesDesc[0]);
         cmd->BindResourceSet(cameras[activeCamera->GetHandle().Id].ResourceSet, mainPipelineLayout, 0);
@@ -759,16 +624,8 @@ namespace Rendering {
 
         //skybox
 
-        cameraBuffer.view = activeCamera->GetTransform()->LookAt();
-        cameraBuffer.proj = activeCamera->GetProjection();
-        cameraBuffer.position = Vector4(activeCamera->GetTransform()->position, 1.0f);
-
-        renderDevice->UpdateBuffer(cameras[activeCamera->GetHandle().Id].ViewProjectionBuffer, &cameraBuffer, 0,
-                                   sizeof(CameraBuffer));
-
         cmd->BeginRenderPass(renderPassesDesc[2]);
         cmd->BindPipeline(shaders[materials[skyboxMaterial->GetMaterialHandle().Id].shader.Id].pipeline);
-        cmd->BindResourceSet(cameras[activeCamera->GetHandle().Id].ResourceSet, mainPipelineLayout, 0);
         cmd->BindResourceSet(materials[skyboxMaterial->GetMaterialHandle().Id].resourceSet,
                              shaders[materials[skyboxMaterial->GetMaterialHandle().Id].shader.Id].pipeline, 2);
         cmd->DrawIndexed(36, 0, 0, 0);
@@ -788,7 +645,121 @@ namespace Rendering {
         delete cmd;
     }
 
-    void Renderer::Bake(DrawCall &irredianceDrawCall, DrawCall &prefilterDrawCall, DrawCall &brdfDrawCall) {
+    BakedResult Renderer::Bake(BakeRequest &request) {
+        TextureCreateRequest irradianceCubemapRequest;
+        irradianceCubemapRequest.Width = request.environmentLighting.resolution.width;
+        irradianceCubemapRequest.Height = request.environmentLighting.resolution.height;
+        irradianceCubemapRequest.Type = TextureType::Cube;
+        irradianceCubemapRequest.Filter = TextureFilter::Bilinear;
+        irradianceCubemapRequest.Wrap = TextureWrap::Clamp;
+        irradianceCubemapRequest.Format = TextureFormat::RGBA;
+
+        auto irradianceCubeMap = new Texture(request.environmentLighting.resolution.width,
+                                             request.environmentLighting.resolution.height, TextureWrap::Clamp, TextureFilter::Bilinear, TextureFormat::RGBA, 1, TextureType::Cube);
+
+        auto irradianceColor = AttachmentDescription{
+            .type = AttachmentType::COLOR,
+            .loadOp = AttachmentLoadOp::CLEAR,
+            .storeOp = AttachmentStoreOp::DONT_CARE,
+            .clearColor = request.environmentLighting.clearColor,
+            .renderCubeMap = irradianceCubeMap->GetId()
+        };
+
+        auto irradianceDepth = AttachmentDescription{
+            .type = AttachmentType::DEPTH,
+            .loadOp = AttachmentLoadOp::CLEAR,
+            .storeOp = AttachmentStoreOp::DONT_CARE
+        };
+
+        const auto irradianceRenderPass = RenderPass{
+            irradianceColor,
+            irradianceDepth,
+            request.environmentLighting.resolution,
+            0,
+            //"irradiance"
+        };
+
+        TextureCreateRequest prefilterCubeMapRequest;
+        prefilterCubeMapRequest.Width = request.environmentReflections.resolution.width;
+        prefilterCubeMapRequest.Height = request.environmentReflections.resolution.height;
+        prefilterCubeMapRequest.MipLevels = 4;
+        prefilterCubeMapRequest.useMipMaps = true;
+        prefilterCubeMapRequest.Type = TextureType::Cube;
+        prefilterCubeMapRequest.Filter = TextureFilter::Trilinear;
+        prefilterCubeMapRequest.Wrap = TextureWrap::Clamp;
+        prefilterCubeMapRequest.Format = TextureFormat::RGBA;
+
+        auto prefilterCubeMap = new Texture(request.environmentReflections.resolution.width,
+                                            request.environmentReflections.resolution.height, TextureType::Cube, 4);
+
+        auto prefilterColor = AttachmentDescription{
+            .type = AttachmentType::COLOR,
+            .loadOp = AttachmentLoadOp::CLEAR,
+            .storeOp = AttachmentStoreOp::DONT_CARE,
+            .clearColor = request.environmentReflections.clearColor,
+            .renderCubeMap = prefilterCubeMap->GetId()
+        };
+
+        auto prefilterDepth = AttachmentDescription{
+            .type = AttachmentType::DEPTH,
+            .loadOp = AttachmentLoadOp::CLEAR,
+            .storeOp = AttachmentStoreOp::DONT_CARE
+        };
+
+        unsigned int maxMipLevels = 4;
+
+        std::vector<RenderPass> prefilterRenderPasses;
+        prefilterRenderPasses.reserve(maxMipLevels);
+
+        for (int mip = 0; mip < maxMipLevels; mip++) {
+            unsigned int mipWidth = static_cast<unsigned int>(
+                request.environmentReflections.resolution.width * std::pow(0.5, mip));
+            unsigned int mipHeight = static_cast<unsigned int>(
+                request.environmentReflections.resolution.height * std::pow(0.5, mip));
+
+            const auto prefilterRenderPass = RenderPass{
+                prefilterColor,
+                prefilterDepth,
+                {0, 0, static_cast<float>(mipWidth), static_cast<float>(mipHeight)},
+                static_cast<uint32_t>(mip),
+                //    "prefilter: "  + mip
+            };
+
+            prefilterRenderPasses.push_back(prefilterRenderPass);
+        }
+
+        TextureCreateRequest brdfTextureRequest;
+        brdfTextureRequest.Width = 512;
+        brdfTextureRequest.Height = 512;
+        brdfTextureRequest.Type = TextureType::Texture2D;
+        brdfTextureRequest.Filter = TextureFilter::Bilinear;
+        brdfTextureRequest.Wrap = TextureWrap::Clamp;
+        brdfTextureRequest.Format = TextureFormat::RG16F;
+
+        auto brdfTexture = new Texture(brdfTextureRequest.Width, brdfTextureRequest.Height, TextureType::Texture2D);
+
+        auto brdfColor = AttachmentDescription{
+            .type = AttachmentType::COLOR,
+            .loadOp = AttachmentLoadOp::CLEAR,
+            .storeOp = AttachmentStoreOp::DONT_CARE,
+            .clearColor = request.environmentLighting.clearColor,
+            .renderTarget = brdfTexture->GetId()
+        };
+
+        auto brdfDepth = AttachmentDescription{
+            .type = AttachmentType::DEPTH,
+            .loadOp = AttachmentLoadOp::CLEAR,
+            .storeOp = AttachmentStoreOp::DONT_CARE
+        };
+
+        const auto brdfRenderPass = RenderPass{
+            brdfColor,
+            brdfDepth,
+            {0, 0, 512, 512},
+            0,
+            //  "brdf"
+        };
+
         const auto cmd = renderDevice->AllocateCommandBuffer(CommandBufferType::Graphics);
 
         cmd->Begin();
@@ -796,12 +767,12 @@ namespace Rendering {
         Matrix4x4 captureProjection = Matrix4x4::Perspective(90.0f, 1.0f, 0.1f, 100.0f);
         const Matrix4x4 captureViews[] =
         {
-            Matrix4x4::LookAt(Vector3::Zero(), Vector3(-1.0f, 0.0f, 0.0f), Vector3(0.0f, -1.0f, 0.0f)),
-            Matrix4x4::LookAt(Vector3::Zero(), Vector3(1.0f, 0.0f, 0.0f), Vector3(0.0f, -1.0f, 0.0f)),
-            Matrix4x4::LookAt(Vector3::Zero(), Vector3(0.0f, 1.0f, 0.0f), Vector3(0.0f, 0.0f, 1.0f)),
-            Matrix4x4::LookAt(Vector3::Zero(), Vector3(0.0f, -1.0f, 0.0f), Vector3(0.0f, 0.0f, -1.0f)),
-            Matrix4x4::LookAt(Vector3::Zero(), Vector3(0.0f, 0.0f, 1.0f), Vector3(0.0f, -1.0f, 0.0f)),
-            Matrix4x4::LookAt(Vector3::Zero(), Vector3(0.0f, 0.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f)),
+            Matrix4x4::LookAt(Vector3::Zero(), -Vector3::Right(), -Vector3::Up()),
+            Matrix4x4::LookAt(Vector3::Zero(), Vector3::Right(), -Vector3::Up()),
+            Matrix4x4::LookAt(Vector3::Zero(), Vector3::Up(), Vector3::Forward()),
+            Matrix4x4::LookAt(Vector3::Zero(), -Vector3::Up(), -Vector3::Forward()),
+            Matrix4x4::LookAt(Vector3::Zero(), Vector3::Forward(), -Vector3::Up()),
+            Matrix4x4::LookAt(Vector3::Zero(), -Vector3::Forward(), -Vector3::Up()),
         };
 
         CameraBoxBuffer cameraBoxBufferData;
@@ -817,12 +788,15 @@ namespace Rendering {
                                    sizeof(CameraBoxBuffer));
 
         // irradiance
-        cmd->BeginRenderPass(renderPassesDesc[3]);
-        cmd->BindPipeline(shaders[materials[irredianceDrawCall.material->GetId().Id].shader.Id].pipeline);
+        cmd->BeginRenderPass(irradianceRenderPass);
+        cmd->BindPipeline(
+            shaders[materials[request.environmentLighting.irradianceMaterial->GetId().Id].shader.Id].pipeline);
         cmd->BindResourceSet(cameraBoxResourceSet,
-                            shaders[materials[irredianceDrawCall.material->GetId().Id].shader.Id].pipeline, 0);
-        cmd->BindResourceSet(materials[irredianceDrawCall.material->GetId().Id].resourceSet,
-                             shaders[materials[irredianceDrawCall.material->GetId().Id].shader.Id].pipeline, 2);
+                             shaders[materials[request.environmentLighting.irradianceMaterial->GetId().Id].shader.Id].
+                             pipeline, 0);
+        cmd->BindResourceSet(materials[request.environmentLighting.irradianceMaterial->GetId().Id].resourceSet,
+                             shaders[materials[request.environmentLighting.irradianceMaterial->GetId().Id].shader.Id].
+                             pipeline, 2);
         cmd->BindVertexBuffer(staticMeshes.vertexBuffer, 0, sizeof(Vertex));
         cmd->BindVertexBuffer(instanceBuffer, 1, sizeof(int));
         cmd->BindIndexBuffer(staticMeshes.indexBuffer);
@@ -832,20 +806,24 @@ namespace Rendering {
         //prefilter
         for (int mip = 0; mip < 4; mip++) {
             const float roughness = static_cast<float>(mip) / static_cast<float>(4);
-            prefilterDrawCall.material->SetProperty("roughness", roughness);
-            renderDevice->UpdateBuffer(materials[prefilterDrawCall.material->GetId().Id].ubo, prefilterDrawCall.material->GetBufferData().data(), 0,
-                                   prefilterDrawCall.material->GetBufferData().size());
-            cmd->BeginRenderPass(renderPassesDesc[4 + mip]);
-            cmd->BindPipeline(shaders[materials[prefilterDrawCall.material->GetId().Id].shader.Id].pipeline);
-            cmd->BindResourceSet(materials[prefilterDrawCall.material->GetId().Id].resourceSet,
-                                 shaders[materials[prefilterDrawCall.material->GetId().Id].shader.Id].pipeline, 2);
+            request.environmentReflections.prefilterMaterial->SetProperty("roughness", roughness);
+            cmd->UploadBufferData(materials[request.environmentReflections.prefilterMaterial->GetId().Id].ubo,
+                                  request.environmentReflections.prefilterMaterial->GetBufferData().data(), 0,
+                                  request.environmentReflections.prefilterMaterial->GetBufferData().size());
+            cmd->BeginRenderPass(prefilterRenderPasses[mip]);
+            cmd->BindPipeline(
+                shaders[materials[request.environmentReflections.prefilterMaterial->GetId().Id].shader.Id].pipeline);
+            cmd->BindResourceSet(materials[request.environmentReflections.prefilterMaterial->GetId().Id].resourceSet,
+                                 shaders[materials[request.environmentReflections.prefilterMaterial->GetId().Id].shader.
+                                     Id].pipeline, 2);
             cmd->DrawIndexed(36, 0, 0, 0, 6);
             cmd->EndRenderPass();
         }
 
         //brdf
-        cmd->BeginRenderPass(renderPassesDesc[8]);
-        cmd->BindPipeline(shaders[materials[brdfDrawCall.material->GetId().Id].shader.Id].pipeline);
+        cmd->BeginRenderPass(brdfRenderPass);
+        cmd->BindPipeline(
+            shaders[materials[request.environmentReflections.brdfMaterial->GetId().Id].shader.Id].pipeline);
         cmd->DrawIndexed(6, 36, 24, 0);
         cmd->EndRenderPass();
 
@@ -853,10 +831,11 @@ namespace Rendering {
 
         if (uploadCommandBuffer != nullptr) {
             std::vector<int> customInstanceIDs(10000);
-            for(int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 10000; i++) {
                 customInstanceIDs[i] = i;
             }
-            uploadCommandBuffer->UploadBufferData(instanceBuffer, customInstanceIDs.data(), 0, customInstanceIDs.size() * sizeof(int));
+            uploadCommandBuffer->UploadBufferData(instanceBuffer, customInstanceIDs.data(), 0,
+                                                  customInstanceIDs.size() * sizeof(int));
             uploadCommandBuffer->End();
             renderDevice->SubmitCommandBuffer(uploadCommandBuffer);
             uploadCommandBuffer = nullptr;
@@ -864,6 +843,13 @@ namespace Rendering {
 
         renderDevice->SubmitCommandBuffer(cmd);
         delete cmd;
+
+        BakedResult result;
+        result.irradianceCubeMap = irradianceCubeMap;
+        result.prefilterCubeMap = prefilterCubeMap;
+        result.brdfTexture = brdfTexture;
+
+        return result;
     }
 
     void Renderer::EndFrame() {

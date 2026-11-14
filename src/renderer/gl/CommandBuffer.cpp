@@ -110,13 +110,14 @@ void Rendering::CommandBuffer::UpdateBuffer(const BufferHandle buffer, const voi
     cmd->data = data;
 }
 
-void Rendering::CommandBuffer::UploadBufferData(const BufferHandle buffer, const void *data, const int offset, const int size) {
+void Rendering::CommandBuffer::UploadBufferData(const BufferHandle buffer, const void *data, const int offset, const int size, const bool isStatic) {
     auto *cmd = allocateCommand<GLCommand_UploadBufferData>(GLCommandType::UploadBufferData);
 
     cmd->buffer = buffer;
     cmd->offset = offset;
     cmd->size = size;
     cmd->data = data;
+    cmd->isStatic = isStatic;
 }
 
 std::vector<uint8_t>& Rendering::CommandBuffer::GetCommands() {

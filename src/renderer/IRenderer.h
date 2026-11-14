@@ -5,6 +5,7 @@
 #ifndef MAXENGINE_IRENDERER_H
 #define MAXENGINE_IRENDERER_H
 
+#include "Renderer.h"
 #include "../Scene.h"
 #include "domain/CameraRender.h"
 #include "domain/LightRenderData.h"
@@ -14,6 +15,7 @@
 
 struct MaterialHandle;
 
+
 namespace Rendering {
 
     struct CameraRenderData {
@@ -21,10 +23,42 @@ namespace Rendering {
         ResourceSetHandle ResourceSet;
     };
 
+    struct BakedResult {
+        Texture* irradianceCubeMap;
+        Texture* prefilterCubeMap;
+        Texture* brdfTexture;
+    };
+
+    enum EnvironmentSource {
+        Skybox,
+        Color
+    };
+
+    struct BakeRequest {
+        struct EnvironmentLighting {
+            EnvironmentSource source;
+            Material* irradianceMaterial;
+            Rect resolution;
+            ::Color clearColor;
+        };
+
+        struct EnvironmentReflections {
+            EnvironmentSource source;
+            Rect resolution;
+            Material* prefilterMaterial;
+            Material* brdfMaterial;
+            ::Color clearColor;
+        };
+
+        Material* skyboxMaterial;
+        EnvironmentLighting environmentLighting;
+        EnvironmentReflections environmentReflections;
+    };
+
     struct CreateLightDesc {
         LightType type;
         float intensity{};
-        Color color;
+        ::Color color;
         Vector3 position;
         Vector3 direction;
         float innerConeAngle{};
@@ -39,9 +73,9 @@ namespace Rendering {
 
         virtual Mesh *CreateMesh(const std::vector<Vertex>& vertices, const std::vector<uint16_t>& indices) = 0;
 
-        virtual TextureHandle CreateTexture(void *data, TextureCreateRequest& textureCreateDesc) = 0;
+        virtual TextureHandle CreateTexture(TextureCreateRequest& textureCreateDesc, void *data) = 0;
 
-        virtual CubeMapHandle CreateCubeMap(const TextureCreateRequest& desc, const std::vector<void*>& datas) = 0;
+        virtual TextureHandle CreateTexture(const TextureCreateRequest& desc, const std::vector<void*>& datas) = 0;
 
         virtual MaterialHandle CreateMaterial(const ShaderHandle shader, const MaterialDesc &materialDesc) = 0;
 
@@ -53,8 +87,6 @@ namespace Rendering {
 
         virtual void BindTextureToMaterial(const Material& material, uint32_t slot, const Texture& texture) = 0;
 
-        virtual void BindCubemapToMaterial(const Material& material, uint32_t slot, const Cubemap& texture) = 0;
-
         virtual void BindBufferToMaterial(MaterialHandle materialHandle, uint32_t slot, BufferHandle bufferId) = 0;
 
         // rendering
@@ -63,7 +95,7 @@ namespace Rendering {
 
         virtual void Render(Scene &scene) = 0;
 
-        virtual void Bake(DrawCall& irredianceDrawCall, DrawCall &prefilterDrawCall, DrawCall &brdf) = 0;
+        virtual BakedResult Bake(BakeRequest& request) = 0;
 
         virtual void EndFrame() = 0;
 

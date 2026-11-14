@@ -24,11 +24,9 @@ namespace Rendering {
     struct RenderPass {
         std::optional<AttachmentDescription> colorAttachment = {};
         std::optional<AttachmentDescription> depthAttachment = {};
-
         Rect viewport = Rect{0, 0, 2160, 1440};
-        Color clearColor = Color{0.5f, 0.5f, 0.5f, 1.0f};
-
         uint32_t mipLevel = 0;
+        std::string name;
     };
 
     struct GraphicsShader {
@@ -46,9 +44,9 @@ namespace Rendering {
 
         CameraRender* CreateCamera(float fov, float zNear, float zFar, float aspectRatio) override;
 
-        TextureHandle CreateTexture(void *data, TextureCreateRequest& textureCreateDesc) override;
+        TextureHandle CreateTexture(TextureCreateRequest& desc, void *data) override;
 
-        CubeMapHandle CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
+        TextureHandle CreateTexture(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
 
         MaterialHandle CreateMaterial(ShaderHandle shaderHandle, const MaterialDesc &materialDesc) override;
 
@@ -66,8 +64,6 @@ namespace Rendering {
 
         void BindTextureToMaterial(const Material& material, uint32_t slot, const Texture& texture) override;
 
-        void BindCubemapToMaterial(const Material& material, uint32_t slot, const Cubemap& cubemap) override;
-
         void BindBufferToMaterial(MaterialHandle materialHandle, uint32_t slot, BufferHandle bufferId) override;
 
         /// End Update data
@@ -78,7 +74,7 @@ namespace Rendering {
 
         void Render(Scene &scene) override;
 
-        void Bake(DrawCall &irredianceDrawCall, DrawCall &prefilterDrawCall, DrawCall &brdf) override;
+        BakedResult Bake(BakeRequest& request) override;
 
         void EndFrame() override;
 
@@ -148,10 +144,6 @@ namespace Rendering {
         StaticMeshes staticMeshes;
 
         CommandBuffer *uploadCommandBuffer{};
-
-        CubeMapHandle irradianceCubeMap;
-        CubeMapHandle prefilterCubeMap;
-        TextureHandle brdfTexture;
 
         BufferHandle instanceBuffer{};
 

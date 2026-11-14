@@ -4,10 +4,7 @@
 
 #include "Material.h"
 
-#include "Cubemap.h"
-#include "../RenderContext.h"
 #include "../../di/DIContainer.h"
-#include "../../math/Vertex.h"
 
 Material::Material(const MaterialHandle handle) : id(handle), shader(nullptr) {
 }
@@ -41,10 +38,6 @@ void Material::ClearDirty() {
 
 void Material::SetTexture(const uint32_t slot, const Rendering::Texture &texture) const {
     DIContainer::GetInstance().Get<Rendering::IRenderer>()->BindTextureToMaterial(*this, slot, texture);
-}
-
-void Material::SetCubemap(const uint32_t slot, const Rendering::Cubemap &texture) const {
-    DIContainer::GetInstance().Get<Rendering::IRenderer>()->BindCubemapToMaterial(*this, slot, texture);
 }
 
 MaterialHandle Material::GetMaterialHandle() const {

@@ -48,7 +48,7 @@ namespace Rendering {
 
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
-        CubeMapHandle CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
+        TextureHandle CreateTexture(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
 
         PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle> &resourceSetLayouts) override;
 
@@ -59,8 +59,6 @@ namespace Rendering {
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const TextureHandle textureHandle) override;
 
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) override;
-
-        void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const CubeMapHandle cubemapHandle) override;
 
         BufferHandle CreateBuffer(const BufferDesc &desc) override;
 
@@ -105,7 +103,6 @@ namespace Rendering {
         std::vector<GraphicsVulkanShader> shaders;
         std::unordered_map<ResourceSetLayoutDesc, VkDescriptorSetLayout> descriptorSetLayouts;
         std::vector<VulkanDescriptorSet> descriptorSets;
-        std::vector<VulkanCubemap> cubemaps;
 
         TextureFormat MapVkFormat(const VkFormat format) {
             switch (format) {

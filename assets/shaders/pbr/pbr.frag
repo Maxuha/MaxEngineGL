@@ -44,18 +44,15 @@ layout (set = 2, binding = 3) uniform MaterialBlock {
     float ao;
 } material;
 
-layout(set = 2, binding = 4) uniform sampler2D diffuse;
-layout(set = 2, binding = 5) uniform sampler2D specular;
-layout(set = 2, binding = 6) uniform sampler2D depthMap;
-layout(set = 2, binding = 7) uniform sampler2D normalMap;
-//layout(set = 2, binding = 8) uniform sampler2D heightMap;
-layout(set = 2, binding = 9) uniform sampler2D albedoMap;
-layout(set = 2, binding = 10) uniform sampler2D metallicMap;
-layout(set = 2, binding = 11) uniform sampler2D roughnessMap;
-layout(set = 2, binding = 12) uniform sampler2D aoMap;
-layout(set = 2, binding = 13) uniform samplerCube irradianceMap;
-layout(set = 2, binding = 14) uniform samplerCube prefilterMap;
-layout(set = 2, binding = 15) uniform sampler2D brdfLUT;
+layout(set = 2, binding = 4) uniform sampler2D depthMap;
+layout(set = 2, binding = 5) uniform sampler2D normalMap;
+layout(set = 2, binding = 6) uniform sampler2D albedoMap;
+layout(set = 2, binding = 7) uniform sampler2D metallicMap;
+layout(set = 2, binding = 8) uniform sampler2D roughnessMap;
+layout(set = 2, binding = 9) uniform sampler2D aoMap;
+layout(set = 2, binding = 10) uniform samplerCube irradianceMap;
+layout(set = 2, binding = 11) uniform samplerCube prefilterMap;
+layout(set = 2, binding = 12) uniform sampler2D brdfLUT;
 
 layout (location = 0) in vec3 FragPos;
 layout (location = 1) in vec3 Normal;
@@ -218,7 +215,7 @@ void main()
     vec3 albedo     = texture(albedoMap, TexCoord).rgb;
     float metallic  = texture(metallicMap, TexCoord).r;
     float roughness = texture(roughnessMap, TexCoord).r;
-    roughness = roughness * material.roughness;
+//    roughness = roughness * material.roughness;
     float ao        = texture(aoMap, TexCoord).r;
 
     vec3 normal = texture(normalMap, TexCoord).rgb;
@@ -263,8 +260,6 @@ void main()
     // add to outgoing radiance Lo
     Lo += (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 
-    // ambient lighting (note that the next IBL tutorial will replace
-    // this ambient lighting with environment lighting).
     vec3 irradiance = texture(irradianceMap, normal).rgb;
     vec3 diffuse = irradiance * albedo;
 

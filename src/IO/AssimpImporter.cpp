@@ -201,7 +201,6 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
     binding_1.type = ResourceType::StorageBuffer;
     binding_1.stage_flags = ShaderStageFlags::Vertex;
     binding_1.count = 1;
-    // binding_1.is_dynamic = true;
 
     layout_1.bindings.push_back(binding_1);
 
@@ -241,10 +240,10 @@ void AssimpImporter::ProcessMaterial(const aiMaterial *mat, Model* model) {
     layout_2.bindings.push_back(binding_7);
 
     ResourceBindingDesc binding_8;
-    binding_7.binding_slot = 8;
-    binding_7.type = ResourceType::SampledImage;
-    binding_7.stage_flags = ShaderStageFlags::Fragment;
-    binding_7.count = 1;
+    binding_8.binding_slot = 8;
+    binding_8.type = ResourceType::SampledImage;
+    binding_8.stage_flags = ShaderStageFlags::Fragment;
+    binding_8.count = 1;
 
     layout_2.bindings.push_back(binding_8);
 

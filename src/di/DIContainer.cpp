@@ -42,10 +42,10 @@ DIContainer::DIContainer()
     WindowDesc windowDesc;
     windowDesc.width = 2160;
     windowDesc.height = 1440;
-    window = std::make_unique<GLFWWindowImpl>(windowDesc, new VulkanGLFWGraphicsContext);
+    window = std::make_unique<GLFWWindowImpl>(windowDesc, new OpenGLGLFWGraphicsContext);
 
     RenderConfig renderConfig;
-    renderConfig.api = RenderAPI::Vulkan;
+    renderConfig.api = RenderAPI::OpenGL;
 
     renderer = std::make_unique<Renderer>(renderConfig, *window);
 

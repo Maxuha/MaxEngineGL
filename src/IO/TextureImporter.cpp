@@ -17,7 +17,7 @@ TextureAsset* TextureImporter::Import(const std::string& fileName) {
     desc.width = static_cast<uint32_t>(width);
     desc.height = static_cast<uint32_t>(height);
     desc.format = Rendering::TextureFormat::SRGBA;
-    desc.mipLevels = 0;
+    desc.mipLevels = 1;
 
   //  auto textureData = DIContainer::GetInstance().Get<Rendering::IRenderer>()->CreateTexture(data, width, height);
     // stbi_image_free(data);

@@ -11,6 +11,7 @@ namespace Rendering {
         RGB,
         RGBA,
         SRGBA,
+        RG16F,
         DEPTH,
         UNDEFINED
     };
@@ -36,7 +37,7 @@ namespace Rendering {
     struct TextureCreateRequest {
         size_t Width{};
         size_t Height{};
-        TextureFormat Format = TextureFormat::RGB;
+        TextureFormat Format = TextureFormat::SRGBA;
         TextureWrap Wrap = TextureWrap::Repeat;
         TextureFilter Filter = TextureFilter::Bilinear;
         TextureType Type = TextureType::Texture2D;

@@ -5,6 +5,7 @@
 #include "Sphere.h"
 
 #include "../../renderer/domain/MeshPrimitives.h"
+#include "../src/components/MeshRenderer.h"
 
 Sphere * Sphere::BuildSphere() {
     const auto mesh = std::shared_ptr<Mesh>(MeshPrimitives::CreateSphere(1));

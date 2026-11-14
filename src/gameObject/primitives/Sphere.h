@@ -5,6 +5,7 @@
 #ifndef MAXENGINE_SPHERE_H
 #define MAXENGINE_SPHERE_H
 
+#include "../GameObject.h"
 
 class Sphere : public GameObject {
 public:

@@ -15,7 +15,6 @@
 #include "src/gameObject/primitives/Plane.h"
 #include "src/gameObject/primitives/Sphere.h"
 #include "src/IO/FileReader.h"
-#include "src/renderer/domain/Cubemap.h"
 #include "src/renderer/DrawCall.h"
 #include <iostream>
 
@@ -29,16 +28,16 @@ int main() {
 
     DIContainer *container = &DIContainer::GetInstance();
 
-    Rendering::IRenderer* renderer = container->Get<Rendering::IRenderer>();
+    Rendering::IRenderer *renderer = container->Get<Rendering::IRenderer>();
 
-    AssetManager* assetManager = container->Get<AssetManager>();
+    AssetManager *assetManager = container->Get<AssetManager>();
 
+    auto pbrShader = assetManager->Import<Shader>("pbr/pbr", {{"renderFace", "Both"}});
     auto phongShader = assetManager->Import<Shader>("phong/phong", {{"renderFace", "Both"}});
     auto depthShader = assetManager->Import<Shader>("depth/depth", {{"renderFace", "Front"}, {"isDepthOnly", "true"}});
     auto skyboxShader = assetManager->Import<Shader>("skybox/skybox", {{"renderFace", "Both"}});
     auto reflactionShader = assetManager->Import<Shader>("reflaction/reflaction", {{"renderFace", "Both"}});
     auto refractionShader = assetManager->Import<Shader>("refraction/refraction", {{"renderFace", "Both"}});
-    auto pbrShader = assetManager->Import<Shader>("pbr/pbr", {{"renderFace", "Both"}});
     auto envShader = assetManager->Import<Shader>("irradiance/irradiance", {{"renderFace", "Both"}});
     auto prefilterShader = assetManager->Import<Shader>("prefilter/prefilter", {{"renderFace", "Both"}});
     auto brdfShader = assetManager->Import<Shader>("brdf/brdf", {{"renderFace", "Both"}});
@@ -50,6 +49,7 @@ int main() {
     auto material3 = new Material(phongShader, 32);
     auto pbrMaterial = new Material(pbrShader, 512);
     auto rustedironMaterial = new Material(pbrShader, 512);
+    auto rustediron2Material = new Material(pbrShader, 512);
     auto skyboxMaterial = new Material(skyboxShader, 0);
     auto reflactionMaterial = new Material(reflactionShader, 0);
     auto refractionMaterial = new Material(refractionShader, 0);
@@ -88,9 +88,13 @@ int main() {
     prefilterCube->GetComponent<MeshRenderer>()->material = prefilterMaterial;
     prefilterCube->GetComponent<Transform>()->position = Vector3(0.0f, 0.0f, 0.0f);
 
-    const auto sphere = Sphere::BuildSphere();
-    sphere->GetComponent<MeshRenderer>()->material = rustedironMaterial;
-    sphere->GetComponent<Transform>()->position = Vector3(8, 4.0f, 5.0f);
+    const auto rustediron = Sphere::BuildSphere();
+    rustediron->GetComponent<MeshRenderer>()->material = rustedironMaterial;
+    rustediron->GetComponent<Transform>()->position = Vector3(8, 4.0f, 5.0f);
+
+    const auto rustediron2 = Sphere::BuildSphere();
+    rustediron2->GetComponent<MeshRenderer>()->material = rustediron2Material;
+    rustediron2->GetComponent<Transform>()->position = Vector3(4, 4.0f, 5.0f);
 
     const auto brickwall = Plane::BuildPlane();
     brickwall->GetComponent<MeshRenderer>()->material = material2;
@@ -117,7 +121,7 @@ int main() {
     backpackModel->root->GetTransform()->scale = Vector3(0.01, 0.01, 0.01);
 
     auto *backpackModel2 = container->Get<AssetManager>()->Import<Model>(
-       R"(assets/models/Survival_BackPack_2/Survival_BackPack_2.fbx)");
+        R"(assets/models/Survival_BackPack_2/Survival_BackPack_2.fbx)");
 
     for (int i = 0; i < size; i++) {
         backpackModel2->root->GetComponentsInChildren<MeshRenderer>()[i]->material = material3;
@@ -133,151 +137,189 @@ int main() {
     erika->root->GetTransform()->position = Vector3(10, 2, 0);
 
     TextureAsset *woodDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-      R"(assets/models/brickwall/wood_diffuse.png)");
+        R"(assets/models/brickwall/wood_diffuse.png)");
 
-    Rendering::Texture *woodDiffuseTexture = new Rendering::Texture(woodDiffuseTextureAsset->Width, woodDiffuseTextureAsset->Height,
-                                                                 woodDiffuseTextureAsset->Wrap, woodDiffuseTextureAsset->Data);
+    Rendering::Texture *woodDiffuseTexture = new Rendering::Texture(woodDiffuseTextureAsset->Width,
+                                                                    woodDiffuseTextureAsset->Height,
+                                                                    woodDiffuseTextureAsset->Data);
 
     TextureAsset *toyBoxDispTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-      R"(assets/models/brickwall/toy_box_disp.png)");
+        R"(assets/models/brickwall/toy_box_disp.png)");
 
-    Rendering::Texture *toyBoxDispTexture = new Rendering::Texture(toyBoxDispTextureAsset->Width, toyBoxDispTextureAsset->Height,
-                                                                toyBoxDispTextureAsset->Wrap, toyBoxDispTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *toyBoxDispTexture = new Rendering::Texture(toyBoxDispTextureAsset->Width,
+                                                                   toyBoxDispTextureAsset->Height,
+                                                                   toyBoxDispTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *toyBoxNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-    R"(assets/models/brickwall/toy_box_normal.png)");
+        R"(assets/models/brickwall/toy_box_normal.png)");
 
-    Rendering::Texture *toyBoxNormalTexture = new Rendering::Texture(toyBoxNormalTextureAsset->Width, toyBoxNormalTextureAsset->Height,
-                                                                toyBoxNormalTextureAsset->Wrap, toyBoxNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *toyBoxNormalTexture = new Rendering::Texture(toyBoxNormalTextureAsset->Width,
+                                                                     toyBoxNormalTextureAsset->Height,
+                                                                     toyBoxNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *rustedironDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-      R"(assets/models/rustediron/rustediron2_basecolor.png)");
+        R"(assets/models/rustediron/rustediron2_basecolor.png)");
 
-    Rendering::Texture *rustedironDiffuseTexture = new Rendering::Texture(rustedironDiffuseTextureAsset->Width, rustedironDiffuseTextureAsset->Height,
-                                                                rustedironDiffuseTextureAsset->Wrap, rustedironDiffuseTextureAsset->Data);
+    Rendering::Texture *rustedironDiffuseTexture = new Rendering::Texture(
+        rustedironDiffuseTextureAsset->Width, rustedironDiffuseTextureAsset->Height,
+        rustedironDiffuseTextureAsset->Data);
 
     TextureAsset *rustedironMetallicTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-  R"(assets/models/rustediron/rustediron2_metallic.png)");
+        R"(assets/models/rustediron/rustediron2_metallic.png)");
 
-    Rendering::Texture *rustedironMetallicTexture = new Rendering::Texture(rustedironMetallicTextureAsset->Width, rustedironMetallicTextureAsset->Height,
-                                                                rustedironMetallicTextureAsset->Wrap, rustedironMetallicTextureAsset->Data);
+    Rendering::Texture *rustedironMetallicTexture = new Rendering::Texture(
+        rustedironMetallicTextureAsset->Width, rustedironMetallicTextureAsset->Height,
+        rustedironMetallicTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *rustedironNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-  R"(assets/models/rustediron/rustediron2_normal.png)");
+        R"(assets/models/rustediron/rustediron2_normal.png)");
 
-    Rendering::Texture *rustedironNormalTexture = new Rendering::Texture(rustedironNormalTextureAsset->Width, rustedironNormalTextureAsset->Height,
-                                                                rustedironNormalTextureAsset->Wrap, rustedironNormalTextureAsset->Data);
+    Rendering::Texture *rustedironNormalTexture = new Rendering::Texture(
+        rustedironNormalTextureAsset->Width, rustedironNormalTextureAsset->Height, rustedironNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *rustedironRoughnessTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-R"(assets/models/rustediron/rustediron2_roughness.png)");
+        R"(assets/models/rustediron/rustediron2_roughness.png)");
 
-    Rendering::Texture *rustedironRoughnessTexture = new Rendering::Texture(rustedironRoughnessTextureAsset->Width, rustedironRoughnessTextureAsset->Height,
-                                                                rustedironRoughnessTextureAsset->Wrap, rustedironRoughnessTextureAsset->Data);
+    Rendering::Texture *rustedironRoughnessTexture = new Rendering::Texture(
+        rustedironRoughnessTextureAsset->Width, rustedironRoughnessTextureAsset->Height,
+        rustedironRoughnessTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *rustediron2DiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/rustediron2/rustediron2_basecolor.png)");
+
+    Rendering::Texture *rustediron2DiffuseTexture = new Rendering::Texture(
+        rustediron2DiffuseTextureAsset->Width, rustediron2DiffuseTextureAsset->Height,
+        rustediron2DiffuseTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *rustediron2MetallicTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/rustediron2/rustediron2_metallic.png)");
+
+    Rendering::Texture *rustediron2MetallicTexture = new Rendering::Texture(
+        rustediron2MetallicTextureAsset->Width, rustediron2MetallicTextureAsset->Height,
+        rustediron2MetallicTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *rustediron2NormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/rustediron2/rustediron2_normal.png)");
+
+    Rendering::Texture *rustediron2NormalTexture = new Rendering::Texture(
+        rustediron2NormalTextureAsset->Width, rustediron2NormalTextureAsset->Height,
+        rustediron2NormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+
+    TextureAsset *rustediron2RoughnessTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
+        R"(assets/models/rustediron2/rustediron2_roughness.png)");
+
+    Rendering::Texture *rustediron2RoughnessTexture = new Rendering::Texture(
+        rustediron2RoughnessTextureAsset->Width, rustediron2RoughnessTextureAsset->Height,
+        rustediron2RoughnessTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *backpackDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-      R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
+        R"(assets/models/Survival_BackPack_2/1001_albedo.jpg)");
 
-    Rendering::Texture *backpackDiffuseTexture = new Rendering::Texture(backpackDiffuseTextureAsset->Width, backpackDiffuseTextureAsset->Height,
-                                                                backpackDiffuseTextureAsset->Wrap, backpackDiffuseTextureAsset->Data);
+    Rendering::Texture *backpackDiffuseTexture = new Rendering::Texture(backpackDiffuseTextureAsset->Width,
+                                                                        backpackDiffuseTextureAsset->Height,
+                                                                        backpackDiffuseTextureAsset->Data);
 
     TextureAsset *backpackSpecularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-   R"(assets/models/Survival_BackPack_2/1001_metallic.jpg)");
+        R"(assets/models/Survival_BackPack_2/1001_metallic.jpg)");
 
-    Rendering::Texture *backpackSpecularTexture = new Rendering::Texture(backpackSpecularTextureAsset->Width, backpackSpecularTextureAsset->Height,
-                                                                backpackSpecularTextureAsset->Wrap, backpackSpecularTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *backpackSpecularTexture = new Rendering::Texture(
+        backpackSpecularTextureAsset->Width, backpackSpecularTextureAsset->Height, backpackSpecularTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *backpackRougnessTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-   R"(assets/models/Survival_BackPack_2/1001_roughness.jpg)");
+        R"(assets/models/Survival_BackPack_2/1001_roughness.jpg)");
 
-    Rendering::Texture *backpackRougnessTexture = new Rendering::Texture(backpackRougnessTextureAsset->Width, backpackRougnessTextureAsset->Height,
-                                                                backpackRougnessTextureAsset->Wrap, backpackRougnessTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *backpackRougnessTexture = new Rendering::Texture(
+        backpackRougnessTextureAsset->Width, backpackRougnessTextureAsset->Height, backpackRougnessTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *backpackAOTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-   R"(assets/models/Survival_BackPack_2/1001_AO.jpg)");
+        R"(assets/models/Survival_BackPack_2/1001_AO.jpg)");
 
-    Rendering::Texture *backpackAOTexture = new Rendering::Texture(backpackAOTextureAsset->Width, backpackAOTextureAsset->Height,
-                                                                backpackAOTextureAsset->Wrap, backpackAOTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *backpackAOTexture = new Rendering::Texture(backpackAOTextureAsset->Width,
+                                                                   backpackAOTextureAsset->Height,
+                                                                   backpackAOTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *backpackNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
- R"(assets/models/Survival_BackPack_2/1001_normal.png)");
+        R"(assets/models/Survival_BackPack_2/1001_normal.png)");
 
-    Rendering::Texture *backpackNormalTexture = new Rendering::Texture(backpackNormalTextureAsset->Width, backpackNormalTextureAsset->Height,
-                                                                backpackNormalTextureAsset->Wrap, backpackNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *backpackNormalTexture = new Rendering::Texture(backpackNormalTextureAsset->Width,
+                                                                       backpackNormalTextureAsset->Height,
+                                                                       backpackNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *brickwallDiffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-       R"(assets/models/brickwall/brickwall_diffuse.jpg)");
+        R"(assets/models/brickwall/brickwall_diffuse.jpg)");
 
-    Rendering::Texture *brickwallDiffuseTexture = new Rendering::Texture(brickwallDiffuseTextureAsset->Width, brickwallDiffuseTextureAsset->Height,
-                                                                brickwallDiffuseTextureAsset->Wrap, brickwallDiffuseTextureAsset->Data);
+    Rendering::Texture *brickwallDiffuseTexture = new Rendering::Texture(
+        brickwallDiffuseTextureAsset->Width, brickwallDiffuseTextureAsset->Height, brickwallDiffuseTextureAsset->Data);
 
     TextureAsset *brickwallNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-      R"(assets/models/brickwall/brickwall_normal.jpg)");
+        R"(assets/models/brickwall/brickwall_normal.jpg)");
 
-    Rendering::Texture *brickwallNormalTexture = new Rendering::Texture(brickwallNormalTextureAsset->Width, brickwallNormalTextureAsset->Height,
-                                                                brickwallNormalTextureAsset->Wrap, brickwallNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *brickwallNormalTexture = new Rendering::Texture(brickwallNormalTextureAsset->Width,
+                                                                        brickwallNormalTextureAsset->Height,
+                                                                        brickwallNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *brickwallHeightTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-     R"(assets/models/brickwall/brickwall_height.jpg)");
+        R"(assets/models/brickwall/brickwall_height.jpg)");
 
-    Rendering::Texture *brickwallHeightTexture = new Rendering::Texture(brickwallHeightTextureAsset->Width, brickwallHeightTextureAsset->Height,
-                                                                brickwallHeightTextureAsset->Wrap, brickwallHeightTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *brickwallHeightTexture = new Rendering::Texture(brickwallHeightTextureAsset->Width,
+                                                                        brickwallHeightTextureAsset->Height,
+                                                                        brickwallHeightTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *defaultNormalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-     R"(assets/models/brickwall/default_normal.jpg)");
+        R"(assets/models/brickwall/default_normal.jpg)");
 
-    Rendering::Texture *defaultNormalTexture = new Rendering::Texture(defaultNormalTextureAsset->Width, defaultNormalTextureAsset->Height,
-                                                                defaultNormalTextureAsset->Wrap, defaultNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+    Rendering::Texture *defaultNormalTexture = new Rendering::Texture(defaultNormalTextureAsset->Width,
+                                                                      defaultNormalTextureAsset->Height,
+                                                                      defaultNormalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *diffuseTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/glove/texture/wood_with_steel_diffuse.png)");
 
     Rendering::Texture *diffuseTexture = new Rendering::Texture(diffuseTextureAsset->Width, diffuseTextureAsset->Height,
-                                                                diffuseTextureAsset->Wrap, diffuseTextureAsset->Data);
+                                                                diffuseTextureAsset->Data);
 
     TextureAsset *normalTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/glove/texture/wood_with_steel_normal.jpg)");
 
     Rendering::Texture *normalTexture = new Rendering::Texture(normalTextureAsset->Width, normalTextureAsset->Height,
-                                                                normalTextureAsset->Wrap, normalTextureAsset->Data, Rendering::TextureFormat::RGBA);
+                                                               normalTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *specularTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/glove/texture/wood_with_steel_specular.png)");
 
     Rendering::Texture *specularTexture = new Rendering::Texture(specularTextureAsset->Width,
                                                                  specularTextureAsset->Height,
-                                                                 specularTextureAsset->Wrap,
-                                                                 specularTextureAsset->Data,
-                                                                 Rendering::TextureFormat::RGBA);
+                                                                 specularTextureAsset->Data, Rendering::TextureFormat::RGBA);
 
     TextureAsset *houseTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/autumn-house/textures/House_texture_01_00.png)");
 
     Rendering::Texture *houseTexture1 = new Rendering::Texture(houseTextureAsset1->Width, houseTextureAsset1->Height,
-                                                               houseTextureAsset1->Wrap, houseTextureAsset1->Data);
+                                                               houseTextureAsset1->Data);
 
     TextureAsset *houseTextureAsset2 = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/autumn-house/textures/House_texture_02_00.png)");
 
     Rendering::Texture *houseTexture2 = new Rendering::Texture(houseTextureAsset2->Width, houseTextureAsset2->Height,
-                                                               houseTextureAsset2->Wrap, houseTextureAsset2->Data);
+                                                               houseTextureAsset2->Data);
 
     TextureAsset *carTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/autumn-house/textures/Car_textures_01_01.png)");
 
     Rendering::Texture *carTexture1 = new Rendering::Texture(carTextureAsset1->Width, carTextureAsset1->Height,
-                                                             carTextureAsset1->Wrap, carTextureAsset1->Data);
+                                                             carTextureAsset1->Data);
 
     TextureAsset *plainTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/autumn-house/textures/Plain_textures_01_00.png)");
 
     Rendering::Texture *plainTexture1 = new Rendering::Texture(plainTextureAsset1->Width, plainTextureAsset1->Height,
-                                                               plainTextureAsset1->Wrap, plainTextureAsset1->Data);
+                                                               plainTextureAsset1->Data);
 
     TextureAsset *plantsTextureAsset1 = container->Get<AssetManager>()->Import<TextureAsset>(
         R"(assets/models/autumn-house/textures/Plants_textures_01_00.png)");
 
     Rendering::Texture *plantsTexture1 = new Rendering::Texture(plantsTextureAsset1->Width, plantsTextureAsset1->Height,
-                                                                plantsTextureAsset1->Wrap, plantsTextureAsset1->Data);
+                                                                plantsTextureAsset1->Data);
 
     //skybox
     TextureAsset *skyboxRightTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
@@ -285,31 +327,34 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
 
 
     TextureAsset *skyboxLeftTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-       R"(assets/textures/skybox/left.jpg)");
+        R"(assets/textures/skybox/left.jpg)");
 
     TextureAsset *skyboxTopTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-      R"(assets/textures/skybox/top.jpg)");
+        R"(assets/textures/skybox/top.jpg)");
 
 
     TextureAsset *skyboxBottomTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-     R"(assets/textures/skybox/bottom.jpg)");
+        R"(assets/textures/skybox/bottom.jpg)");
 
 
     TextureAsset *skyboxFrontTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-    R"(assets/textures/skybox/front.jpg)");
+        R"(assets/textures/skybox/front.jpg)");
 
     TextureAsset *skyboxBackTextureAsset = container->Get<AssetManager>()->Import<TextureAsset>(
-  R"(assets/textures/skybox/back.jpg)");
+        R"(assets/textures/skybox/back.jpg)");
 
-    std::vector<void*> skyboxTextures = { skyboxRightTextureAsset->Data, skyboxLeftTextureAsset->Data, skyboxTopTextureAsset->Data, skyboxBottomTextureAsset->Data, skyboxFrontTextureAsset->Data, skyboxBackTextureAsset->Data };
+    std::vector<void *> skyboxTextures = {
+        skyboxRightTextureAsset->Data, skyboxLeftTextureAsset->Data, skyboxTopTextureAsset->Data,
+        skyboxBottomTextureAsset->Data, skyboxFrontTextureAsset->Data, skyboxBackTextureAsset->Data
+    };
 
-    Rendering::Cubemap *skybox = new Rendering::Cubemap(skyboxBackTextureAsset->Width, Rendering::TextureFormat::SRGBA, skyboxTextures);
+    Rendering::Texture *skybox = new Rendering::Texture(skyboxBackTextureAsset->Width, skyboxBackTextureAsset->Height, skyboxTextures);
 
-    skyboxMaterial->SetCubemap(3, *skybox);
-    reflactionMaterial->SetCubemap(3, *skybox);
-    refractionMaterial->SetCubemap(3, *skybox);
-    envMaterial->SetCubemap(1, *skybox);
-    prefilterMaterial->SetCubemap(1, *skybox);
+    skyboxMaterial->SetTexture(3, *skybox);
+    reflactionMaterial->SetTexture(3, *skybox);
+    refractionMaterial->SetTexture(3, *skybox);
+    envMaterial->SetTexture(1, *skybox);
+    prefilterMaterial->SetTexture(1, *skybox);
 
     houseModel->materials[0].SetTexture(4, *houseTexture2);
     houseModel->materials[1].SetTexture(4, *houseTexture1);
@@ -335,6 +380,7 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     material1->SetTexture(4, *diffuseTexture);
     material1->SetTexture(5, *specularTexture);
     material1->SetTexture(7, *normalTexture);
+    // material1->SetTexture(18, *diffuseTexture);
     material1->SetProperty("material.shininess", 32.0f);
 
     material2->SetTexture(4, *brickwallDiffuseTexture);
@@ -347,17 +393,12 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     material3->SetTexture(7, *backpackNormalTexture);
     material3->SetProperty("material.shininess", 32.0f);
 
-    pbrMaterial->SetTexture(4, *backpackDiffuseTexture);
-    pbrMaterial->SetTexture(5, *backpackSpecularTexture);
-    pbrMaterial->SetTexture(7, *backpackNormalTexture);
-    // pbrMaterial->SetTexture(8, *brickwallHeightTexture);
-    pbrMaterial->SetTexture(9, *backpackDiffuseTexture);
-    pbrMaterial->SetTexture(10, *backpackSpecularTexture);
-    pbrMaterial->SetTexture(11, *backpackRougnessTexture);
-    pbrMaterial->SetTexture(12, *backpackAOTexture);
-    pbrMaterial->SetCubemap(13, *skybox);
-    pbrMaterial->SetCubemap(14, *skybox);
-    pbrMaterial->SetTexture(15, *backpackDiffuseTexture);
+    pbrMaterial->SetTexture(4, *rustedironDiffuseTexture);
+    pbrMaterial->SetTexture(5, *backpackNormalTexture);
+    pbrMaterial->SetTexture(6, *backpackDiffuseTexture);
+    pbrMaterial->SetTexture(7, *backpackSpecularTexture);
+    pbrMaterial->SetTexture(8, *backpackRougnessTexture);
+    pbrMaterial->SetTexture(9, *backpackAOTexture);
 
     pbrMaterial->SetProperty("material.shininess", 32.0f);
     pbrMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
@@ -366,22 +407,30 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     pbrMaterial->SetProperty("material.ao", 1.0f);
 
     rustedironMaterial->SetTexture(4, *rustedironDiffuseTexture);
-    rustedironMaterial->SetTexture(5, *rustedironMetallicTexture);
-    rustedironMaterial->SetTexture(7, *rustedironNormalTexture);
-    // rustedironMaterial->SetTexture(8, *brickwallHeightTexture);
-    rustedironMaterial->SetTexture(9, *rustedironDiffuseTexture);
-    rustedironMaterial->SetTexture(10, *rustedironMetallicTexture);
-    rustedironMaterial->SetTexture(11, *rustedironRoughnessTexture);
-    rustedironMaterial->SetTexture(12, *backpackAOTexture);
-    rustedironMaterial->SetCubemap(13, *skybox);
-    rustedironMaterial->SetCubemap(14, *skybox);
-    rustedironMaterial->SetTexture(15, *backpackDiffuseTexture);
+    rustedironMaterial->SetTexture(5, *rustedironNormalTexture);
+    rustedironMaterial->SetTexture(6, *rustedironDiffuseTexture);
+    rustedironMaterial->SetTexture(7, *rustedironMetallicTexture);
+    rustedironMaterial->SetTexture(8, *rustedironRoughnessTexture);
+    rustedironMaterial->SetTexture(9, *backpackAOTexture);
 
     rustedironMaterial->SetProperty("material.shininess", 32.0f);
     rustedironMaterial->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
     rustedironMaterial->SetProperty("material.metallic", 0.5f);
     rustedironMaterial->SetProperty("material.roughness", 0.3f);
     rustedironMaterial->SetProperty("material.ao", 1.0f);
+
+    rustediron2Material->SetTexture(4, *rustediron2DiffuseTexture);
+    rustediron2Material->SetTexture(5, *rustediron2NormalTexture);
+    rustediron2Material->SetTexture(6, *rustediron2DiffuseTexture);
+    rustediron2Material->SetTexture(7, *rustediron2MetallicTexture);
+    rustediron2Material->SetTexture(8, *rustediron2RoughnessTexture);
+    rustediron2Material->SetTexture(9, *backpackAOTexture);
+
+    // rustediron2Material->SetProperty("material.shininess", 32.0f);
+    // rustediron2Material->SetProperty("material.albedo", Vector3(1.0f, 1.0f, 1.0f));
+    // rustediron2Material->SetProperty("material.metallic", 0.5f);
+    // rustediron2Material->SetProperty("material.roughness", 0.3f);
+    // rustediron2Material->SetProperty("material.ao", 1.0f);
 
     const auto lightFactory = new LightFactory();
 
@@ -428,23 +477,55 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
     lamp3->GetComponent<PointLight>()->intensity = 4.0f;
     lamp3->GetComponent<PointLight>()->SetRange(10.0f);
 
-    Rendering::DrawCall draw_call = Rendering::DrawCall { ._mesh = envCube->GetComponent<MeshRenderer>()->mesh.get(), .material = envCube->GetComponent<MeshRenderer>()->material , .transform = envCube->GetTransform()};
-    Rendering::DrawCall prefilter_draw_call = Rendering::DrawCall { ._mesh = prefilterCube->GetComponent<MeshRenderer>()->mesh.get(), .material = prefilterCube->GetComponent<MeshRenderer>()->material , .transform = prefilterCube->GetTransform()};
-    Rendering::DrawCall brdf_draw_call = Rendering::DrawCall { ._mesh = brdfPlane->GetComponent<MeshRenderer>()->mesh.get(), .material = brdfPlane->GetComponent<MeshRenderer>()->material , .transform = brdfPlane->GetTransform()};
+    Rendering::DrawCall draw_call = Rendering::DrawCall{
+        ._mesh = envCube->GetComponent<MeshRenderer>()->mesh.get(),
+        .material = envCube->GetComponent<MeshRenderer>()->material, .transform = envCube->GetTransform()
+    };
+    Rendering::DrawCall prefilter_draw_call = Rendering::DrawCall{
+        ._mesh = prefilterCube->GetComponent<MeshRenderer>()->mesh.get(),
+        .material = prefilterCube->GetComponent<MeshRenderer>()->material, .transform = prefilterCube->GetTransform()
+    };
+    Rendering::DrawCall brdf_draw_call = Rendering::DrawCall{
+        ._mesh = brdfPlane->GetComponent<MeshRenderer>()->mesh.get(),
+        .material = brdfPlane->GetComponent<MeshRenderer>()->material, .transform = brdfPlane->GetTransform()
+    };
 
-    renderer->Bake(draw_call, prefilter_draw_call, brdf_draw_call);
+    Rendering::BakeRequest bakeRequest;
+    bakeRequest.skyboxMaterial = skyboxMaterial;
+    bakeRequest.environmentLighting.irradianceMaterial = envMaterial;
+    bakeRequest.environmentLighting.clearColor = Color::White();
+    bakeRequest.environmentLighting.resolution = Rect{.x = 0, .y = 0, .width = 32, .height = 32};
+    bakeRequest.environmentReflections.prefilterMaterial = prefilterMaterial;
+    bakeRequest.environmentReflections.clearColor = Color::White();
+    bakeRequest.environmentReflections.resolution = Rect{.x = 0, .y = 0, .width = 32, .height = 32};
+    bakeRequest.environmentReflections.brdfMaterial = brdfMaterial;
+
+    Rendering::BakedResult bakedResult = renderer->Bake(bakeRequest);
+
+    pbrMaterial->SetTexture(12, *bakedResult.brdfTexture);
+    pbrMaterial->SetTexture(10, *bakedResult.irradianceCubeMap);
+    pbrMaterial->SetTexture(11, *bakedResult.prefilterCubeMap);
+
+    // rustedironMaterial->SetTexture(12, *bakedResult.brdfTexture);
+    rustedironMaterial->SetTexture(10, *bakedResult.irradianceCubeMap);
+    // rustedironMaterial->SetTexture(11, *bakedResult.prefilterCubeMap);
+
+    rustediron2Material->SetTexture(12, *bakedResult.brdfTexture);
+    rustediron2Material->SetTexture(10, *bakedResult.irradianceCubeMap);
+    rustediron2Material->SetTexture(11, *bakedResult.prefilterCubeMap);
 
     auto *scene = new Scene(camera);
     scene->Add(cube1);
     scene->Add(cube2);
     scene->Add(cube3);
-    scene->Add(sphere);
-     // scene->Add(erika->root);
+    scene->Add(rustediron);
+    scene->Add(rustediron2);
+    // scene->Add(erika->root);
     scene->Add(houseModel->root);
     scene->Add(backpackModel->root);
     scene->Add(backpackModel2->root);
     scene->Add(brickwall);
-    
+
     scene->Add(ambientLight);
     scene->Add(sun);
     // scene->Add(light);
@@ -469,12 +550,18 @@ R"(assets/models/rustediron/rustediron2_roughness.png)");
         camera->Update(delta_time);
         ambientLight->GetComponent<Light>()->Update(delta_time);
 
-         // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
+        // sun->GetComponent<Transform>()->RotatePitch(delta_time * 30);
 
-        backpackModel->root->GetComponent<Transform>()->rotation = backpackModel->root->GetComponent<Transform>()->rotation * Quaternion::FromAxisAngle(Vector3::Up().x, Vector3::Up().y, Vector3::Up().z, 10 * delta_time);
-        cube1->GetComponent<Transform>()->rotation = Quaternion::FromAxisAngle(cube1->GetComponent<Transform>()->Right().x, cube1->GetComponent<Transform>()->Right().y, cube1->GetComponent<Transform>()->Right().z, angle);
-        sphere->GetComponent<Transform>()->rotation = Quaternion::FromAxisAngle(sphere->GetComponent<Transform>()->Up().x, sphere->GetComponent<Transform>()->Up().y, sphere->GetComponent<Transform>()->Up().z, angle);
-        sphere->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(0, angle, 0);
+        backpackModel->root->GetComponent<Transform>()->rotation =
+                backpackModel->root->GetComponent<Transform>()->rotation * Quaternion::FromAxisAngle(
+                    Vector3::Up().x, Vector3::Up().y, Vector3::Up().z, 10 * delta_time);
+        cube1->GetComponent<Transform>()->rotation = Quaternion::FromAxisAngle(
+            cube1->GetComponent<Transform>()->Right().x, cube1->GetComponent<Transform>()->Right().y,
+            cube1->GetComponent<Transform>()->Right().z, angle);
+        rustediron->GetComponent<Transform>()->rotation = Quaternion::FromAxisAngle(
+            rustediron->GetComponent<Transform>()->Up().x, rustediron->GetComponent<Transform>()->Up().y,
+            rustediron->GetComponent<Transform>()->Up().z, angle);
+        rustediron->GetComponent<Transform>()->rotation = Quaternion::FromEulerAngles(0, angle, 0);
         angle += 30 * delta_time;
 
         renderer->BeginFrame(*camera);

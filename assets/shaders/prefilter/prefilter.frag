@@ -2,7 +2,7 @@
 
 layout(set = 2, binding = 1) uniform samplerCube envMap;
 
-layout(set = 2, binding = 2) uniform Roughness {
+layout(set = 2, binding = 3) uniform Roughness {
     float roughness;
 };
 

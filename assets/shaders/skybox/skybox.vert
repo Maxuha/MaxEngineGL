@@ -16,5 +16,4 @@ void main()
     mat4 staticView = mat4(mat3(camera.view));
     vec4 pos = camera.proj * staticView * vec4(aPos, 1.0);
     gl_Position = pos.xyww;
-
 }

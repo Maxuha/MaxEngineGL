@@ -7,7 +7,6 @@
 #include <memory>
 
 #include "OGLCommandPoolManager.h"
-#include "OGlCubeMapManager.h"
 #include "OGLDescriptorSetManager.h"
 #include "../IRenderDevice.h"
 #include "../domain/Mesh.h"
@@ -43,7 +42,7 @@ namespace Rendering {
 
         TextureHandle CreateTexture(const TextureCreateRequest &desc, const void *initialData) override;
 
-        CubeMapHandle CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
+        TextureHandle CreateTexture(const TextureCreateRequest &desc, const std::vector<void *> &datas) override;
 
         PipelineLayoutHandle CreatePipelineLayout(const std::vector<ResourceSetLayoutHandle>& resourceSetLayouts) override;
 
@@ -52,8 +51,6 @@ namespace Rendering {
         ResourceSetHandle CreateResourceSet(const ResourceSetLayoutHandle resourceSetLayoutHandle) override;
 
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const TextureHandle textureHandle) override;
-
-        void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const CubeMapHandle cubemapHandle) override;
 
         void UpdateResourceSet(ResourceSetHandle setHandle, const uint32_t binding, const BufferHandle bufferHandle) override;
 
@@ -75,7 +72,6 @@ namespace Rendering {
         OGLInstance* instance;
         OGLVertexBufferManager* bufferManager;
         OGLTextureManager* textureManager;
-        OGlCubeMapManager* cubeMapManager;
         OGLShaderManager* shaderManager;
         OGLPipelineManager* pipelineManager;
         OGLCommandPoolManager* commandPoolManager;

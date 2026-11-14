@@ -27,8 +27,7 @@
 
 
 namespace Rendering {
-    VulkanRenderDevice::VulkanRenderDevice(IWindow &window)
-    {
+    VulkanRenderDevice::VulkanRenderDevice(IWindow &window) {
         if (!window.CheckVulkanSupport()) {
             std::cout << "Vulkan is not supported" << std::endl;
             return;
@@ -83,26 +82,26 @@ namespace Rendering {
         const TextureHandle texture = textureManager->CreateTexture(depthTextureDesc);
         depthTexture = textureManager->GetTexture(texture);
 
-        mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-        loaderCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics,
+                                                                        VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+        loaderCommandBuffer = commandBufferManager->AllocateCommandBuffer(
+            CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     }
 
     VulkanRenderDevice::~VulkanRenderDevice() {
     }
 
-    CommandBuffer *VulkanRenderDevice::AllocateCommandBuffer(const CommandBufferType type = CommandBufferType::Graphics) {
+    CommandBuffer *
+    VulkanRenderDevice::AllocateCommandBuffer(const CommandBufferType type = CommandBufferType::Graphics) {
         // should be allicate here
 
         return new CommandBuffer(2048 * 1024, type);
     }
 
     void VulkanRenderDevice::CreateVao(const VertexLayout layout) {
-
     }
 
     TextureHandle VulkanRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
-        const auto data = const_cast<void *>(initialData);
-
         const TextureHandle textureHandle = textureManager->CreateTexture(desc);
 
         if (initialData != nullptr) {
@@ -129,20 +128,15 @@ namespace Rendering {
         return textureHandle;
     }
 
-    CubeMapHandle VulkanRenderDevice::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
-        VulkanCubemap cubemap;
-        cubemap.texture = CreateTexture(desc, nullptr);
-
-        cubemaps.push_back(cubemap);
-
-        const CubeMapHandle handle = {.Id = cubemaps.size() - 1};
+    TextureHandle VulkanRenderDevice::CreateTexture(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        const TextureHandle handle = textureManager->CreateTexture(desc);
 
         if (datas.size() != 6) return handle;
 
         const StagingAllocation staging = stagingBufferPool->Allocate((desc.Width * desc.Height * 4) * 6);
 
         const VkCommandBuffer uploadCmd = commandBufferManager->AllocateCommandBuffer(
-               CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY).GetCommandBuffer();
+            CommandPoolType::Transfer, VK_COMMAND_BUFFER_LEVEL_PRIMARY).GetCommandBuffer();
 
         VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -150,7 +144,7 @@ namespace Rendering {
         vkBeginCommandBuffer(uploadCmd, &beginInfo);
 
         const size_t size = desc.Width * desc.Height * 4;
-        textureManager->UploadData(uploadCmd, staging, cubemap.texture, datas, size, 6);
+        textureManager->UploadData(uploadCmd, staging, handle, datas, size, 6);
 
         vkEndCommandBuffer(uploadCmd);
 
@@ -192,29 +186,28 @@ namespace Rendering {
 
     void VulkanRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
                                                const TextureHandle textureHandle) {
-        const VulkanDescriptorSet resourceSet = descriptorSets[setHandle.id];
+        const VulkanDescriptorSet descriptorSet = descriptorSets[setHandle.id];
         const VulkanTexture texture = textureManager->GetTexture(textureHandle);
 
+        std::vector<VkDescriptorImageInfo> imageInfos(MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkWriteDescriptorSet> descriptorWrites(MAX_FRAMES_IN_FLIGHT);
+
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = texture.ImageView;
-            imageInfo.sampler = texture.Sampler;
+            imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfos[i].imageView = texture.ImageView;
+            imageInfos[i].sampler = texture.Sampler;
 
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = resourceSet.set[i];
-            descriptorWrite.dstBinding = binding;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &imageInfo;
-
-            std::array descriptorWrites = {descriptorWrite};
-
-            vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
-                                   nullptr);
+            descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[i].dstSet = descriptorSet.set[i];
+            descriptorWrites[i].dstBinding = binding;
+            descriptorWrites[i].dstArrayElement = 0;
+            descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[i].descriptorCount = 1;
+            descriptorWrites[i].pImageInfo = &imageInfos[i];
         }
+
+        vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
+                               nullptr);
     }
 
     void VulkanRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
@@ -234,59 +227,28 @@ namespace Rendering {
             descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         }
 
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = buffer.buffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = buffer.size;
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = descriptorSet.set[i];
-            descriptorWrite.dstBinding = binding;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = descriptorType;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
-            descriptorWrite.pImageInfo = nullptr; // Optional
-            descriptorWrite.pTexelBufferView = nullptr; // Optional
-
-            std::array descriptorWrites = {descriptorWrite};
-
-            vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
-                                   nullptr);
-        }
-    }
-
-    void VulkanRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
-        const CubeMapHandle cubemapHandle) {
-        const VulkanDescriptorSet descriptorSet = descriptorSets[setHandle.id];
-        const VulkanCubemap cubemap = cubemaps[cubemapHandle.Id];
-        const VulkanTexture texture = textureManager->GetTexture(cubemap.texture);
+        std::vector<VkDescriptorBufferInfo> bufferInfos(MAX_FRAMES_IN_FLIGHT);
+        std::vector<VkWriteDescriptorSet> descriptorWrites(MAX_FRAMES_IN_FLIGHT);
 
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = texture.ImageView;
-            imageInfo.sampler = texture.Sampler;
+            bufferInfos[i].buffer = buffer.buffers[i];
+            bufferInfos[i].offset = 0;
+            bufferInfos[i].range = buffer.size;
 
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = descriptorSet.set[i];
-            descriptorWrite.dstBinding = binding;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &imageInfo;
-
-            std::array descriptorWrites = {descriptorWrite};
-
-            vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
-                                   nullptr);
+            descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[i].dstSet = descriptorSet.set[i];
+            descriptorWrites[i].dstBinding = binding;
+            descriptorWrites[i].dstArrayElement = 0;
+            descriptorWrites[i].descriptorType = descriptorType;
+            descriptorWrites[i].descriptorCount = 1;
+            descriptorWrites[i].pBufferInfo = &bufferInfos[i];
         }
+
+        vkUpdateDescriptorSets(logicalDevice->GetDevice(), descriptorWrites.size(), descriptorWrites.data(), 0,
+                               nullptr);
     }
 
-    BufferHandle VulkanRenderDevice::CreateBuffer(const BufferDesc& desc) {
+    BufferHandle VulkanRenderDevice::CreateBuffer(const BufferDesc &desc) {
         VulkanDynamicBuffer vbuffer;
         vbuffer.size = desc.size;
         vbuffer.isDynamic = desc.isDynamicB;
@@ -295,18 +257,20 @@ namespace Rendering {
         if (desc.isNewApproach) {
             switch (desc.usage) {
                 case BufferUsage::Vertex: {
-                    const VulkanBuffer vertexBuffer = bufferManager->CreateDeviceLocalBuffer(desc.size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+                    const VulkanBuffer vertexBuffer = bufferManager->CreateDeviceLocalBuffer(
+                        desc.size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
                     buffers.push_back(vertexBuffer);
 
-                    return BufferHandle { .Id = buffers.size() - 1 };
+                    return BufferHandle{.Id = buffers.size() - 1};
                 }
                 case BufferUsage::Index: {
-                    const VulkanBuffer indexBuffer = bufferManager->CreateDeviceLocalBuffer(desc.size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+                    const VulkanBuffer indexBuffer = bufferManager->CreateDeviceLocalBuffer(
+                        desc.size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
                     buffers.push_back(indexBuffer);
 
-                    return BufferHandle { .Id = buffers.size() - 1 };
+                    return BufferHandle{.Id = buffers.size() - 1};
                 }
                 case BufferUsage::Uniform: {
                     VulkanDynamicBuffer buffers;
@@ -314,17 +278,19 @@ namespace Rendering {
                     buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
                     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                        VulkanBuffer buffer = bufferManager->CreateDeviceLocalBuffer(desc.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+                        VulkanBuffer buffer = bufferManager->CreateDeviceLocalBuffer(
+                            desc.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
                         buffers.buffers[i] = buffer.buffer;
                         buffers.memories[i] = buffer.memory;
 
-                        vkMapMemory(logicalDevice->GetDevice(), buffer.memory, 0, desc.size, 0, &buffers.mappedPointers[i]);
+                        vkMapMemory(logicalDevice->GetDevice(), buffer.memory, 0, desc.size, 0,
+                                    &buffers.mappedPointers[i]);
                     }
 
                     dynamicBuffers.push_back(buffers);
 
-                    return BufferHandle { .Id = dynamicBuffers.size() - 1 };
+                    return BufferHandle{.Id = dynamicBuffers.size() - 1};
                 }
                 case BufferUsage::Storage:
                     break;
@@ -392,7 +358,7 @@ namespace Rendering {
         const uint32_t frameIndex = frameManager->GetCurrentIndexFrame();
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             const VulkanDynamicBuffer &buffer = dynamicBuffers[id.Id];
-            const auto dstMemory = static_cast<uint8_t*>(buffer.mappedPointers[frameIndex]);
+            const auto dstMemory = static_cast<uint8_t *>(buffer.mappedPointers[frameIndex]);
             memcpy(dstMemory + offset, data, size);
         }
         // const VulkanDynamicBuffer &buffer = dynamicBuffers[id.Id];
@@ -437,7 +403,8 @@ namespace Rendering {
             frame = frameManager->AcquireFrame();
             mainCommandBuffer = this->mainCommandBuffer;
         } else if (commandBuffer->GetType() == CommandBufferType::Compute) {
-            mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+            mainCommandBuffer = commandBufferManager->AllocateCommandBuffer(
+                CommandPoolType::Compute, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
         } else if (commandBuffer->GetType() == CommandBufferType::Transfer) {
             mainCommandBuffer = this->loaderCommandBuffer;
         }
@@ -446,9 +413,9 @@ namespace Rendering {
 
         if (commandBuffer->GetType() == CommandBufferType::Graphics) {
             mainCommandBuffer.TransitionImageLayout(frame.ColorTexture.Image,
-                                                 VK_IMAGE_LAYOUT_UNDEFINED,
-                                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                 VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+                                                    VK_IMAGE_LAYOUT_UNDEFINED,
+                                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                    VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
         }
 
         VulkanCommandBufferi secondaryCommandBuffer;
@@ -469,7 +436,8 @@ namespace Rendering {
                     const auto *cmd = reinterpret_cast<GLCommand_BeginRenderPass *>(&commands[readOffset]);
                     readOffset += sizeof(GLCommand_BeginRenderPass);
 
-                    secondaryCommandBuffer = commandBufferManager->AllocateCommandBuffer(CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+                    secondaryCommandBuffer = commandBufferManager->AllocateCommandBuffer(
+                        CommandPoolType::Graphics, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
                     Rect viewport = cmd->viewport;
                     std::optional<AttachmentDescription> colorAttachmentDescription = cmd->colorAttachment;
@@ -486,13 +454,13 @@ namespace Rendering {
                         colorCount = 1;
 
                         if (attachmentDescription.renderCubeMap.has_value()) {
-                            CubeMapHandle cubeMapHandle = attachmentDescription.renderCubeMap.value();
-                            VulkanTexture colorTarget = textureManager->GetTexture(cubemaps[cubeMapHandle.Id].texture);
+                            TextureHandle cubeMapHandle = attachmentDescription.renderCubeMap.value();
+                            VulkanTexture colorTarget = textureManager->GetTexture(cubeMapHandle);
                             colorTexture = colorTarget;
 
                             mainCommandBuffer.TransitionImageLayout(colorTexture.Image, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                               VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+                                                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                                    VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
                         }
                     }
 
@@ -514,12 +482,13 @@ namespace Rendering {
                             depthFormat = depthTex.Format;
 
                             mainCommandBuffer.TransitionImageLayout(depthImage, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                                 VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                                                                 VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
+                                                                    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                                    VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
                         }
                     }
 
-                    mainCommandBuffer.BeginRenderPass(viewport, colorAttachmentDescription, depthAttachmentDescription, colorTexture, depthTexture);
+                    mainCommandBuffer.BeginRenderPass(viewport, colorAttachmentDescription, depthAttachmentDescription,
+                                                      colorTexture, depthTexture);
                     secondaryCommandBuffer.Begin(colorCount, colorFormat, depthFormat);
                     break;
                 }
@@ -618,8 +587,8 @@ namespace Rendering {
 
                     if (depthImage != nullptr) {
                         mainCommandBuffer.TransitionImageLayout(depthImage, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                             VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
+                                                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                                VK_IMAGE_ASPECT_DEPTH_BIT, 1, 1);
                         depthImage = nullptr;
                     } else {
                         colorPassEnded = true;
@@ -637,19 +606,32 @@ namespace Rendering {
 
                     auto bufferHandle = cmd->buffer;
                     auto data = cmd->data;
-                    auto size = cmd->size;
                     auto offset = cmd->offset;
+                    auto size = cmd->size;
+                    auto isStatic = cmd->isStatic;
 
-                    VulkanBuffer& buffer = buffers[bufferHandle.Id];
+                    if (!isStatic) {
+                        const uint32_t currentFrame = frameManager->GetCurrentIndexFrame();
+                        const VulkanDynamicBuffer &vulkanVertexBuffer = dynamicBuffers[bufferHandle.Id];
+                        for (auto i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                            if (currentFrame == i) continue;
 
-                    VulkanBuffer staging = bufferManager->CreateHostVisibleBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+                            const auto srcMemory = static_cast<uint8_t *>(vulkanVertexBuffer.mappedPointers[i]);
+                            memcpy(srcMemory + offset, data, size);
+                        }
+                    } else {
+                        VulkanBuffer &buffer = buffers[bufferHandle.Id];
 
-                    void* mapped;
-                    vkMapMemory(logicalDevice->GetDevice(), staging.memory, 0, size, 0, &mapped);
-                    std::memcpy(mapped, data, size);
-                    vkUnmapMemory(logicalDevice->GetDevice(), staging.memory);
+                        VulkanBuffer staging = bufferManager->CreateHostVisibleBuffer(
+                            size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
-                    mainCommandBuffer.CopyBuffer(staging.buffer, buffer.buffer, size, offset);
+                        void *mapped;
+                        vkMapMemory(logicalDevice->GetDevice(), staging.memory, 0, size, 0, &mapped);
+                        std::memcpy(mapped, data, size);
+                        vkUnmapMemory(logicalDevice->GetDevice(), staging.memory);
+
+                        mainCommandBuffer.CopyBuffer(staging.buffer, buffer.buffer, size, offset);
+                    }
                 }
                 default: ;
             }
@@ -657,16 +639,18 @@ namespace Rendering {
 
         if (colorPassEnded) {
             mainCommandBuffer.TransitionImageLayout(colorTexture.Image,
-                                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                                 VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+                                                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                                    VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
         }
 
         mainCommandBuffer.End();
 
         switch (commandBuffer->GetType()) {
             case CommandBufferType::Graphics: {
-                commandBufferManager->SendCommandBuffer(mainCommandBuffer, CommandPoolType::Graphics, frame.ImageAvailableSemaphoreVk, frame.RenderFinishedSemaphoreVk, frame.InFlightVk);
+                commandBufferManager->SendCommandBuffer(mainCommandBuffer, CommandPoolType::Graphics,
+                                                        frame.ImageAvailableSemaphoreVk,
+                                                        frame.RenderFinishedSemaphoreVk, frame.InFlightVk);
                 break;
             }
             case CommandBufferType::Compute:

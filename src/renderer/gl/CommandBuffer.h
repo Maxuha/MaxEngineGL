@@ -107,6 +107,7 @@ namespace Rendering {
         size_t offset;
         size_t size;
         const void *data;
+        bool isStatic;
     };
 
     enum class CommandBufferType {
@@ -152,7 +153,7 @@ namespace Rendering {
 
         void UpdateBuffer(BufferHandle buffer, const void *data, int offset, int size);
 
-        void UploadBufferData(BufferHandle buffer, const void *data, int offset, int size);
+        void UploadBufferData(BufferHandle buffer, const void *data, int offset, int size, bool isStatic = false);
 
         std::vector<uint8_t>& GetCommands();
 

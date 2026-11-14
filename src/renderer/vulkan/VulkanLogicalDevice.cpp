@@ -69,7 +69,7 @@ namespace Rendering {
         deviceCreateInfo.pNext = &deviceFeatures2;
         deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
         deviceCreateInfo.queueCreateInfoCount = queueCreateInfos.size();
-        deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+        deviceCreateInfo.pEnabledFeatures = nullptr;
         deviceCreateInfo.enabledExtensionCount = deviceExtensions.size();
         deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
         deviceCreateInfo.enabledLayerCount = 0;

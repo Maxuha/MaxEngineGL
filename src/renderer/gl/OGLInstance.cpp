@@ -23,6 +23,7 @@ namespace Rendering {
                                   GLsizei length, const GLchar *message, const void *userParam) {
             if (severity == GL_DEBUG_SEVERITY_HIGH) {
                 printf("OpenGL: %s\n", message);
+                // std::cout << "OpenGL: " << message << std::end;
 #ifdef _MSC_VER
                 __debugbreak();
 #else

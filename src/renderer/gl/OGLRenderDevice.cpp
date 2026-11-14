@@ -132,21 +132,11 @@ namespace Rendering {
 
         instance = new OGLInstance(window);
         textureManager = new OGLTextureManager();
-        cubeMapManager = new OGlCubeMapManager();
         pipelineManager = new OGLPipelineManager();
         shaderManager = new OGLShaderManager();
         bufferManager = new OGLVertexBufferManager();
         commandPoolManager = new OGLCommandPoolManager();
         descriptorSetManager = new OGLDescriptorSetManager();
-
-        // std::vector<int> customInstanceIDs(10000);
-        // for(int i = 0; i < 10000; i++) {
-        //     customInstanceIDs[i] = i;
-        // }
-        //
-        // GLuint instanceID_VBO;
-        // glCreateBuffers(1, &instanceID_VBO);
-        // glNamedBufferData(instanceID_VBO, customInstanceIDs.size() * sizeof(int), customInstanceIDs.data(), GL_STATIC_DRAW);
     }
 
     OGLRenderDevice::~OGLRenderDevice() = default;
@@ -175,9 +165,7 @@ namespace Rendering {
     }
 
     TextureHandle OGLRenderDevice::CreateTexture(const TextureCreateRequest &desc, const void *initialData) {
-        const auto _data = const_cast<void *>(initialData);
-
-        const TextureHandle textureHandle = textureManager->CreateTexture(desc.Width, desc.Height, desc.Format, _data);
+        const TextureHandle textureHandle = textureManager->CreateTexture(desc, initialData);
         OGLTexture &texture = textureManager->GetTexture(textureHandle);
 
        // if (desc.Format == TextureFormat::DEPTH) {
@@ -190,78 +178,20 @@ namespace Rendering {
        // }
 
         return textureHandle;
-
-        GLuint glId;
-
-        glCreateTextures(GL_TEXTURE_2D, 1, &glId);
-
-        const GLenum internalFormat = MapTextureInternalFormat(desc.Format);
-
-        auto mips = static_cast<GLsizei>(desc.MipLevels);
-
-        if (mips == 0) {
-            if (initialData) {
-                mips = static_cast<GLsizei>(std::log2(std::max(desc.Width, desc.Height))) + 1;
-            } else {
-                mips = 1;
-            }
-        }
-
-        glTextureStorage2D(glId, mips, internalFormat, static_cast<GLsizei>(desc.Width),
-                           static_cast<GLsizei>(desc.Height));
-
-        if (initialData) {
-            const GLenum externalFormat = MapTextureExternalFormat(desc.Format);
-
-            glTextureSubImage2D(
-                glId,
-                0,
-                0, 0,
-                static_cast<GLsizei>(desc.Width),
-                static_cast<GLsizei>(desc.Height),
-                externalFormat,
-                GL_UNSIGNED_BYTE,
-                initialData
-            );
-        }
-
-        if (mips > 1) {
-            glGenerateTextureMipmap(glId);
-        }
-
-        if (mips > 1) {
-            glTextureParameteri(glId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTextureParameteri(glId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        } else {
-            glTextureParameteri(glId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTextureParameteri(glId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTextureParameteri(glId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-            glTextureParameteri(glId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-            constexpr float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-            glTextureParameteri(glId, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-            glTextureParameteri(glId, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-
-            // glTextureParameteri(glId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        }
-
-        const auto id = TextureHandle{.Id = static_cast<uint32_t>(textures.size())};
-
-        TextureData data;
-        data.id = glId;
-        data.width = desc.Width;
-        data.height = desc.Height;
-        data.format = desc.Format;
-        data.mipLevels = mips;
-        textures.push_back(data);
-
-        return id;
     }
 
-    CubeMapHandle OGLRenderDevice::CreateCubeMap(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
-        return cubeMapManager->CreateCubeMap(desc, datas);
+    TextureHandle OGLRenderDevice::CreateTexture(const TextureCreateRequest &desc, const std::vector<void *> &datas) {
+        TextureHandle handle = textureManager->CreateTexture(desc, datas);
+        OGLTexture &texture = textureManager->GetTexture(handle);
+
+        GLuint fbo;
+        glCreateFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        // glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, texture.Id, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        texture.fbo = fbo;
+
+        return handle;
     }
 
     PipelineLayoutHandle OGLRenderDevice::CreatePipelineLayout(
@@ -292,12 +222,6 @@ namespace Rendering {
                                             const TextureHandle textureHandle) {
         descriptorSetManager->BindTexture(setHandle, binding, textureHandle);
     }
-
-    void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
-        const CubeMapHandle cubemapHandle) {
-        descriptorSetManager->BindCubemap(setHandle, binding, cubemapHandle);
-    }
-
 
     void OGLRenderDevice::UpdateResourceSet(const ResourceSetHandle setHandle, const uint32_t binding,
                                             const BufferHandle bufferHandle) {
@@ -379,11 +303,10 @@ namespace Rendering {
                         }
 
                         if (_colorAttachment.renderCubeMap.has_value()) {
-                            CubeMapHandle renderTarget = _colorAttachment.renderCubeMap.value();
-                            OGLCubeMapData cubeMap = cubeMapManager->GetCubeMap(renderTarget);
+                            TextureHandle renderTarget = _colorAttachment.renderCubeMap.value();
+                            OGLTexture cubeMap = textureManager->GetTexture(renderTarget);
                             activeFBO = cubeMap.fbo;
-
-                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.glId, mipLevel);
+                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.Id, mipLevel);
                         }
                     }
 
@@ -400,11 +323,11 @@ namespace Rendering {
                         }
 
                         if (_depthAttachment.renderCubeMap.has_value()) {
-                            CubeMapHandle renderTarget = _depthAttachment.renderCubeMap.value();
-                            OGLCubeMapData cubeMap = cubeMapManager->GetCubeMap(renderTarget);
+                            TextureHandle renderTarget = _depthAttachment.renderCubeMap.value();
+                            OGLTexture cubeMap = textureManager->GetTexture(renderTarget);
                             activeFBO = cubeMap.fbo;
 
-                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.glId, mipLevel);
+                            glNamedFramebufferTexture(activeFBO, attachmentType, cubeMap.Id, mipLevel);
                         }
                     }
 
@@ -428,7 +351,7 @@ namespace Rendering {
                     if (colorAttachment.has_value() && colorAttachment.value().loadOp == AttachmentLoadOp::CLEAR) {
                         if (colorAttachment.value().type == AttachmentType::COLOR) clearMask |= GL_COLOR_BUFFER_BIT;
 
-                        Color clearColor = colorAttachment.value().clearColor;
+                        ::Color clearColor = colorAttachment.value().clearColor;
 
                         GLfloat rgba[4] = { clearColor.r, clearColor.g, clearColor.b, clearColor.a };
 
@@ -530,11 +453,11 @@ namespace Rendering {
                         glBindTextureUnit(item.binding, 0);
 
                         //TODO Remove it
-                        if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999 && item.cubemapHandle.Id == 9999999) continue;
+                        if (item.bufferHandle.Id == 9999999 && item.textureHandle.Id == 9999999) continue;
 
-                        if (item.cubemapHandle.Id != 9999999) {
-                            OGLCubeMapData cubemap = cubeMapManager->GetCubeMap(item.cubemapHandle);
-                            glBindTextureUnit(item.binding, cubemap.glId);
+                        if (item.textureHandle.Id != 9999999) {
+                            OGLTexture cubemap = textureManager->GetTexture(item.textureHandle);
+                            glBindTextureUnit(item.binding, cubemap.Id);
                             continue;
                         }
 
@@ -614,19 +537,16 @@ namespace Rendering {
 
                 case GLCommandType::UploadBufferData: {
                     const auto *cmd = reinterpret_cast<GLCommand_UploadBufferData *>(&commands[readOffset]);
-                    // readOffset += sizeof(GLCommand_UploadBufferData) + cmd->size;
                     readOffset += sizeof(GLCommand_UploadBufferData);
 
                     auto bufferHandle = cmd->buffer;
-                    // auto data = reinterpret_cast<const uint8_t *>(cmd) + sizeof(GLCommand_UploadBufferData);
                     auto data = cmd->data;
-                    auto size = cmd->size;
-                    auto offset = cmd->offset;
+                    auto size = static_cast<GLsizeiptr>(cmd->size);
+                    auto offset = static_cast<GLintptr>(cmd->offset);
 
                     OGLBuffer &buffer = bufferManager->GetBuffer(bufferHandle);
 
-                    glNamedBufferSubData(buffer.glId, static_cast<GLintptr>(offset), static_cast<GLsizeiptr>(size),
-                                         data);
+                    glNamedBufferSubData(buffer.glId, offset, size, data);
                 }
 
                 default:
